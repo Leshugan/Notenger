@@ -868,6 +868,7 @@ export default function App() {
   const [recording, setRecording] = useState(false);
   const [wordMonth, setWordMonth] = useState(false); // переключатель формата месяца в дате
   const mediaRec = useRef(null);
+  const nativeRec = useRef(null);
   const recChunks = useRef([]);
   const [undo,      setUndo]      = useState(null);
   const [toast,     setToast]     = useState(null);
@@ -896,6 +897,7 @@ export default function App() {
   const [composerFull, setComposerFull] = useState(false); // ЭКСПЕРИМЕНТ: режим написания как в Google Keep
   const [fullFmt, setFullFmt] = useState(false);
   const fmtSel = useRef(null);
+  const lastSel = useRef(null); // последнее НЕпустое выделение в поле
   const [lightbox, setLightbox] = useState(null); // dataUrl открытого изображения
   const fullTaRef = useRef(null);
   const taSwipe = useRef(null);
@@ -906,7 +908,6 @@ export default function App() {
   const recStartY = useRef(0);
   const micStream = useRef(null);
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
-  useEffect(()=>{ /* fullTaResize */ if(composerFull&&fullTaRef.current){ const ta=fullTaRef.current; ta.style.height="auto"; ta.style.height=ta.scrollHeight+"px"; } },[composerFull, note]);
   function sendPendingVoice(){
     const pv=pendingVoice; if(!pv) return;
     const o=pv.origin;
@@ -919,33 +920,32 @@ export default function App() {
   async function startRec(e){
     recCancel.current=false;
     if(e&&e.touches&&e.touches[0]) recStartY.current=e.touches[0].clientY;
-    // освобождаем возможный «зависший» поток с прошлого раза
-    try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>t.stop()); micStream.current=null; } }catch{}
-    const getMic=async()=>{
-      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia) return await navigator.mediaDevices.getUserMedia({audio:true});
-      const gum=navigator.getUserMedia||navigator.webkitGetUserMedia||navigator.mozGetUserMedia;
-      if(!gum) throw new Error("no getUserMedia");
-      return await new Promise((res,rej)=>gum.call(navigator,{audio:true},res,rej));
-    };
-    let stream;
-    try{ stream=await getMic(); }
-    catch(err){
-      // NotReadableError: устройство занято — короткая пауза и повтор
-      if(err&&(err.name==="NotReadableError"||err.name==="AbortError")){
-        await new Promise(r=>setTimeout(r,400));
-        try{ stream=await getMic(); }
-        catch(err2){ tst("Микрофон занят, закройте другие приложения и попробуйте снова"); return; }
-      } else if(err&&err.name==="NotAllowedError"){
-        // разрешение не выдано — пробуем запросить через Capacitor и повторить
-        try{
-          const p="@capacitor/core"; const m=await import(/* @vite-ignore */ p);
-          if(m&&m.Capacitor&&m.Capacitor.isNativePlatform&&m.Capacitor.isNativePlatform()){
-            tst("Разрешите доступ к микрофону в настройках приложения");
-          } else { tst("Микрофон: доступ запрещён"); }
-        }catch{ tst("Микрофон: доступ запрещён"); }
+    // Пробуем НАТИВНУЮ запись (как в Telegram) — без getUserMedia/WebView
+    try{
+      const pn="@capacitor-community/voice-recorder";
+      const vr=await import(/* @vite-ignore */ pn);
+      const VoiceRecorder = vr.VoiceRecorder || (vr.default&&vr.default.VoiceRecorder) || vr.default;
+      const cap = await (async()=>{ try{ const c=await import(/* @vite-ignore */ "@capacitor/core"); return c.Capacitor; }catch{ return null; } })();
+      if(VoiceRecorder && cap && cap.isNativePlatform && cap.isNativePlatform()){
+        try{ await VoiceRecorder.requestAudioRecordingPermission(); }catch{}
+        const canRec = await VoiceRecorder.canDeviceVoiceRecord().then(r=>r&&r.value).catch(()=>true);
+        if(!canRec){ tst("Запись недоступна на устройстве"); return; }
+        await VoiceRecorder.startRecording();
+        nativeRec.current = VoiceRecorder;
+        setRecording(true); setRecSec(0);
+        recTimer.current=setInterval(()=>setRecSec(x=>x+1),1000);
+        try{navigator.vibrate&&navigator.vibrate(12);}catch{}
         return;
-      } else { tst("Микрофон: "+(err&&err.name?err.name:"нет доступа")); return; }
-    }
+      }
+    }catch(e){ /* плагина нет (превью) — уходим в веб-запись */ }
+
+    // ── Веб-запись (превью в браузере) ──
+    try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>t.stop()); micStream.current=null; } }catch{}
+    let stream;
+    try{
+      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia) stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      else { const gum=navigator.getUserMedia||navigator.webkitGetUserMedia||navigator.mozGetUserMedia; if(!gum) throw new Error("no"); stream=await new Promise((res,rej)=>gum.call(navigator,{audio:true},res,rej)); }
+    }catch(err){ tst("Микрофон: "+(err&&err.name?err.name:"нет доступа")); return; }
     micStream.current=stream;
     try{
       const mr=new MediaRecorder(stream);
@@ -960,11 +960,11 @@ export default function App() {
         setRecSec(0);
         if(cancelled) return;
         const blob=new Blob(recChunks.current,{type:mr.mimeType||"audio/webm"});
-        if(blob.size<800) return; // слишком короткая запись
+        if(blob.size<800) return;
         const fr=new FileReader();
         fr.onload=()=>{
           const att={type:(blob.type&&blob.type.startsWith("audio/"))?blob.type:"audio/webm",name:`Голосовое ${secs}s`,dataUrl:fr.result,size:blob.size,voice:true,dur:secs};
-          setPendingVoice({att, origin:composerOrigin.current||{fid,sid}}); // показываем подтверждение
+          setPendingVoice({att, origin:composerOrigin.current||{fid,sid}});
         };
         fr.readAsDataURL(blob);
       };
@@ -974,8 +974,27 @@ export default function App() {
       try{navigator.vibrate&&navigator.vibrate(12);}catch{}
     }catch{ tst("Запись недоступна"); }
   }
-  function stopRec(cancel){
+  async function stopRec(cancel){
     recCancel.current=!!cancel;
+    // Нативная запись
+    if(nativeRec.current){
+      const VoiceRecorder=nativeRec.current; nativeRec.current=null;
+      if(recTimer.current){ clearInterval(recTimer.current); recTimer.current=null; }
+      const secs=recSec; setRecording(false); setRecSec(0);
+      try{
+        const res=await VoiceRecorder.stopRecording();
+        if(cancel) return;
+        const v=res&&res.value; if(!v||!v.recordDataBase64) return;
+        const mime=v.mimeType||"audio/aac";
+        const dataUrl="data:"+mime+";base64,"+v.recordDataBase64;
+        const dur=v.msDuration?Math.round(v.msDuration/1000):secs;
+        if(dur<1) return;
+        const att={type:mime,name:`Голосовое ${dur}s`,dataUrl,size:Math.round((v.recordDataBase64.length*3)/4),voice:true,dur};
+        setPendingVoice({att, origin:composerOrigin.current||{fid,sid}});
+      }catch(err){ tst("Не удалось сохранить запись"); }
+      return;
+    }
+    // Веб-запись
     const mr=mediaRec.current;
     if(mr && mr.state!=="inactive"){ try{mr.stop();}catch{} }
     else { setRecording(false); if(recTimer.current){clearInterval(recTimer.current);recTimer.current=null;} setRecSec(0); }
@@ -1148,6 +1167,17 @@ export default function App() {
     setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]);
     if(noteId) setTimeout(()=>jumpTo(noteId), 120);
   }
+  // Постоянно запоминаем последнее непустое выделение в поле ввода
+  useEffect(()=>{
+    if(!composerFull) return;
+    const id=setInterval(()=>{
+      const el=fullTaRef.current; if(!el) return;
+      if(document.activeElement===el && el.selectionStart!==el.selectionEnd){
+        lastSel.current={s:el.selectionStart,e:el.selectionEnd};
+      }
+    }, 150);
+    return ()=>clearInterval(id);
+  }, [composerFull]);
   // Открыть тему/категорию по умолчанию при запуске
   useEffect(()=>{
     if(dlaunchApplied.current) return; dlaunchApplied.current=true;
@@ -2295,23 +2325,41 @@ export default function App() {
               onChange={e=>setNote(e.target.value)}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
-              onContextMenu={e=>{ e.preventDefault(); showSelBar(e.clientX||window.innerWidth/2, e.clientY||window.innerHeight/2); }}
-              onTouchStart={e=>{ const t=e.touches[0]; taSwipe.current={x:t.clientX,y:t.clientY,h:false}; if(selBarTimer.current)clearTimeout(selBarTimer.current); selBarTimer.current=setTimeout(()=>{ showSelBar(t.clientX,t.clientY); },480); }}
-              onTouchMove={e=>{ const s2=taSwipe.current; if(!s2)return; const dx=e.touches[0].clientX-s2.x, dy=e.touches[0].clientY-s2.y; if((Math.abs(dx)>8||Math.abs(dy)>8)&&selBarTimer.current){ clearTimeout(selBarTimer.current); selBarTimer.current=null; } if(!s2.h && Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)){ s2.h=true; try{fullTaRef.current&&fullTaRef.current.blur();}catch{} try{window.getSelection&&window.getSelection().removeAllRanges();}catch{} } }}
-              onTouchEnd={()=>{ if(selBarTimer.current){clearTimeout(selBarTimer.current);selBarTimer.current=null;} }}
+              onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
+              onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
+              onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
               autoFocus placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
-              onInput={e=>{ const ta=e.target; ta.style.height="auto"; ta.style.height=ta.scrollHeight+"px"; }}
-              rows={1}
-              style={{width:"100%",background:"#1A1410",border:"none",outline:"none",
+              style={{flex:1,width:"100%",background:"#1A1410",border:"none",outline:"none",
                 color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",
                 boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
-                WebkitAppearance:"none",appearance:"none",boxShadow:"none",minHeight:54}}/>
+                WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             </div>
+            {/* Всплывающая панель ББ-кодов */}
+            {fullFmt&&(
+              <div style={{position:"absolute",left:10,bottom:54,background:"#241C16",borderRadius:12,padding:"5px 6px",
+                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid #3A2E24",zIndex:6}}>
+                {[
+                  {ic:<Icon size={18} d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" stroke={2} />, b:"[b]",a:"[/b]",x:"текст",t:"Жирный"},
+                  {ic:<Icon size={18} d={["M15 5h-5","M14 19H9","M14 5l-4 14"]} stroke={2} />, b:"[i]",a:"[/i]",x:"текст",t:"Курсив"},
+                  {ic:<Icon size={18} d={["M5 12h14","M8 8a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3","M16 16a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3"]} stroke={2} />, b:"[s]",a:"[/s]",x:"текст",t:"Зачёркнутый"},
+                  {ic:<Icon size={18} d={["M9 8l-4 4 4 4","M15 8l4 4-4 4"]} stroke={2} />, b:"[code]",a:"[/code]",x:"код",t:"Моноширинный"},
+                  {ic:<Icon size={18} d={["M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"]} stroke={2} />, b:"[spoiler]",a:"[/spoiler]",x:"текст",t:"Спойлер"},
+                  {ic:<Icon size={18} d={["M7 7h4v5a4 4 0 0 1-4 4","M14 7h4v5a4 4 0 0 1-4 4"]} stroke={2} />, b:"[q]",a:"[/q]",x:"цитата",t:"Цитата"},
+                  {ic:<Icon size={18} d={["M9 15l6-6","M10 7l1-1a3.5 3.5 0 0 1 5 5l-1 1","M14 17l-1 1a3.5 3.5 0 0 1-5-5l1-1"]} stroke={2} />, link:true,x:"ссылка",t:"Ссылка"},
+                ].map((it,i)=>(
+                  <button key={i} title={it.t||""} onMouseDown={e=>e.preventDefault()}
+                    onClick={()=>{ const el=fullTaRef.current; if(!el)return; let s=el.selectionStart,e2=el.selectionEnd; if(s===e2 && lastSel.current && lastSel.current.s!==lastSel.current.e){ s=lastSel.current.s; e2=lastSel.current.e; } const sel=note.slice(s,e2)||it.x;
+                      if(it.link){ const ins="["+sel+"](https://)"; setNote(note.slice(0,s)+ins+note.slice(e2)); lastSel.current=null; setFullFmt(false); setTimeout(()=>{ el.focus(); const urlPos=s+sel.length+3+("https://").length; el.setSelectionRange(urlPos,urlPos); },0); return; }
+                      setNote(note.slice(0,s)+it.b+sel+it.a+note.slice(e2)); lastSel.current=null; setFullFmt(false); setTimeout(()=>{ el.focus(); const p=s+it.b.length+sel.length+it.a.length; el.setSelectionRange(p,p); },0); }}
+                    style={{background:"#2E251C",border:"none",borderRadius:8,width:38,height:38,cursor:"pointer",color:"#F2EAE0",display:"flex",alignItems:"center",justifyContent:"center"}}>{it.ic}</button>
+                ))}
+              </div>
+            )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:6,padding:"3px 10px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46}}>
-              <button onMouseDown={e=>e.preventDefault()} onTouchStart={e=>{ e.preventDefault(); const el=fullTaRef.current; if(el){fmtSel.current={s:el.selectionStart,e:el.selectionEnd};} }} onClick={()=>{ const el=fullTaRef.current; if(el){fmtSel.current={s:el.selectionStart,e:el.selectionEnd};} setFullFmt(v=>!v); }} title="Форматирование"
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46,overflowX:"auto"}}>
+              <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
-                  color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>Aa</button>
+                  color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>Aa</button>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
               <button onClick={undoNote} title="Отменить"
@@ -2331,6 +2379,9 @@ export default function App() {
                     onTouchStart={e=>{ e.preventDefault(); startRec(e); }}
                     onTouchMove={e=>{ if(recording){ const dy=e.touches[0].clientY-recStartY.current; if(dy>90){ stopRec(true); } } }}
                     onTouchEnd={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
+                    onMouseDown={e=>{ e.preventDefault(); startRec(e); }}
+                    onMouseUp={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
+                    onMouseLeave={e=>{ if(recording) stopRec(false); }}
                     style={{width:44,height:44,borderRadius:"50%",background:recording?"#E05252":"#EF6C00",border:"none",cursor:"pointer",
                       color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)",
                       transform:recording?"scale(1.15)":"scale(1)",transition:"transform .15s ease, background .15s ease"}}>{IC.mic}</button>}
@@ -2373,34 +2424,6 @@ export default function App() {
                 ).map((b,i)=>(
                   <button key={i} onClick={b.fn} onTouchStart={e=>e.stopPropagation()} style={{background:"none",border:"none",color:"#D8CCBE",fontSize:12.5,
                     padding:"8px 13px",cursor:"pointer",borderLeft:i?"1px solid #3A2E24":"none",whiteSpace:"nowrap"}}>{b.l}</button>
-                ))}
-              </div>
-            )}
-            {/* Поп-меню форматирования внутри полноэкранного */}
-            {fullFmt&&(
-              <div style={{position:"absolute",left:10,bottom:64,background:"#241C16",borderRadius:12,padding:"5px 6px",
-                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid #3A2E24",zIndex:5}}>
-                {[
-                  {l:"B",s:{fontWeight:700},b:"[b]",a:"[/b]",x:"текст"},
-                  {l:"I",s:{fontStyle:"italic"},b:"[i]",a:"[/i]",x:"текст"},
-                  {l:"S",s:{textDecoration:"line-through"},b:"[s]",a:"[/s]",x:"текст"},
-                  {l:"M",s:{fontFamily:"monospace",fontSize:12},b:"[code]",a:"[/code]",x:"код"},
-                  {l:"||",s:{opacity:.7},b:"[spoiler]",a:"[/spoiler]",x:"текст"},
-                  {l:"❝",s:{},b:"[q]",a:"[/q]",x:"цитата"},
-                ].map((it,i)=>(
-                  <button key={i} tabIndex={-1}
-                    onPointerDown={(ev)=>{ ev.preventDefault(); const el=fullTaRef.current; if(!el)return;
-                      // читаем выделение СИНХРОННО, до потери фокуса
-                      let s=el.selectionStart, e2=el.selectionEnd;
-                      if(s===e2 && fmtSel.current && fmtSel.current.s!==fmtSel.current.e){ s=fmtSel.current.s; e2=fmtSel.current.e; }
-                      const cur=el.value; const sel=cur.slice(s,e2)||it.x;
-                      const nv=cur.slice(0,s)+it.b+sel+it.a+cur.slice(e2);
-                      const p=s+it.b.length+sel.length+it.a.length;
-                      setNote(nv);
-                      requestAnimationFrame(()=>{ try{ el.focus(); el.setSelectionRange(p,p); fmtSel.current={s:p,e:p}; }catch{} });
-                    }}
-                    onMouseDown={e=>e.preventDefault()} onTouchStart={e=>e.preventDefault()}
-                    style={{background:"none",border:"none",borderRadius:8,padding:"7px 11px",cursor:"pointer",color:"#F2EAE0",fontSize:13,...it.s}}>{it.l}</button>
                 ))}
               </div>
             )}
