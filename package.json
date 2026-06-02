@@ -12,7 +12,7 @@
     "react-dom": "18.2.0",
     "@capacitor/app": "6.0.2",
     "@capacitor/clipboard": "6.0.2",
-    "@capacitor-community/voice-recorder": "6.0.0"
+    "capacitor-voice-recorder": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/android": "6.1.2",
