@@ -903,6 +903,7 @@ export default function App() {
   const recTimer = useRef(null);
   const recCancel = useRef(false);
   const recStartY = useRef(0);
+  const micStream = useRef(null);
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   useEffect(()=>{ /* fullTaResize */ if(composerFull&&fullTaRef.current){ const ta=fullTaRef.current; ta.style.height="auto"; ta.style.height=ta.scrollHeight+"px"; } },[composerFull, note]);
   function sendPendingVoice(){
@@ -917,23 +918,31 @@ export default function App() {
   async function startRec(e){
     recCancel.current=false;
     if(e&&e.touches&&e.touches[0]) recStartY.current=e.touches[0].clientY;
+    // освобождаем возможный «зависший» поток с прошлого раза
+    try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>t.stop()); micStream.current=null; } }catch{}
+    const getMic=async()=>{
+      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia) return await navigator.mediaDevices.getUserMedia({audio:true});
+      const gum=navigator.getUserMedia||navigator.webkitGetUserMedia||navigator.mozGetUserMedia;
+      if(!gum) throw new Error("no getUserMedia");
+      return await new Promise((res,rej)=>gum.call(navigator,{audio:true},res,rej));
+    };
     let stream;
-    try{
-      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-        stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      } else {
-        const gum=navigator.getUserMedia||navigator.webkitGetUserMedia||navigator.mozGetUserMedia;
-        if(!gum) throw new Error("no getUserMedia");
-        stream=await new Promise((res,rej)=>gum.call(navigator,{audio:true},res,rej));
-      }
+    try{ stream=await getMic(); }
+    catch(err){
+      // NotReadableError: устройство занято — короткая пауза и повтор
+      if(err&&(err.name==="NotReadableError"||err.name==="AbortError")){
+        await new Promise(r=>setTimeout(r,400));
+        try{ stream=await getMic(); }
+        catch(err2){ tst("Микрофон занят, закройте другие приложения и попробуйте снова"); return; }
+      } else { tst("Микрофон: "+(err&&err.name?err.name:"нет доступа")); return; }
     }
-    catch(err){ tst("Микрофон: "+(err&&err.name?err.name:"нет доступа")); return; }
+    micStream.current=stream;
     try{
       const mr=new MediaRecorder(stream);
       mediaRec.current=mr; recChunks.current=[];
       mr.ondataavailable=ev=>{ if(ev.data&&ev.data.size>0) recChunks.current.push(ev.data); };
       mr.onstop=()=>{
-        stream.getTracks().forEach(t=>t.stop());
+        stream.getTracks().forEach(t=>t.stop()); micStream.current=null;
         if(recTimer.current){ clearInterval(recTimer.current); recTimer.current=null; }
         const cancelled=recCancel.current;
         setRecording(false);
@@ -2256,6 +2265,8 @@ export default function App() {
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
             <textarea ref={fullTaRef} value={note} className="editor-ta"
               onChange={e=>setNote(e.target.value)}
+              onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
+              onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onContextMenu={e=>{ e.preventDefault(); showSelBar(e.clientX||window.innerWidth/2, e.clientY||window.innerHeight/2); }}
               onTouchStart={e=>{ const t=e.touches[0]; taSwipe.current={x:t.clientX,y:t.clientY,h:false}; if(selBarTimer.current)clearTimeout(selBarTimer.current); selBarTimer.current=setTimeout(()=>{ showSelBar(t.clientX,t.clientY); },480); }}
               onTouchMove={e=>{ const s2=taSwipe.current; if(!s2)return; const dx=e.touches[0].clientX-s2.x, dy=e.touches[0].clientY-s2.y; if((Math.abs(dx)>8||Math.abs(dy)>8)&&selBarTimer.current){ clearTimeout(selBarTimer.current); selBarTimer.current=null; } if(!s2.h && Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)){ s2.h=true; try{fullTaRef.current&&fullTaRef.current.blur();}catch{} try{window.getSelection&&window.getSelection().removeAllRanges();}catch{} } }}
@@ -2349,8 +2360,8 @@ export default function App() {
                   {l:"||",s:{opacity:.7},b:"[spoiler]",a:"[/spoiler]",x:"текст"},
                   {l:"❝",s:{},b:"[q]",a:"[/q]",x:"цитата"},
                 ].map((it,i)=>(
-                  <button key={i} onMouseDown={e=>e.preventDefault()} onTouchStart={e=>e.preventDefault()}
-                    onClick={()=>{ const el=fullTaRef.current; if(!el)return; const fs=fmtSel.current; let s=el.selectionStart,e2=el.selectionEnd; if(fs&&fs.s!==fs.e){ s=fs.s; e2=fs.e; } const sel=note.slice(s,e2)||it.x; setNote(note.slice(0,s)+it.b+sel+it.a+note.slice(e2)); setTimeout(()=>{el.focus();const p=s+it.b.length+sel.length+it.a.length; el.setSelectionRange(p,p); fmtSel.current=null;},0); }}
+                  <button key={i} tabIndex={-1} onMouseDown={e=>e.preventDefault()} onTouchStart={e=>e.preventDefault()}
+                    onClick={()=>{ const el=fullTaRef.current; if(!el)return; const fs=fmtSel.current||{s:el.selectionStart,e:el.selectionEnd}; const s=fs.s, e2=fs.e; const sel=note.slice(s,e2)||it.x; const nv=note.slice(0,s)+it.b+sel+it.a+note.slice(e2); setNote(nv); const p=s+it.b.length+sel.length+it.a.length; setTimeout(()=>{ try{el.focus(); el.setSelectionRange(p,p); fmtSel.current={s:p,e:p};}catch{} },0); }}
                     style={{background:"none",border:"none",borderRadius:8,padding:"7px 11px",cursor:"pointer",color:"#F2EAE0",fontSize:13,...it.s}}>{it.l}</button>
                 ))}
               </div>
