@@ -81,11 +81,21 @@ jobs:
           import androidx.core.content.ContextCompat;
           import java.util.ArrayList;
           import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.BridgeWebChromeClient;
           public class MainActivity extends BridgeActivity {
             @Override
             public void onCreate(Bundle savedInstanceState) {
               super.onCreate(savedInstanceState);
               requestStartupPermissions();
+              // Наследуем клиент Capacitor (file chooser работает) и добавляем выдачу мик/камеры
+              this.bridge.getWebView().setWebChromeClient(new BridgeWebChromeClient(this.bridge) {
+                @Override
+                public void onPermissionRequest(final PermissionRequest request) {
+                  runOnUiThread(new Runnable() {
+                    @Override public void run() { request.grant(request.getResources()); }
+                  });
+                }
+              });
             }
             private void requestStartupPermissions() {
               ArrayList<String> need = new ArrayList<>();
@@ -107,11 +117,6 @@ jobs:
           }
           EOF
           echo "=== MainActivity.java ==="; cat "$MA"
-          # Включаем доступ WebView к мик/камере через конфиг Capacitor (не ломая file chooser)
-          CFG=android/app/src/main/assets/capacitor.config.json
-          if [ -f "$CFG" ]; then
-            node -e "const f='$CFG';const c=require('./'+f);c.android=c.android||{};c.server=c.server||{};const fs=require('fs');fs.writeFileSync(f,JSON.stringify(c,null,2));" || true
-          fi
 
       - name: Подготовить постоянный ключ подписи
         run: |
