@@ -42,6 +42,8 @@ jobs:
 
       - name: Добавить Android-проект (Capacitor)
         run: |
+          # Удаляем возможную старую папку android (в ней мог остаться чужой appId)
+          rm -rf android
           npx cap add android || npx cap sync android
           npx cap sync android
 
@@ -55,11 +57,42 @@ jobs:
           GRADLE=android/app/build.gradle
           sed -i 's/versionCode .*/versionCode 2/' "$GRADLE"
           sed -i 's/versionName .*/versionName "0.2"/' "$GRADLE"
-          # Принудительно задаём имя пакета (на случай если Capacitor взял дефолтное)
-          sed -i 's/applicationId "[^"]*"/applicationId "leshugan.notenger"/' "$GRADLE"
-          sed -i 's/namespace "[^"]*"/namespace "leshugan.notenger"/' "$GRADLE"
+          # Принудительно задаём имя пакета — ловим оба формата (с '=' и без)
+          sed -i -E 's/applicationId[[:space:]]*=?[[:space:]]*"[^"]*"/applicationId "leshugan.notenger"/' "$GRADLE"
+          sed -i -E 's/namespace[[:space:]]*=?[[:space:]]*"[^"]*"/namespace "leshugan.notenger"/' "$GRADLE"
           echo "=== build.gradle (id) ==="; grep -E "applicationId|namespace" "$GRADLE"
+          # Защита: если appId всё ещё не наш — остановить сборку с понятной ошибкой
+          if ! grep -q "leshugan.notenger" "$GRADLE"; then echo "ОШИБКА: appId не установлен!"; exit 1; fi
           echo "=== Manifest head ==="; head -30 "$MANIFEST"
+
+      - name: Разрешить WebView доступ к микрофону/камере
+        run: |
+          # Находим MainActivity.java и добавляем выдачу WebView-разрешений (нужно для getUserMedia)
+          MA=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
+          echo "MainActivity: $MA"
+          PKG=$(grep -m1 '^package' "$MA" | sed 's/package //;s/;//')
+          cat > "$MA" <<EOF
+          package $PKG;
+          import android.os.Bundle;
+          import android.webkit.PermissionRequest;
+          import android.webkit.WebChromeClient;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
+                @Override
+                public void onPermissionRequest(final PermissionRequest request) {
+                  runOnUiThread(new Runnable() {
+                    @Override public void run() { request.grant(request.getResources()); }
+                  });
+                }
+              });
+            }
+          }
+          EOF
+          echo "=== MainActivity.java ==="; cat "$MA"
 
       - name: Собрать APK
         run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
