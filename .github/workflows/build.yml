@@ -1,0 +1,71 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Скачать код
+        uses: actions/checkout@v4
+
+      - name: Установить Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Установить Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Установить зависимости
+        run: npm install
+
+      - name: Собрать веб-приложение
+        run: npm run build
+
+      - name: Зафиксировать appId (имя пакета)
+        run: |
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "leshugan.notenger",
+            "appName": "Notenger",
+            "webDir": "dist"
+          }
+          EOF
+          echo "=== capacitor.config.json ==="; cat capacitor.config.json
+
+      - name: Добавить Android-проект (Capacitor)
+        run: |
+          npx cap add android || npx cap sync android
+          npx cap sync android
+
+      - name: Прописать разрешения и версию
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          PERMS='<uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>'
+          if ! grep -q "RECORD_AUDIO" "$MANIFEST"; then
+            sed -i "s|<application|$PERMS\n    <application|" "$MANIFEST"
+          fi
+          GRADLE=android/app/build.gradle
+          sed -i 's/versionCode .*/versionCode 2/' "$GRADLE"
+          sed -i 's/versionName .*/versionName "0.2"/' "$GRADLE"
+          # Принудительно задаём имя пакета (на случай если Capacitor взял дефолтное)
+          sed -i 's/applicationId "[^"]*"/applicationId "leshugan.notenger"/' "$GRADLE"
+          sed -i 's/namespace "[^"]*"/namespace "leshugan.notenger"/' "$GRADLE"
+          echo "=== build.gradle (id) ==="; grep -E "applicationId|namespace" "$GRADLE"
+          echo "=== Manifest head ==="; head -30 "$MANIFEST"
+
+      - name: Собрать APK
+        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
+
+      - name: Загрузить готовый APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
