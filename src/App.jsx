@@ -868,7 +868,6 @@ export default function App() {
   const [recording, setRecording] = useState(false);
   const [wordMonth, setWordMonth] = useState(false); // переключатель формата месяца в дате
   const mediaRec = useRef(null);
-  const nativeRec = useRef(null);
   const recChunks = useRef([]);
   const [undo,      setUndo]      = useState(null);
   const [toast,     setToast]     = useState(null);
@@ -907,6 +906,7 @@ export default function App() {
   const recCancel = useRef(false);
   const recStartY = useRef(0);
   const micStream = useRef(null);
+  const recSecRef = useRef(0);
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   function sendPendingVoice(){
     const pv=pendingVoice; if(!pv) return;
@@ -917,87 +917,78 @@ export default function App() {
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),80);
   }
   function discardPendingVoice(){ setPendingVoice(null); }
+  // ── Запись голосовых: чистая реализация, поток освобождается полностью ──
   async function startRec(e){
     recCancel.current=false;
     if(e&&e.touches&&e.touches[0]) recStartY.current=e.touches[0].clientY;
-    // Пробуем НАТИВНУЮ запись (как в Telegram) — без getUserMedia/WebView
-    try{
-      const pn="capacitor-voice-recorder";
-      const vr=await import(/* @vite-ignore */ pn);
-      const VoiceRecorder = vr.VoiceRecorder || (vr.default&&vr.default.VoiceRecorder) || vr.default;
-      const cap = await (async()=>{ try{ const c=await import(/* @vite-ignore */ "@capacitor/core"); return c.Capacitor; }catch{ return null; } })();
-      if(VoiceRecorder && cap && cap.isNativePlatform && cap.isNativePlatform()){
-        try{ await VoiceRecorder.requestAudioRecordingPermission(); }catch{}
-        const canRec = await VoiceRecorder.canDeviceVoiceRecord().then(r=>r&&r.value).catch(()=>true);
-        if(!canRec){ tst("Запись недоступна на устройстве"); return; }
-        await VoiceRecorder.startRecording();
-        nativeRec.current = VoiceRecorder;
-        setRecording(true); setRecSec(0);
-        recTimer.current=setInterval(()=>setRecSec(x=>x+1),1000);
-        try{navigator.vibrate&&navigator.vibrate(12);}catch{}
-        return;
-      }
-    }catch(e){ /* плагина нет (превью) — уходим в веб-запись */ }
-
-    // ── Веб-запись (превью в браузере) ──
-    try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>t.stop()); micStream.current=null; } }catch{}
+    if(recording) return; // уже идёт
+    // Жёстко освобождаем любой прежний поток/рекордер
+    try{ if(mediaRec.current && mediaRec.current.state!=="inactive") mediaRec.current.stop(); }catch{}
+    mediaRec.current=null;
+    try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>{ try{t.stop();}catch{} }); } }catch{}
+    micStream.current=null;
+    recChunks.current=[];
+    recSecRef.current=0;
+    if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){ tst("Запись не поддерживается"); return; }
     let stream;
     try{
-      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia) stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      else { const gum=navigator.getUserMedia||navigator.webkitGetUserMedia||navigator.mozGetUserMedia; if(!gum) throw new Error("no"); stream=await new Promise((res,rej)=>gum.call(navigator,{audio:true},res,rej)); }
-    }catch(err){ tst("Микрофон: "+(err&&err.name?err.name:"нет доступа")); return; }
-    micStream.current=stream;
-    try{
-      const mr=new MediaRecorder(stream);
-      mediaRec.current=mr; recChunks.current=[];
-      mr.ondataavailable=ev=>{ if(ev.data&&ev.data.size>0) recChunks.current.push(ev.data); };
-      mr.onstop=()=>{
-        stream.getTracks().forEach(t=>t.stop()); micStream.current=null;
-        if(recTimer.current){ clearInterval(recTimer.current); recTimer.current=null; }
-        const cancelled=recCancel.current;
-        setRecording(false);
-        const secs=recSec;
-        setRecSec(0);
-        if(cancelled) return;
-        const blob=new Blob(recChunks.current,{type:mr.mimeType||"audio/webm"});
-        if(blob.size<800) return;
-        const fr=new FileReader();
-        fr.onload=()=>{
-          const att={type:(blob.type&&blob.type.startsWith("audio/"))?blob.type:"audio/webm",name:`Голосовое ${secs}s`,dataUrl:fr.result,size:blob.size,voice:true,dur:secs};
-          setPendingVoice({att, origin:composerOrigin.current||{fid,sid}});
-        };
-        fr.readAsDataURL(blob);
-      };
-      mr.start();
-      setRecording(true); setRecSec(0);
-      recTimer.current=setInterval(()=>setRecSec(x=>x+1),1000);
-      try{navigator.vibrate&&navigator.vibrate(12);}catch{}
-    }catch{ tst("Запись недоступна"); }
-  }
-  async function stopRec(cancel){
-    recCancel.current=!!cancel;
-    // Нативная запись
-    if(nativeRec.current){
-      const VoiceRecorder=nativeRec.current; nativeRec.current=null;
-      if(recTimer.current){ clearInterval(recTimer.current); recTimer.current=null; }
-      const secs=recSec; setRecording(false); setRecSec(0);
-      try{
-        const res=await VoiceRecorder.stopRecording();
-        if(cancel) return;
-        const v=res&&res.value; if(!v||!v.recordDataBase64) return;
-        const mime=v.mimeType||"audio/aac";
-        const dataUrl="data:"+mime+";base64,"+v.recordDataBase64;
-        const dur=v.msDuration?Math.round(v.msDuration/1000):secs;
-        if(dur<1) return;
-        const att={type:mime,name:`Голосовое ${dur}s`,dataUrl,size:Math.round((v.recordDataBase64.length*3)/4),voice:true,dur};
-        setPendingVoice({att, origin:composerOrigin.current||{fid,sid}});
-      }catch(err){ tst("Не удалось сохранить запись"); }
+      stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    }catch(err){
+      const n=err&&err.name;
+      if(n==="NotAllowedError"||n==="SecurityError") tst("Нет доступа к микрофону");
+      else if(n==="NotReadableError"||n==="AbortError") tst("Микрофон недоступен");
+      else tst("Микрофон: "+(n||"ошибка"));
+      try{ if(stream) stream.getTracks().forEach(t=>t.stop()); }catch{}
       return;
     }
-    // Веб-запись
+    micStream.current=stream;
+    // выбираем поддерживаемый формат
+    let mime="";
+    try{
+      const cand=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg;codecs=opus","audio/ogg"];
+      for(const c of cand){ if(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)){ mime=c; break; } }
+    }catch{}
+    let mr;
+    try{ mr = mime ? new MediaRecorder(stream,{mimeType:mime}) : new MediaRecorder(stream); }
+    catch{ try{ mr=new MediaRecorder(stream); }catch{ tst("Запись недоступна"); try{stream.getTracks().forEach(t=>t.stop());}catch{} micStream.current=null; return; } }
+    mediaRec.current=mr;
+    mr.ondataavailable=ev=>{ if(ev.data&&ev.data.size>0) recChunks.current.push(ev.data); };
+    mr.onstop=()=>{
+      // полностью отпускаем микрофон
+      try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>{ try{t.stop();}catch{} }); } }catch{}
+      micStream.current=null;
+      if(recTimer.current){ clearInterval(recTimer.current); recTimer.current=null; }
+      const cancelled=recCancel.current;
+      const secs=recSecRef.current;
+      setRecording(false); setRecSec(0); recSecRef.current=0;
+      const chunks=recChunks.current; recChunks.current=[];
+      mediaRec.current=null;
+      if(cancelled) return;
+      const blob=new Blob(chunks,{type:mr.mimeType||mime||"audio/webm"});
+      if(blob.size<500) { tst("Слишком коротко"); return; }
+      const fr=new FileReader();
+      fr.onload=()=>{
+        const t=(blob.type&&blob.type.indexOf("audio")>=0)?blob.type:"audio/webm";
+        const att={type:t,name:`Голосовое ${secs}s`,dataUrl:fr.result,size:blob.size,voice:true,dur:secs};
+        setPendingVoice({att, origin:composerOrigin.current||{fid,sid}});
+      };
+      fr.readAsDataURL(blob);
+    };
+    try{ mr.start(); }catch{ tst("Не удалось начать запись"); try{stream.getTracks().forEach(t=>t.stop());}catch{} micStream.current=null; mediaRec.current=null; return; }
+    setRecording(true); setRecSec(0); recSecRef.current=0;
+    recTimer.current=setInterval(()=>{ recSecRef.current+=1; setRecSec(recSecRef.current); },1000);
+    try{navigator.vibrate&&navigator.vibrate(12);}catch{}
+  }
+  function stopRec(cancel){
+    recCancel.current=!!cancel;
     const mr=mediaRec.current;
-    if(mr && mr.state!=="inactive"){ try{mr.stop();}catch{} }
-    else { setRecording(false); if(recTimer.current){clearInterval(recTimer.current);recTimer.current=null;} setRecSec(0); }
+    if(mr && mr.state!=="inactive"){ try{ mr.stop(); }catch{ /* fallback */ try{ if(micStream.current){micStream.current.getTracks().forEach(t=>t.stop());micStream.current=null;} }catch{} setRecording(false); } }
+    else {
+      try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>t.stop()); micStream.current=null; } }catch{}
+      setRecording(false);
+      if(recTimer.current){clearInterval(recTimer.current);recTimer.current=null;}
+      setRecSec(0); recSecRef.current=0;
+    }
   }
   function fmtRec(s){ const m=Math.floor(s/60), ss=s%60; return m+":"+String(ss).padStart(2,"0"); }
   async function clipWrite(t){
