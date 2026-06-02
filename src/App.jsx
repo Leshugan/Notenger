@@ -922,7 +922,7 @@ export default function App() {
     if(e&&e.touches&&e.touches[0]) recStartY.current=e.touches[0].clientY;
     // Пробуем НАТИВНУЮ запись (как в Telegram) — без getUserMedia/WebView
     try{
-      const pn="@capacitor-community/voice-recorder";
+      const pn="capacitor-voice-recorder";
       const vr=await import(/* @vite-ignore */ pn);
       const VoiceRecorder = vr.VoiceRecorder || (vr.default&&vr.default.VoiceRecorder) || vr.default;
       const cap = await (async()=>{ try{ const c=await import(/* @vite-ignore */ "@capacitor/core"); return c.Capacitor; }catch{ return null; } })();
