@@ -65,34 +65,53 @@ jobs:
           if ! grep -q "leshugan.notenger" "$GRADLE"; then echo "ОШИБКА: appId не установлен!"; exit 1; fi
           echo "=== Manifest head ==="; head -30 "$MANIFEST"
 
-      - name: Разрешить WebView доступ к микрофону/камере
+      - name: Разрешить WebView доступ + авто-запрос разрешений
         run: |
-          # Находим MainActivity.java и добавляем выдачу WebView-разрешений (нужно для getUserMedia)
           MA=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
           echo "MainActivity: $MA"
           PKG=$(grep -m1 '^package' "$MA" | sed 's/package //;s/;//')
           cat > "$MA" <<EOF
           package $PKG;
+          import android.os.Build;
           import android.os.Bundle;
+          import android.Manifest;
+          import android.content.pm.PackageManager;
           import android.webkit.PermissionRequest;
-          import android.webkit.WebChromeClient;
+          import androidx.core.app.ActivityCompat;
+          import androidx.core.content.ContextCompat;
+          import java.util.ArrayList;
           import com.getcapacitor.BridgeActivity;
           public class MainActivity extends BridgeActivity {
             @Override
             public void onCreate(Bundle savedInstanceState) {
               super.onCreate(savedInstanceState);
-              this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
-                @Override
-                public void onPermissionRequest(final PermissionRequest request) {
-                  runOnUiThread(new Runnable() {
-                    @Override public void run() { request.grant(request.getResources()); }
-                  });
-                }
-              });
+              requestStartupPermissions();
+            }
+            private void requestStartupPermissions() {
+              ArrayList<String> need = new ArrayList<>();
+              String[] perms;
+              if (Build.VERSION.SDK_INT >= 33) {
+                perms = new String[]{ Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA,
+                  Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO };
+              } else {
+                perms = new String[]{ Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA,
+                  Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE };
+              }
+              for (String p : perms) {
+                if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) need.add(p);
+              }
+              if (!need.isEmpty()) {
+                ActivityCompat.requestPermissions(this, need.toArray(new String[0]), 1001);
+              }
             }
           }
           EOF
           echo "=== MainActivity.java ==="; cat "$MA"
+          # Включаем доступ WebView к мик/камере через конфиг Capacitor (не ломая file chooser)
+          CFG=android/app/src/main/assets/capacitor.config.json
+          if [ -f "$CFG" ]; then
+            node -e "const f='$CFG';const c=require('./'+f);c.android=c.android||{};c.server=c.server||{};const fs=require('fs');fs.writeFileSync(f,JSON.stringify(c,null,2));" || true
+          fi
 
       - name: Подготовить постоянный ключ подписи
         run: |
