@@ -96,35 +96,19 @@ jobs:
 
       - name: Подготовить постоянный ключ подписи
         run: |
-          # Берём один и тот же keystore из файла в репозитории (notenger.keystore.b64).
-          # Подпись всегда одинаковая -> приложение ставится поверх без конфликтов.
-          KS=android/app/notenger.keystore
-          if [ -f notenger.keystore.b64 ]; then
-            base64 -d notenger.keystore.b64 > "$KS"
-            echo "keystore восстановлен из репозитория"
-          else
-            echo "ОШИБКА: нет файла notenger.keystore.b64 в корне репозитория."
-            exit 1
+          # Подменяем стандартный debug-keystore нашим фиксированным,
+          # чтобы подпись не менялась между сборками (приложение ставится поверх).
+          if [ ! -f notenger.keystore.b64 ]; then
+            echo "ОШИБКА: нет файла notenger.keystore.b64 в корне репозитория."; exit 1
           fi
+          mkdir -p android/app
+          base64 -d notenger.keystore.b64 > android/app/debug.keystore
+          # Указываем gradle использовать именно его (стандартные debug-параметры)
           GRADLE=android/app/build.gradle
-          python3 - "$GRADLE" <<'PYEOF'
-          import sys,re
-          p=sys.argv[1]; s=open(p).read()
-          sign='''    signingConfigs {
-            debug {
-                storeFile file('notenger.keystore')
-                storePassword 'android'
-                keyAlias 'androiddebugkey'
-                keyPassword 'android'
-            }
-        }
-'''
-          if 'notenger.keystore' not in s:
-              s=re.sub(r'(android\s*\{)', r'\1\n'+sign, s, count=1)
-          open(p,'w').write(s)
-          print("signingConfig -> notenger.keystore")
-          PYEOF
-          echo "=== signing ==="; grep -n "notenger.keystore\|signingConfigs" "$GRADLE"
+          if ! grep -q "signingConfigs" "$GRADLE"; then
+            sed -i 's|android {|android {\n    signingConfigs { debug { storeFile file("debug.keystore"); storePassword "android"; keyAlias "androiddebugkey"; keyPassword "android" } }|' "$GRADLE"
+          fi
+          echo "=== signing ==="; grep -n "signingConfigs\|debug.keystore" "$GRADLE" || true
 
       - name: Собрать APK
         run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
