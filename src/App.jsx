@@ -2388,8 +2388,18 @@ export default function App() {
                   {l:"||",s:{opacity:.7},b:"[spoiler]",a:"[/spoiler]",x:"текст"},
                   {l:"❝",s:{},b:"[q]",a:"[/q]",x:"цитата"},
                 ].map((it,i)=>(
-                  <button key={i} tabIndex={-1} onMouseDown={e=>e.preventDefault()} onTouchStart={e=>e.preventDefault()}
-                    onClick={()=>{ const el=fullTaRef.current; if(!el)return; const fs=fmtSel.current||{s:el.selectionStart,e:el.selectionEnd}; const s=fs.s, e2=fs.e; const sel=note.slice(s,e2)||it.x; const nv=note.slice(0,s)+it.b+sel+it.a+note.slice(e2); setNote(nv); const p=s+it.b.length+sel.length+it.a.length; setTimeout(()=>{ try{el.focus(); el.setSelectionRange(p,p); fmtSel.current={s:p,e:p};}catch{} },0); }}
+                  <button key={i} tabIndex={-1}
+                    onPointerDown={(ev)=>{ ev.preventDefault(); const el=fullTaRef.current; if(!el)return;
+                      // читаем выделение СИНХРОННО, до потери фокуса
+                      let s=el.selectionStart, e2=el.selectionEnd;
+                      if(s===e2 && fmtSel.current && fmtSel.current.s!==fmtSel.current.e){ s=fmtSel.current.s; e2=fmtSel.current.e; }
+                      const cur=el.value; const sel=cur.slice(s,e2)||it.x;
+                      const nv=cur.slice(0,s)+it.b+sel+it.a+cur.slice(e2);
+                      const p=s+it.b.length+sel.length+it.a.length;
+                      setNote(nv);
+                      requestAnimationFrame(()=>{ try{ el.focus(); el.setSelectionRange(p,p); fmtSel.current={s:p,e:p}; }catch{} });
+                    }}
+                    onMouseDown={e=>e.preventDefault()} onTouchStart={e=>e.preventDefault()}
                     style={{background:"none",border:"none",borderRadius:8,padding:"7px 11px",cursor:"pointer",color:"#F2EAE0",fontSize:13,...it.s}}>{it.l}</button>
                 ))}
               </div>
