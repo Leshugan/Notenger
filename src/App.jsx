@@ -918,8 +918,16 @@ export default function App() {
     recCancel.current=false;
     if(e&&e.touches&&e.touches[0]) recStartY.current=e.touches[0].clientY;
     let stream;
-    try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
-    catch{ tst("Нет доступа к микрофону"); return; }
+    try{
+      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+        stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      } else {
+        const gum=navigator.getUserMedia||navigator.webkitGetUserMedia||navigator.mozGetUserMedia;
+        if(!gum) throw new Error("no getUserMedia");
+        stream=await new Promise((res,rej)=>gum.call(navigator,{audio:true},res,rej));
+      }
+    }
+    catch(err){ tst("Микрофон: "+(err&&err.name?err.name:"нет доступа")); return; }
     try{
       const mr=new MediaRecorder(stream);
       mediaRec.current=mr; recChunks.current=[];
@@ -1140,6 +1148,7 @@ export default function App() {
     else if(scr==="sub")setScr("main");
   }
   // Аппаратная кнопка «Назад» (Android). Возвращает true, если что-то закрыли.
+  function closeAllMenus(){ setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); }
   function handleHardwareBack(){
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
     if(composerFull){ if(composerPeek){ setComposerPeek(false); return true; } setComposerFull(false); return true; }
@@ -1173,26 +1182,35 @@ export default function App() {
 
   // Аппаратная кнопка «Назад» (Capacitor)
   const exitArm = useRef(false);
+  const backRef = useRef(()=>false);
+  backRef.current = handleHardwareBack;  // всегда актуальная логика
   useEffect(()=>{
     let remove=()=>{};
+    let appRef=null;
+    const onBack=()=>{
+      const handled = backRef.current();
+      if(!handled){
+        if(exitArm.current){ appRef&&appRef.exitApp&&appRef.exitApp(); }
+        else { exitArm.current=true; tst("Нажмите ещё раз для выхода"); setTimeout(()=>{exitArm.current=false;},2000); }
+      }
+    };
     (async()=>{
       try{
         const cap="@capacitor/app"; const mod = await import(/* @vite-ignore */ cap);
         const App = mod.App || (mod.default&&mod.default.App);
-        if(!App) return;
-        const h = await App.addListener("backButton", ()=>{
-          const handled = handleHardwareBack();
-          if(!handled){
-            // главный экран: выход только по двойному нажатию
-            if(exitArm.current){ App.exitApp&&App.exitApp(); }
-            else { exitArm.current=true; tst("Нажмите ещё раз для выхода"); setTimeout(()=>{exitArm.current=false;},2000); }
-          }
-        });
-        remove=()=>h.remove&&h.remove();
-      }catch(e){ /* в браузере плагина нет — игнор */ }
+        if(App){
+          appRef=App;
+          const h = await App.addListener("backButton", onBack);
+          remove=()=>h&&h.remove&&h.remove();
+          return;
+        }
+      }catch(e){}
+      // Фолбэк: Cordova-style событие
+      document.addEventListener("backbutton", onBack, false);
+      remove=()=>document.removeEventListener("backbutton", onBack, false);
     })();
     return ()=>remove();
-  });
+  }, []);
 
   // ── Folder CRUD ──
   function mkF(n,i,c)  { upd(d=>({...d,folders:[...d.folders,{id:"f"+Date.now(),name:n,icon:i,color:c,unread:0,subfolders:[]}]})); setModal(null); }
@@ -1799,7 +1817,7 @@ export default function App() {
 
           {scr==="main"&&(
             <div style={{position:"relative",flex:1}} onClick={e=>e.stopPropagation()}>
-              <div data-menutrigger onClick={()=>setSettingsMenu(true)}
+              <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(true); }}
                 style={{fontSize:19,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
                 Notenger <span style={{fontSize:12,color:"#B0A498"}}>▾</span>
               </div>
@@ -1860,7 +1878,7 @@ export default function App() {
                   ]}/>}
               </div>
               <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
-                <button data-menutrigger onClick={()=>setPlusMenu(true)} title="Создать"
+                <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(true); }} title="Создать"
                   style={{width:38,height:38,background:"#EF6C00",border:"none",color:"#fff",borderRadius:"50%",cursor:"pointer",fontSize:22,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.plus}</button>
                 {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
                   style={{position:"absolute",top:"calc(100% + 6px)",right:0}}
@@ -1957,7 +1975,7 @@ export default function App() {
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
           background:"#241C16",borderTop:"1px solid #3A2E24",flexShrink:0,minHeight:46,overflow:"visible"}} onClick={e=>e.stopPropagation()}>
           <div style={{position:"relative",flex:1,minWidth:0}}>
-            <div data-menutrigger onClick={()=>setSettingsMenu(true)}
+            <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(true); }}
               style={{fontSize:17,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
               Notenger <span style={{fontSize:11,color:"#B0A498"}}>▾</span>
             </div>
@@ -1970,7 +1988,7 @@ export default function App() {
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
-          <button data-menutrigger onClick={()=>setPlusMenu(true)} title="Создать"
+          <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(true); }} title="Создать"
             style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",zIndex:5,
               width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",
               fontSize:24,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
@@ -2077,7 +2095,7 @@ export default function App() {
           </div>
           {/* Центрированный FAB "+" как кнопка "Написать" */}
           <div style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",zIndex:5}}>
-            <button data-menutrigger onClick={()=>setPlusMenu(true)} title="Создать"
+            <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(true); }} title="Создать"
               style={{width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",
                 fontSize:22,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
             {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
@@ -2252,7 +2270,7 @@ export default function App() {
             </div>
             {/* Нижняя панель инструментов */}
             <div style={{display:"flex",alignItems:"center",gap:6,padding:"3px 10px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46}}>
-              <button onMouseDown={e=>e.preventDefault()} onTouchStart={e=>{ const el=fullTaRef.current; if(el){fmtSel.current={s:el.selectionStart,e:el.selectionEnd};} }} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
+              <button onMouseDown={e=>e.preventDefault()} onTouchStart={e=>{ e.preventDefault(); const el=fullTaRef.current; if(el){fmtSel.current={s:el.selectionStart,e:el.selectionEnd};} }} onClick={()=>{ const el=fullTaRef.current; if(el){fmtSel.current={s:el.selectionStart,e:el.selectionEnd};} setFullFmt(v=>!v); }} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>Aa</button>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
@@ -2403,7 +2421,7 @@ export default function App() {
               {subf&&<div style={{fontSize:11,color:"#8A7A65"}}>{subf.notes.length} сообщений</div>}
             </div>
             {/* Кнопка Написать — по центру панели */}
-            <button onClick={()=>{ if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }} title="Написать"
+            <button onClick={()=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }} title="Написать"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
                 background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
