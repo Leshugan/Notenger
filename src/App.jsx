@@ -187,6 +187,7 @@ function RichText({ text, color, onLinkMenu, highlight }) {
 const SK = "napp_v9";
 const AS_KEY = "napp_v9_autosave"; // autosave settings
 const DRAFT_KEY = "napp_v9_drafts";
+const DLAUNCH_KEY = "napp_v9_defaultLaunch";
 function loadDrafts(){ try{ const r=localStorage.getItem(DRAFT_KEY); return r?JSON.parse(r):{}; }catch{ return {}; } }
 function saveDrafts(d){ try{ localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch{} }
 
@@ -1003,6 +1004,9 @@ export default function App() {
   const [destroying, setDestroying] = useState(null);
   const [noInputAnim, setNoInputAnim] = useState(()=>{ try{return localStorage.getItem("napp_noInputAnim")==="1";}catch{return false;} });
   const [noDelAnim, setNoDelAnim] = useState(()=>{ try{return localStorage.getItem("napp_noDelAnim")==="1";}catch{return false;} });
+  const dlaunchApplied = useRef(false);
+  function setDefaultLaunch(target){ try{ if(target) localStorage.setItem(DLAUNCH_KEY, JSON.stringify(target)); else localStorage.removeItem(DLAUNCH_KEY); }catch{} tst(target?"Будет открываться при запуске":"Запуск сброшен на главный экран"); }
+  function getDefaultLaunch(){ try{ const r=localStorage.getItem(DLAUNCH_KEY); return r?JSON.parse(r):null; }catch{ return null; } }
   function toggleDelAnim(){ setNoDelAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noDelAnim",nv?"1":"0");}catch{} return nv; }); }
   function toggleInputAnim(){ setNoInputAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noInputAnim",nv?"1":"0");}catch{} return nv; }); }
   const swipeRef = useRef(null);
@@ -1135,6 +1139,15 @@ export default function App() {
     setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]);
     if(noteId) setTimeout(()=>jumpTo(noteId), 120);
   }
+  // Открыть тему/категорию по умолчанию при запуске
+  useEffect(()=>{
+    if(dlaunchApplied.current) return; dlaunchApplied.current=true;
+    const t=getDefaultLaunch(); if(!t) return;
+    const f=data.folders.find(x=>x.id===t.fid); if(!f) return;
+    if(t.sid==="__top__"||f.isTheme){ setFid(f.id); setSid("__top__"); setScr("chat"); }
+    else if(t.sid){ const sub=f.subfolders.find(x=>x.id===t.sid); if(sub){ setFid(f.id); setSid(sub.id); setScr("chat"); } else { setFid(f.id); setScr("sub"); } }
+    else { setFid(f.id); setScr("sub"); }
+  }, []);
   // Результаты глобального поиска по всем сообщениям
   function globalResults(q){
     if(!q || !q.trim()) return [];
@@ -1199,7 +1212,7 @@ export default function App() {
     const onBack=()=>{
       const handled = backRef.current();
       if(!handled){
-        if(exitArm.current){ appRef&&appRef.exitApp&&appRef.exitApp(); }
+        if(exitArm.current){ try{ if(appRef&&appRef.exitApp) appRef.exitApp(); else if(navigator.app&&navigator.app.exitApp) navigator.app.exitApp(); }catch(e){} }
         else { exitArm.current=true; tst("Нажмите ещё раз для выхода"); setTimeout(()=>{exitArm.current=false;},2000); }
       }
     };
@@ -1731,7 +1744,7 @@ export default function App() {
         .selectable,.selectable *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;cursor:text;}
         ::-webkit-scrollbar{width:0;}
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
-        @keyframes fS {from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+        @keyframes fS {from{opacity:0}to{opacity:1}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#3A2E24;}
         .row:has(button:active){background:transparent;}
@@ -1970,6 +1983,7 @@ export default function App() {
                       {ic:f.pinned?IC.pinOff:IC.pin,label:f.pinned?"Открепить":"Закрепить",fn:()=>pinFolder(f.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setFid(f.id);setModal("renF");}},
+                      {ic:IC.sendUp,label:"Открывать при запуске",fn:()=>setDefaultLaunch({fid:f.id,sid:f.isTheme?"__top__":null})},
                       {ic:IC.trash,label:f.isTheme?"Удалить тему":"Удалить категорию",danger:true,fn:()=>{setFid(f.id);setDlg({msg:`Удалить «${f.name}»?`,yes:()=>delF(f.id),anchor:folderMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
@@ -1994,6 +2008,8 @@ export default function App() {
                 {ic:IC.save,label:"Сохранить / экспорт",fn:()=>setExpSh(true)},
                 {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                 {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
+                {sep:true},
+                {ic:IC.sendUp,label:"Сбросить запуск по умолчанию",fn:()=>setDefaultLaunch(null)},
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
@@ -2058,6 +2074,7 @@ export default function App() {
                       {ic:s.pinned?IC.pinOff:IC.pin,label:s.pinned?"Открепить":"Закрепить",fn:()=>pinSub(s.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setSid(s.id);setModal("renS");}},
+                      {ic:IC.sendUp,label:"Открывать при запуске",fn:()=>setDefaultLaunch({fid:fid,sid:s.id})},
                       {ic:IC.trash,label:"Удалить",danger:true,fn:()=>{setSid(s.id);setDlg({msg:`Удалить «${s.name}»?`,yes:()=>delS(s.id),anchor:subMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
