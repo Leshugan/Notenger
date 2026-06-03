@@ -540,7 +540,7 @@ function VoiceMessage({ att, color }){
     rafRef.current=requestAnimationFrame(tick);
     return ()=>cancelAnimationFrame(rafRef.current);
   },[playing]);
-  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>setPlaying(true)).catch(()=>{}); } };
+  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>{ setCur(a.currentTime); setPlaying(true); }).catch(()=>{}); } };
   const pct=dur>0?Math.min(100,(cur/dur)*100):0;
   const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
   const seek=(e)=>{ e.stopPropagation(); const a=audioRef.current; if(!a||!dur)return; const r=e.currentTarget.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width; a.currentTime=Math.max(0,Math.min(dur,x*dur)); setCur(a.currentTime); };
@@ -573,10 +573,10 @@ function VoiceMessage({ att, color }){
 }
 function AttBubble({ att, onOpen }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
-    <div style={{marginTop:8}}
-      onPointerUpCapture={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}
-      onClickCapture={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
-      <img data-img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
+    <div data-img data-imgsrc={att.dataUrl} style={{marginTop:8}}
+      onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}
+      onPointerUp={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
+      <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
       {att.caption?<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>
         :<div style={{fontSize:11,color:"#B0A498",marginTop:3}}>{att.name}</div>}
     </div>
@@ -1725,7 +1725,7 @@ export default function App() {
     clearTimeout(lpTimer.current);
     // Тап по картинке → открыть на весь экран
     const imgEl = e&&e.target&&e.target.closest&&e.target.closest("[data-img]");
-    if(imgEl){ const src=imgEl.getAttribute("src"); if(src){ if(!lpFired.current) setLightbox(src); } lpFired.current=false; lastTap.current={id:null,t:0}; return; }
+    if(imgEl){ const src=imgEl.getAttribute("data-imgsrc")||imgEl.getAttribute("src"); if(src){ setLightbox(src); } lastTap.current={id:null,t:0}; return; }
     const isTouch = e.type==="touchend";
     if(!isTouch && touchUsed.current){ setTimeout(()=>{touchUsed.current=false;},400); return; }
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
