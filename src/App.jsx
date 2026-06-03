@@ -520,12 +520,14 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
 }
 
 // ─── Attachment bubble ────────────────────────────────────────
-function VoiceMessage({ att, color }){
+function VoiceMessage({ att, color, center }){
   const [playing,setPlaying]=useState(false);
   const [cur,setCur]=useState(0);
   const [dur,setDur]=useState(att.dur||0);
   const audioRef=useRef(null);
   const rafRef=useRef(0);
+  const trackRef=useRef(null);
+  const draggingRef=useRef(false);
   useEffect(()=>{
     const a=new Audio(att.dataUrl);
     audioRef.current=a;
@@ -533,38 +535,41 @@ function VoiceMessage({ att, color }){
     a.onended=()=>{ setPlaying(false); setCur(0); cancelAnimationFrame(rafRef.current); };
     return ()=>{ try{a.pause();}catch{} cancelAnimationFrame(rafRef.current); audioRef.current=null; };
   },[att.dataUrl]);
-  // плавное обновление прогресса через requestAnimationFrame (без рывков)
   useEffect(()=>{
     if(!playing) { cancelAnimationFrame(rafRef.current); return; }
-    const tick=()=>{ const a=audioRef.current; if(a){ setCur(a.currentTime); } rafRef.current=requestAnimationFrame(tick); };
+    const tick=()=>{ const a=audioRef.current; if(a&&!draggingRef.current){ setCur(a.currentTime); } rafRef.current=requestAnimationFrame(tick); };
     rafRef.current=requestAnimationFrame(tick);
     return ()=>cancelAnimationFrame(rafRef.current);
   },[playing]);
   const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>{ setCur(a.currentTime); setPlaying(true); }).catch(()=>{}); } };
   const pct=dur>0?Math.min(100,(cur/dur)*100):0;
   const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
-  const seek=(e)=>{ e.stopPropagation(); const a=audioRef.current; if(!a||!dur)return; const r=e.currentTarget.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width; a.currentTime=Math.max(0,Math.min(dur,x*dur)); setCur(a.currentTime); };
+  const seekToClientX=(clientX)=>{ const el=trackRef.current; const a=audioRef.current; if(!el||!a||!dur)return; const r=el.getBoundingClientRect(); const x=Math.max(0,Math.min(1,(clientX-r.left)/r.width)); const t=x*dur; a.currentTime=t; setCur(t); };
+  const onDown=(e)=>{ e.stopPropagation(); draggingRef.current=true; seekToClientX(e.clientX); };
+  const onMove=(e)=>{ if(draggingRef.current){ e.stopPropagation(); seekToClientX(e.clientX); } };
+  const onUp=(e)=>{ if(draggingRef.current){ e.stopPropagation(); draggingRef.current=false; } };
   const bars=[7,11,8,15,10,17,9,14,12,19,8,13,16,10,18,11,9,15,12,8,14,10,17,9];
   const c=color||"#EF6C00";
+  const Bars=({fill})=>(
+    <div style={{display:"flex",alignItems:"center",gap:2,height:24,position:"absolute",inset:0}}>
+      {bars.map((h,i)=><div key={i} style={{width:3,height:h,borderRadius:2,background:fill,flexShrink:0}}/>)}
+    </div>
+  );
   return (
-    <div onClick={e=>e.stopPropagation()} style={{marginTop:8,display:"flex",alignItems:"center",gap:11,background:"#15100C",borderRadius:14,padding:"9px 13px",minWidth:190,maxWidth:250}}>
+    <div onClick={e=>e.stopPropagation()} style={{marginTop:8,display:"flex",alignItems:"center",gap:11,background:"#15100C",borderRadius:14,padding:"9px 13px",minWidth:190,maxWidth:250,...(center?{margin:"0 auto",width:"fit-content"}:{})}}>
       <button onClick={toggle} style={{width:38,height:38,flexShrink:0,borderRadius:"50%",background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
         {playing
           ? <Icon size={16} d={["M7 5h3v14H7z","M14 5h3v14h-3z"]} fill="solid" />
           : <Icon size={16} d="M7 4l13 8-13 8z" fill="solid" />}
       </button>
       <div style={{flex:1,minWidth:0}}>
-        <div onClick={seek} style={{display:"flex",alignItems:"center",gap:2,height:24,cursor:"pointer"}}>
-          {bars.map((h,i)=>{
-            const barStart=(i/bars.length)*100, barEnd=((i+1)/bars.length)*100;
-            let fillRatio=0;
-            if(pct>=barEnd) fillRatio=1; else if(pct<=barStart) fillRatio=0; else fillRatio=(pct-barStart)/(barEnd-barStart);
-            return (
-              <div key={i} style={{width:3,height:h,borderRadius:2,position:"relative",background:"#3A2E24",overflow:"hidden",flexShrink:0}}>
-                <div style={{position:"absolute",left:0,top:0,bottom:0,width:(fillRatio*100)+"%",background:c}}/>
-              </div>
-            );
-          })}
+        <div ref={trackRef}
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+          style={{position:"relative",height:24,cursor:"pointer",touchAction:"none",width:160,maxWidth:"100%"}}>
+          <Bars fill="#3A2E24" />
+          <div style={{position:"absolute",inset:0,clipPath:`inset(0 ${100-pct}% 0 0)`,transition:draggingRef.current?"none":"clip-path .12s linear",willChange:"clip-path"}}>
+            <Bars fill={c} />
+          </div>
         </div>
         <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums"}}>{playing||cur>0?fmt(cur):fmt(dur)}</div>
       </div>
@@ -2524,7 +2529,7 @@ export default function App() {
               <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#241C16",borderTop:"1px solid #3A2E24",
                 padding:"12px 14px",zIndex:24,display:"flex",flexDirection:"column",gap:10}}>
                 <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
-                <VoiceMessage att={pendingVoice.att} />
+                <VoiceMessage att={pendingVoice.att} center />
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={discardPendingVoice}
                     style={{flex:1,background:"#2E251C",border:"1px solid #3A2E24",borderRadius:10,padding:"11px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
