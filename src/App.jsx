@@ -566,7 +566,7 @@ function VoiceMessage({ att, color, center }){
             const barMid=((i+0.5)/bars.length)*100;
             const on = pct>=barMid;
             return (
-              <div key={i} style={{width:3,height:h,borderRadius:2,background:on?c:"#3A2E24",flexShrink:0}}/>
+              <div key={i} style={{width:3,height:h,borderRadius:2,background:on?c:"#3A2E24",flexShrink:0,transition:"background .12s linear"}}/>
             );
           })}
         </div>
@@ -630,7 +630,7 @@ function PinnedBanner({ note, color, onJump }) {
 }
 
 // ─── Media browser (Telegram-style, opens from avatar tap) ───
-function MediaBrowser({ open, onClose, subf, color, onChangeIcon }) {
+function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage }) {
   const [tab,setTab]=useState("photo");
   if(!open||!subf) return null;
 
@@ -687,7 +687,8 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon }) {
           {tab==="photo"&&(
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4}}>
               {current.items.map((a,i)=>(
-                <img key={i} src={a.dataUrl} alt={a.name} style={{width:"100%",aspectRatio:"1",objectFit:"cover",borderRadius:8}}/>
+                <img key={i} src={a.dataUrl} alt={a.name} onClick={()=>onOpenImage&&onOpenImage(a.dataUrl)}
+                  style={{width:"100%",aspectRatio:"1",objectFit:"cover",borderRadius:8,cursor:"pointer"}}/>
               ))}
             </div>
           )}
@@ -1932,7 +1933,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v40</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v41</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2532,7 +2533,7 @@ export default function App() {
               <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#241C16",borderTop:"1px solid #3A2E24",
                 padding:"12px 14px",zIndex:24,display:"flex",flexDirection:"column",gap:10}}>
                 <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
-                <div style={{display:"flex",justifyContent:"flex-end"}}><VoiceMessage att={pendingVoice.att} /></div>
+                <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={discardPendingVoice}
                     style={{flex:1,background:"#2E251C",border:"1px solid #3A2E24",borderRadius:10,padding:"11px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
@@ -2680,6 +2681,7 @@ export default function App() {
       <LinkDlg open={lnkDlg} selected={lnkSel} onClose={()=>setLnkDlg(false)} onInsert={insertLink}/>
       <PreviewModal open={prevSh} onClose={()=>setPrevSh(false)} onSend={composerCommit} text={note} atts={patts} color={subColor} isEdit={!!editId}/>
       <MediaBrowser open={mediaBrowser} onClose={()=>setMediaBrowser(false)} subf={subf} color={subColor}
+        onOpenImage={(u)=>{ setMediaBrowser(false); setTimeout(()=>setLightbox(u),60); }}
         onChangeIcon={()=>{ setMediaBrowser(false); setModal(sid==="__top__"?"renF":"renS"); }}/>
       <Sheet open={pinnedOpen} onClose={()=>setPinnedOpen(false)} title="Закреплённые сообщения">
         {(()=>{
