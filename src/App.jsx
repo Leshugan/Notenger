@@ -555,7 +555,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
   const c=color||"#EF6C00";
   const BARW=compact?2:3, GAP=2, TRACKW=bars.length*(BARW+GAP); const PB=compact?42:48;
   return (
-    <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:9,background:"#1C1510",borderRadius:16,padding:"8px 9px",width:"fit-content",maxWidth:270,...(center?{margin:"0 auto"}:{})}}>
+    <div style={{display:"flex",alignItems:"center",gap:9,background:"#1C1510",borderRadius:16,padding:"8px 9px",width:"fit-content",maxWidth:270,...(center?{margin:"0 auto"}:{})}}>
       <div style={{flexShrink:0,display:"flex",flexDirection:"column"}}>
         <div ref={trackRef}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
@@ -581,10 +581,9 @@ function VoiceMessage({ att, color, center, stamp, compact }){
 }
 function AttBubble({ att, onOpen, stamp, selecting }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
-    <div data-img data-imgsrc={att.dataUrl} style={{marginTop:0,position:"relative"}}
-      onClick={(e)=>{ if(selecting) return; e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
-      <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:9,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
-      {stamp&&<span style={{position:"absolute",right:6,bottom:6,fontSize:9,color:"#fff",background:"rgba(20,12,6,.55)",borderRadius:6,padding:"0px 6px 1px",pointerEvents:"none",lineHeight:1.3,fontWeight:500}}>{stamp}</span>}
+    <div data-imgsrc={att.dataUrl} style={{marginTop:0,position:"relative"}}>
+      <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:9,display:"block",pointerEvents:"none"}}/>
+      {stamp&&<span style={{position:"absolute",right:0,bottom:0,left:0,fontSize:9,color:"#fff",background:"linear-gradient(transparent,rgba(20,12,6,.75))",borderRadius:"0 0 9px 9px",padding:"8px 8px 3px",pointerEvents:"none",lineHeight:1.2,fontWeight:500,textAlign:"right"}}>{stamp}</span>}
       {att.caption&&<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>}
     </div>
   );
@@ -796,10 +795,10 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
             </button>
           ))}
           {onBrowse&&(
-            <button onClick={onBrowse} title="Выбрать своё изображение"
+            <button onClick={onBrowse} title="Загрузить своё изображение"
               style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:"1px dashed #5A4C40",
                 background:"#2E251C",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              {IC.gallery}
+              <Icon d={["M12 16V4","M7 9l5-5 5 5","M5 20h14"]} stroke={2} />
             </button>
           )}
         </div>
@@ -1801,7 +1800,6 @@ export default function App() {
   }
 
   function bubbleLpStart(n, e) {
-    if(e&&e.target&&e.target.closest&&e.target.closest("[data-img]")) return; // тап по картинке — не вмешиваемся
     if(editId) return;
     const isTouch = e.type==="touchstart";
     if(isTouch) touchUsed.current=true;
@@ -1825,14 +1823,14 @@ export default function App() {
   function bubbleLpMove()  { lpScrolled.current=true; clearTimeout(lpTimer.current); }
   function bubbleLpEnd(n, e) {
     clearTimeout(lpTimer.current);
-    // Тап по картинке → открыть на весь экран
-    const imgEl = e&&e.target&&e.target.closest&&e.target.closest("[data-img]");
-    if(imgEl){ const src=imgEl.getAttribute("data-imgsrc")||imgEl.getAttribute("src"); if(src){ setLightbox(src); } lastTap.current={id:null,t:0}; return; }
     const isTouch = e.type==="touchend";
     if(!isTouch && touchUsed.current){ setTimeout(()=>{touchUsed.current=false;},400); return; }
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
     if(lpScrolled.current){ lastTap.current={id:null,t:0}; lpScrolled.current=false; return; }
-    if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; setTimeout(()=>setTextArmed(true),50); return; } // удержание уже выделило; текст армируем после отпускания
+    if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; setTimeout(()=>setTextArmed(true),50); return; } // удержание уже выделило
+    // обычный тап по картинке → открыть на весь экран
+    const imgEl = e&&e.target&&e.target.closest&&e.target.closest("[data-imgsrc]");
+    if(imgEl){ const src=imgEl.getAttribute("data-imgsrc"); if(src) setLightbox(src); }
   }
 
   // ── Links ──
@@ -2018,7 +2016,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v46</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v47</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2863,7 +2861,7 @@ export default function App() {
       </Sheet>
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
-      <Sheet open={fontSh} onClose={()=>setFontSh(false)} title="Шрифты">
+      <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
         <div onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
           style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",marginBottom:14}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.imp}</span>
@@ -2872,33 +2870,37 @@ export default function App() {
         {FONT_TARGETS.map(t=>{
           const curId=fonts.assign?.[t.key]||"sys";
           const curFont=allFonts.find(f=>f.id===curId)||allFonts[0];
-          const isOpen=fontOpen===t.key;
           return (
-            <div key={t.key} style={{marginBottom:8,background:"#241C16",borderRadius:10,overflow:"hidden"}}>
-              <div onClick={()=>setFontOpen(isOpen?null:t.key)}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",cursor:"pointer"}}>
-                <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{t.label}</span>
-                <span style={{fontSize:13,color:"#B0A498",fontFamily:curFont.css}}>{curFont.name}</span>
-                <span style={{display:"flex",color:"#8A7A65",transform:isOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
-              </div>
-              {isOpen&&(
-                <div style={{borderTop:"1px solid #2E251C"}}>
-                  {allFonts.map(f=>(
-                    <div key={f.id} onClick={()=>{ setFontAssign(t.key,f.id); }}
-                      style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer"}}>
-                      <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(curId===f.id?"#EF6C00":"#5A4C40"),
-                        display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        {curId===f.id&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}
-                      </div>
-                      <span style={{fontSize:14,color:"#F2EAE0",fontFamily:f.css}}>{f.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div key={t.key} onClick={()=>setFontOpen(t.key)}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",marginBottom:8}}>
+              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{t.label}</span>
+              <span style={{fontSize:13,color:"#B0A498",fontFamily:curFont.css}}>{curFont.name}</span>
+              <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
           );
         })}
       </Sheet>
+      {/* Popup выбора шрифта поверх */}
+      {fontOpen&&(
+        <div onClick={()=>setFontOpen(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px",backdropFilter:"blur(3px)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#241C16",borderRadius:16,width:"100%",maxWidth:340,maxHeight:"70vh",overflowY:"auto",animation:"fS .15s ease",border:"1px solid #3A2E24"}}>
+            <div style={{padding:"16px 18px 10px",fontSize:15,fontWeight:700,color:"#F2EAE0"}}>{FONT_TARGETS.find(t=>t.key===fontOpen)?.label}</div>
+            {allFonts.map(f=>{
+              const curId=fonts.assign?.[fontOpen]||"sys";
+              return (
+                <div key={f.id} onClick={()=>{ setFontAssign(fontOpen,f.id); setFontOpen(null); }}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",cursor:"pointer"}}>
+                  <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(curId===f.id?"#EF6C00":"#5A4C40"),
+                    display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {curId===f.id&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
+                  </div>
+                  <span style={{fontSize:15,color:"#F2EAE0",fontFamily:f.css}}>{f.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <Sheet open={modal==="mkF"}  onClose={()=>setModal(null)}><FolderForm title="Новая категория"            icons={ICONS_F} btnLabel="Создать" onSubmit={mkF}/></Sheet>
       <Sheet open={modal==="renF"} onClose={()=>setModal(null)}>{folder&&<FolderForm title="Редактировать категорию" icons={ICONS_F} initName={folder.name} initIcon={folder.icon} initColor={folder.color} onSubmit={renF} onBrowse={()=>browseIcon("folder")}/>}</Sheet>
