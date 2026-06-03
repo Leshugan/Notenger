@@ -78,6 +78,9 @@ jobs:
           import android.content.Intent;
           import android.content.pm.PackageManager;
           import android.net.Uri;
+          import android.media.MediaRecorder;
+          import android.util.Base64;
+          import android.webkit.JavascriptInterface;
           import android.webkit.PermissionRequest;
           import android.webkit.ValueCallback;
           import android.webkit.WebChromeClient;
@@ -86,11 +89,15 @@ jobs:
           import androidx.core.content.ContextCompat;
           import androidx.activity.result.ActivityResultLauncher;
           import androidx.activity.result.contract.ActivityResultContracts;
+          import java.io.File;
+          import java.io.FileInputStream;
           import java.util.ArrayList;
           import com.getcapacitor.BridgeActivity;
           public class MainActivity extends BridgeActivity {
             private ValueCallback<Uri[]> filePathCallback;
             private ActivityResultLauncher<Intent> fileChooserLauncher;
+            private MediaRecorder audioRec;
+            private String audioPath;
             @Override
             public void onCreate(Bundle savedInstanceState) {
               super.onCreate(savedInstanceState);
@@ -120,6 +127,32 @@ jobs:
                 ws.setJavaScriptEnabled(true);
                 ws.setDomStorageEnabled(true);
               } catch (Exception ignore) {}
+              // Нативная запись звука (минуя WebView/getUserMedia)
+              this.bridge.getWebView().addJavascriptInterface(new Object(){
+                @JavascriptInterface
+                public boolean startRec(){
+                  try{
+                    stopRecInternal(false);
+                    audioPath = getCacheDir().getAbsolutePath() + "/voice_" + System.currentTimeMillis() + ".m4a";
+                    audioRec = new MediaRecorder();
+                    audioRec.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    audioRec.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                    audioRec.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                    audioRec.setAudioEncodingBitRate(64000);
+                    audioRec.setAudioSamplingRate(44100);
+                    audioRec.setOutputFile(audioPath);
+                    audioRec.prepare();
+                    audioRec.start();
+                    return true;
+                  }catch(Exception e){ try{ if(audioRec!=null){audioRec.release();audioRec=null;} }catch(Exception ignore){} return false; }
+                }
+                @JavascriptInterface
+                public String stopRec(){
+                  return stopRecInternal(true);
+                }
+                @JavascriptInterface
+                public void cancelRec(){ stopRecInternal(false); }
+              }, "AndroidRec");
               this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
                 @Override
                 public void onPermissionRequest(final PermissionRequest request) {
@@ -167,6 +200,28 @@ jobs:
                   }
                 }
               });
+            }
+            private String stopRecInternal(boolean wantData){
+              String result = null;
+              try{
+                if(audioRec!=null){
+                  try{ audioRec.stop(); }catch(Exception ignore){}
+                  try{ audioRec.release(); }catch(Exception ignore){}
+                  audioRec=null;
+                  if(wantData && audioPath!=null){
+                    File f=new File(audioPath);
+                    if(f.exists() && f.length()>0){
+                      FileInputStream fis=new FileInputStream(f);
+                      byte[] data=new byte[(int)f.length()];
+                      fis.read(data); fis.close();
+                      result = "data:audio/mp4;base64," + Base64.encodeToString(data, Base64.NO_WRAP);
+                    }
+                  }
+                }
+              }catch(Exception e){ result=null; }
+              try{ if(audioPath!=null){ new File(audioPath).delete(); } }catch(Exception ignore){}
+              audioPath=null;
+              return result;
             }
             private void requestStartupPermissions() {
               ArrayList<String> need = new ArrayList<>();
