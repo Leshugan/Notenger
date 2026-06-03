@@ -130,6 +130,36 @@ jobs:
                   return true;
                 }
               });
+              // Сохранение файлов (экспорт): ловим data:/blob: загрузки и пишем в папку Notenger
+              final android.content.Context ctx = this;
+              this.bridge.getWebView().setDownloadListener(new android.webkit.DownloadListener() {
+                @Override
+                public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                  try {
+                    String fileName = "notenger_backup.json";
+                    if (contentDisposition != null && contentDisposition.contains("filename=")) {
+                      fileName = contentDisposition.substring(contentDisposition.indexOf("filename=")+9).replace("\\"","").trim();
+                    }
+                    byte[] bytes = null;
+                    if (url.startsWith("data:")) {
+                      int comma = url.indexOf(',');
+                      String meta = url.substring(0, comma);
+                      String dataPart = url.substring(comma+1);
+                      if (meta.contains("base64")) bytes = android.util.Base64.decode(dataPart, android.util.Base64.DEFAULT);
+                      else bytes = java.net.URLDecoder.decode(dataPart, "UTF-8").getBytes();
+                    }
+                    if (bytes == null) return;
+                    java.io.File dir = new java.io.File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "Notenger");
+                    if (!dir.exists()) dir.mkdirs();
+                    java.io.File out = new java.io.File(dir, fileName);
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(out);
+                    fos.write(bytes); fos.close();
+                    runOnUiThread(new Runnable(){ public void run(){ android.widget.Toast.makeText(ctx, "Сохранено: Download/Notenger/"+out.getName(), android.widget.Toast.LENGTH_LONG).show(); }});
+                  } catch (final Exception e) {
+                    runOnUiThread(new Runnable(){ public void run(){ android.widget.Toast.makeText(ctx, "Ошибка сохранения", android.widget.Toast.LENGTH_SHORT).show(); }});
+                  }
+                }
+              });
             }
             private void requestStartupPermissions() {
               ArrayList<String> need = new ArrayList<>();
