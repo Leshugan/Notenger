@@ -520,10 +520,47 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
 }
 
 // ─── Attachment bubble ────────────────────────────────────────
+function VoiceMessage({ att, color }){
+  const [playing,setPlaying]=useState(false);
+  const [cur,setCur]=useState(0);
+  const [dur,setDur]=useState(att.dur||0);
+  const audioRef=useRef(null);
+  useEffect(()=>{
+    const a=new Audio(att.dataUrl);
+    audioRef.current=a;
+    a.onloadedmetadata=()=>{ if(isFinite(a.duration)&&a.duration>0) setDur(Math.round(a.duration)); };
+    a.ontimeupdate=()=>{ setCur(a.currentTime); };
+    a.onended=()=>{ setPlaying(false); setCur(0); };
+    return ()=>{ try{a.pause();}catch{} audioRef.current=null; };
+  },[att.dataUrl]);
+  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>setPlaying(true)).catch(()=>{}); } };
+  const pct=dur>0?Math.min(100,(cur/dur)*100):0;
+  const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
+  const bars=[8,14,10,18,12,20,9,16,11,19,7,15,13,17,10,14,8,18,12,9];
+  return (
+    <div onClick={e=>e.stopPropagation()} style={{marginTop:8,display:"flex",alignItems:"center",gap:10,background:"#15100C",borderRadius:12,padding:"8px 12px",minWidth:180,maxWidth:240}}>
+      <button onClick={toggle} style={{width:36,height:36,flexShrink:0,borderRadius:"50%",background:color||"#EF6C00",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
+        {playing
+          ? <Icon size={16} d={["M7 5h3v14H7z","M14 5h3v14h-3z"]} fill="solid" />
+          : <Icon size={16} d="M7 4l13 8-13 8z" fill="solid" />}
+      </button>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:2,height:22}}>
+          {bars.map((h,i)=>{ const on=(i/bars.length)*100<=pct; return (
+            <div key={i} style={{width:3,height:h,borderRadius:2,background:on?(color||"#EF6C00"):"#3A2E24",transition:"background .1s"}}/>
+          );})}
+        </div>
+        <div style={{fontSize:11,color:"#B0A498",marginTop:3}}>{playing||cur>0?fmt(cur):fmt(dur)}</div>
+      </div>
+    </div>
+  );
+}
 function AttBubble({ att, onOpen }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
-    <div style={{marginTop:8}}>
-      <img data-img src={att.dataUrl} alt={att.name} onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer"}}/>
+    <div style={{marginTop:8}}
+      onPointerUpCapture={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}
+      onClickCapture={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
+      <img data-img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
       {att.caption?<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>
         :<div style={{fontSize:11,color:"#B0A498",marginTop:3}}>{att.name}</div>}
     </div>
@@ -536,7 +573,7 @@ function AttBubble({ att, onOpen }) {
   );
   if(att.dataUrl&&att.type?.startsWith("audio/")) return (
     <div style={{marginTop:8}}>
-      <audio src={att.dataUrl} controls style={{width:"100%",maxWidth:220}}/>
+      <VoiceMessage att={att} />
       {att.caption&&<div style={{fontSize:12,color:"#D8CCBE",marginTop:3}}>{att.caption}</div>}
     </div>
   );
@@ -926,6 +963,9 @@ export default function App() {
   const recTimer = useRef(null);
   const recCancel = useRef(false);
   const recStartY = useRef(0);
+  const recStartX = useRef(0);
+  const [recSlide, setRecSlide] = useState(0); // смещение пальца влево (px) для отмены
+  const recCancelArm = useRef(false);
   const micStream = useRef(null);
   const recSecRef = useRef(0);
   const nativeAudio = useRef(false);
@@ -942,7 +982,7 @@ export default function App() {
   // ── Запись голосовых: чистая реализация, поток освобождается полностью ──
   async function startRec(e){
     recCancel.current=false;
-    if(e&&e.touches&&e.touches[0]) recStartY.current=e.touches[0].clientY;
+    if(e&&e.touches&&e.touches[0]){ recStartY.current=e.touches[0].clientY; recStartX.current=e.touches[0].clientX; } setRecSlide(0); recCancelArm.current=false;
     if(recording) return; // уже идёт
     // НАТИВНАЯ запись (Android, минуя WebView/getUserMedia)
     if(window.AndroidRec && typeof window.AndroidRec.startRec==="function"){
@@ -1843,6 +1883,7 @@ export default function App() {
         ::-webkit-scrollbar{width:0;}
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
+        @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#3A2E24;}
         .row:has(button:active){background:transparent;}
@@ -2433,16 +2474,29 @@ export default function App() {
                     style={{width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",cursor:"pointer",
                       color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)"}}>{IC.send}</button>
                 : <button title="Удерживайте для записи"
-                    onTouchStart={e=>{ e.preventDefault(); startRec(e); }}
-                    onTouchMove={e=>{ if(recording){ const dy=e.touches[0].clientY-recStartY.current; if(dy>90){ stopRec(true); } } }}
-                    onTouchEnd={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
+                    onTouchStart={e=>{ e.preventDefault(); e.stopPropagation(); startRec(e); }}
+                    onTouchMove={e=>{ if(!recording)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
+                    onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); if(recording) stopRec(recCancelArm.current); setRecSlide(0); }}
                     onMouseDown={e=>{ e.preventDefault(); startRec(e); }}
                     onMouseUp={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
-                    onMouseLeave={e=>{ if(recording) stopRec(false); }}
                     style={{width:44,height:44,borderRadius:"50%",background:recording?"#E05252":"#EF6C00",border:"none",cursor:"pointer",
                       color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)",
                       transform:recording?"scale(1.15)":"scale(1)",transition:"transform .15s ease, background .15s ease"}}>{IC.mic}</button>}
             </div>
+            {/* Оверлей записи: таймер + подсказка смахивания влево для отмены */}
+            {recording && (
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:58,background:"#241C16",borderTop:"1px solid #3A2E24",
+                display:"flex",alignItems:"center",padding:"0 16px",zIndex:30,gap:12,
+                opacity:Math.max(0.4,1-recSlide/120)}}>
+                <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
+                <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(recSec)}</span>
+                <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:recSlide>60?"#E05252":"#B0A498",
+                  transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`,transition:recSlide?"none":"transform .2s, color .2s"}}>
+                  <Icon size={16} d="M15 6l-6 6 6 6" stroke={2} />
+                  <span style={{fontSize:13}}>{recSlide>60?"Отпустите для отмены":"Смахните влево для отмены"}</span>
+                </div>
+              </div>
+            )}
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
               <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#241C16",borderTop:"1px solid #3A2E24",
