@@ -520,7 +520,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
 }
 
 // ─── Attachment bubble ────────────────────────────────────────
-function VoiceMessage({ att, color, center }){
+function VoiceMessage({ att, color, center, stamp, compact }){
   const [playing,setPlaying]=useState(false);
   const [cur,setCur]=useState(0);
   const [dur,setDur]=useState(att.dur||0);
@@ -551,40 +551,41 @@ function VoiceMessage({ att, color, center }){
   const onUp=(e)=>{ if(!draggingRef.current)return; e.stopPropagation(); draggingRef.current=false; try{e.currentTarget.releasePointerCapture&&e.currentTarget.releasePointerCapture(e.pointerId);}catch{} };
   const bars=[6,10,8,14,9,16,7,13,11,18,8,12,15,9,17,10,8,14,11,7,13,9,16,8,12,10,15,9];
   const c=color||"#EF6C00";
+  const BARW=compact?2:3, GAP=2, TRACKW=bars.length*(BARW+GAP); const PB=compact?40:48;
   return (
-    <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:11,background:"#1C1510",borderRadius:22,padding:"7px 14px 7px 8px",width:"fit-content",maxWidth:260,...(center?{margin:"0 auto"}:{})}}>
-      <button onClick={toggle} style={{width:44,height:44,flexShrink:0,borderRadius:"50%",background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",boxShadow:"0 2px 8px "+c+"55"}}>
-        {playing
-          ? <Icon size={19} d={["M7 5h3.2v14H7z","M13.8 5H17v14h-3.2z"]} fill="solid" />
-          : <Icon size={19} d="M8 5l11 7-11 7z" fill="solid" />}
-      </button>
+    <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:11,background:"#1C1510",borderRadius:16,padding:"8px 9px",width:"fit-content",maxWidth:270,...(center?{margin:"0 auto"}:{})}}>
       <div style={{flexShrink:0}}>
         <div ref={trackRef}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-          style={{position:"relative",height:26,cursor:"pointer",touchAction:"none",width:158,display:"flex",alignItems:"center"}}>
+          style={{position:"relative",height:compact?22:26,cursor:"pointer",touchAction:"none",width:TRACKW,display:"flex",alignItems:"center"}}>
           {/* серая дорожка */}
-          <div style={{display:"flex",alignItems:"center",gap:2,position:"absolute",inset:0}}>
-            {bars.map((h,i)=><div key={i} style={{width:3,height:h,borderRadius:2,background:"#3A2E24",flexShrink:0}}/>)}
+          <div style={{display:"flex",alignItems:"center",gap:GAP,position:"absolute",inset:0}}>
+            {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:"#3A2E24",flexShrink:0}}/>)}
           </div>
-          {/* цветная дорожка, плавно открывается слева */}
-          <div style={{position:"absolute",inset:0,overflow:"hidden",width:pct+"%",transition:draggingRef.current?"none":(started?"width .1s linear":"none")}}>
-            <div style={{display:"flex",alignItems:"center",gap:2,width:158}}>
-              {bars.map((h,i)=><div key={i} style={{width:3,height:h,borderRadius:2,background:c,flexShrink:0}}/>)}
+          {/* цветная дорожка — та же сетка, клип по ширине (полоски совпадают 1-в-1) */}
+          <div style={{position:"absolute",top:0,left:0,bottom:0,overflow:"hidden",width:pct+"%",transition:draggingRef.current?"none":(started?"width .08s linear":"none")}}>
+            <div style={{display:"flex",alignItems:"center",gap:GAP,height:"100%",width:TRACKW}}>
+              {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:c,flexShrink:0}}/>)}
             </div>
           </div>
         </div>
-        <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums"}}>{playing||cur>0?fmt(cur):fmt(dur)}</div>
+        <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums",display:"flex",gap:6,alignItems:"center"}}><span>{playing||cur>0?fmt(cur):fmt(dur)}</span>{stamp&&<span style={{fontSize:8.5,opacity:.8}}>{stamp}</span>}</div>
       </div>
+      <button onClick={toggle} style={{width:PB,height:PB,flexShrink:0,borderRadius:14,background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",boxShadow:"0 2px 8px "+c+"55"}}>
+        {playing
+          ? <Icon size={21} d={["M7 5h3.4v14H7z","M13.6 5H17v14h-3.4z"]} fill="solid" />
+          : <Icon size={21} d="M8 5l11 7-11 7z" fill="solid" />}
+      </button>
     </div>
   );
 }
-function AttBubble({ att, onOpen }) {
+function AttBubble({ att, onOpen, stamp }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
-    <div data-img data-imgsrc={att.dataUrl} style={{marginTop:8}}
+    <div data-img data-imgsrc={att.dataUrl} style={{marginTop:0,position:"relative"}}
       onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
-      <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
-      {att.caption?<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>
-        :<div style={{fontSize:11,color:"#B0A498",marginTop:3}}>{att.name}</div>}
+      <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:9,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
+      {stamp&&<span style={{position:"absolute",right:6,bottom:6,fontSize:9,color:"#fff",background:"rgba(0,0,0,.45)",borderRadius:6,padding:"1px 5px",pointerEvents:"none"}}>{stamp}</span>}
+      {att.caption&&<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>}
     </div>
   );
   if(att.dataUrl&&att.type?.startsWith("video/")) return (
@@ -595,7 +596,7 @@ function AttBubble({ att, onOpen }) {
   );
   if(att.dataUrl&&att.type?.startsWith("audio/")) return (
     <div style={{marginTop:0}}>
-      <VoiceMessage att={att} />
+      <VoiceMessage att={att} stamp={stamp} />
       {att.caption&&<div style={{fontSize:12,color:"#D8CCBE",marginTop:3}}>{att.caption}</div>}
     </div>
   );
@@ -633,11 +634,15 @@ function PinnedBanner({ note, color, onJump }) {
 }
 
 // ─── Media browser (Telegram-style, opens from avatar tap) ───
-function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage }) {
+function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, onJumpTo }) {
+  const [ctxMenu,setCtxMenu]=useState(null); // {item,x,y}
+  const lpRef=useRef(null);
+  const startLp=(item,e)=>{ const t=e.touches?e.touches[0]:e; const x=t.clientX,y=t.clientY; lpRef.current=setTimeout(()=>{ try{navigator.vibrate&&navigator.vibrate(15);}catch{} setCtxMenu({item,x,y}); },450); };
+  const cancelLp=()=>{ clearTimeout(lpRef.current); };
   const [tab,setTab]=useState("photo");
   if(!open||!subf) return null;
 
-  const allAtts = subf.notes.flatMap(n=>(n.attachments||[]).map(a=>({...a,noteText:strip(n.text),noteTime:n.time})));
+  const allAtts = subf.notes.flatMap(n=>(n.attachments||[]).map(a=>({...a,noteText:strip(n.text),noteTime:n.time,noteId:n.id})));
   const links   = subf.notes.flatMap(n=>{
     const parsed=parseMarkdown(n.text||"");
     return parsed.filter(p=>p.type==="link").map(p=>({href:p.href,label:p.content,noteTime:n.time}));
@@ -691,6 +696,8 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage })
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4}}>
               {current.items.map((a,i)=>(
                 <img key={i} src={a.dataUrl} alt={a.name} onClick={()=>onOpenImage&&onOpenImage(a.dataUrl)}
+                  onTouchStart={(e)=>startLp(a,e)} onTouchEnd={cancelLp} onTouchMove={cancelLp}
+                  onContextMenu={(e)=>{e.preventDefault();setCtxMenu({item:a,x:e.clientX,y:e.clientY});}}
                   style={{width:"100%",aspectRatio:"1",objectFit:"cover",borderRadius:8,cursor:"pointer"}}/>
               ))}
             </div>
@@ -698,20 +705,17 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage })
           {tab==="video"&&(
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {current.items.map((a,i)=>(
-                <div key={i}><video src={a.dataUrl} controls style={{width:"100%",borderRadius:10}}/></div>
+                <div key={i} onTouchStart={(e)=>startLp(a,e)} onTouchEnd={cancelLp} onTouchMove={cancelLp} onContextMenu={(e)=>{e.preventDefault();setCtxMenu({item:a,x:e.clientX,y:e.clientY});}}><video src={a.dataUrl} controls style={{width:"100%",borderRadius:10}}/></div>
               ))}
             </div>
           )}
           {tab==="audio"&&(
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {current.items.map((a,i)=>(
-                <div key={i} style={{background:"#241C16",borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:10}}>
-                  <span style={{color:"#EF6C00",display:"flex"}}>{IC.audio}</span>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
-                    <div style={{fontSize:11,color:"#B0A498"}}>{a.noteTime}</div>
-                  </div>
-                  <audio src={a.dataUrl} controls style={{height:32,width:120}}/>
+                <div key={i} style={{display:"flex",justifyContent:"center"}}
+                  onTouchStart={(e)=>startLp(a,e)} onTouchEnd={cancelLp} onTouchMove={cancelLp}
+                  onContextMenu={(e)=>{e.preventDefault();setCtxMenu({item:a,x:e.clientX,y:e.clientY});}}>
+                  <VoiceMessage att={a} compact stamp={a.noteTime} />
                 </div>
               ))}
             </div>
@@ -719,7 +723,9 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage })
           {tab==="doc"&&(
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {current.items.map((a,i)=>(
-                <div key={i} style={{background:"#241C16",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
+                <div key={i} onTouchStart={(e)=>startLp(a,e)} onTouchEnd={cancelLp} onTouchMove={cancelLp}
+                  onContextMenu={(e)=>{e.preventDefault();setCtxMenu({item:a,x:e.clientX,y:e.clientY});}}
+                  style={{background:"#241C16",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
                   <span style={{color:"#EF6C00",display:"flex"}}>{ficon(a.type)}</span>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
@@ -750,6 +756,18 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage })
           <button onClick={onClose} style={{width:"100%",background:"#241C16",border:"none",borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
         </div>
       </div>
+      {ctxMenu&&(
+        <div onClick={(e)=>{e.stopPropagation();setCtxMenu(null);}} style={{position:"fixed",inset:0,zIndex:500}}>
+          <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
+            left:Math.min(ctxMenu.x,window.innerWidth-210),top:Math.min(ctxMenu.y,window.innerHeight-90),
+            background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
+            <button onClick={()=>{ const id=ctxMenu.item.noteId; setCtxMenu(null); onClose&&onClose(); onJumpTo&&onJumpTo(id); }}
+              style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:"#F2EAE0",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{display:"flex",color:"#EF6C00"}}>{IC.arrRight}</span> Перейти к сообщению
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -979,6 +997,7 @@ export default function App() {
   const fmtSel = useRef(null);
   const lastSel = useRef(null); // последнее НЕпустое выделение в поле
   const [lightbox, setLightbox] = useState(null); // dataUrl открытого изображения
+  const lightboxFromBrowser = useRef(false);
   const fullTaRef = useRef(null);
   const taSwipe = useRef(null);
   const clipText = useRef("");
@@ -1331,8 +1350,9 @@ export default function App() {
   }
   // Аппаратная кнопка «Назад» (Android). Возвращает true, если что-то закрыли.
   function closeAllMenus(){ setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); }
+  function closeLightbox(){ setLightbox(null); if(lightboxFromBrowser.current){ lightboxFromBrowser.current=false; setMediaBrowser(true); } }
   function handleHardwareBack(){
-    if(lightbox){ setLightbox(null); return true; }
+    if(lightbox){ closeLightbox(); return true; }
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
     if(composerFull){ if(composerPeek){ setComposerPeek(false); return true; } setComposerFull(false); return true; }
     if(dlg){ setDlg(null); return true; }
@@ -1727,6 +1747,18 @@ export default function App() {
     else if(touchUsed.current) return; // игнор синтетической мыши после touch
     lpScrolled.current=false;
     if(selectMode===n.id || multiSelect.length>0) return; // в выделении — не вмешиваемся
+    // Удержание (~400мс как в Telegram) → войти в режим выделения сообщения
+    clearTimeout(lpTimer.current);
+    lpTimer.current=setTimeout(()=>{
+      if(lpScrolled.current) return;
+      lpFired.current=true;
+      if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop;
+      justEnteredSel.current=n.id;
+      setTimeout(()=>{ justEnteredSel.current=null; },450);
+      setSelectMode(n.id);
+      setNoteCtx(null);
+      try{navigator.vibrate&&navigator.vibrate(15);}catch{}
+    },400);
   }
   function bubbleLpMove()  { lpScrolled.current=true; clearTimeout(lpTimer.current); }
   function bubbleLpEnd(n, e) {
@@ -1738,20 +1770,7 @@ export default function App() {
     if(!isTouch && touchUsed.current){ setTimeout(()=>{touchUsed.current=false;},400); return; }
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
     if(lpScrolled.current){ lastTap.current={id:null,t:0}; lpScrolled.current=false; return; }
-    if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; return; } // меню уже открыто
-    // двойной тап (в окне 300мс) по тому же пузырю → выделить сообщение
-    const now=Date.now();
-    const fast = lastTap.current.id===n.id && (now-lastTap.current.t)<=300 && (now-lastTap.current.t)>40;
-    if(fast){
-      if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop;
-      justEnteredSel.current=n.id;
-      setTimeout(()=>{ justEnteredSel.current=null; },450);
-      setSelectMode(n.id);
-      setNoteCtx(null);
-      lastTap.current={id:null,t:0};
-    } else {
-      lastTap.current={id:n.id,t:now};
-    }
+    if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; return; } // удержание уже выделило
   }
 
   // ── Links ──
@@ -1936,7 +1955,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v42</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v43</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2342,9 +2361,10 @@ export default function App() {
               <div onClick={(e)=>{ if(e.target!==e.currentTarget) return; const now=Date.now(); if(rowTap.current.id===n.id && now-rowTap.current.t<300){ if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; rowTap.current={id:null,t:0}; if(selectMode===n.id){ setSelectMode(null); } else if(multiSelect.includes(n.id)){ setMultiSelect(ms=>ms.filter(x=>x!==n.id)); } else { justEnteredSel.current=n.id; setTimeout(()=>{justEnteredSel.current=null;},450); setSelectMode(n.id); } } else { rowTap.current={id:n.id,t:now}; } }}
                 style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative"}}>
                 <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 30px)"}}>
-                {/* Чекбокс — вплотную слева от пузыря (1px). У широких сообщений оказывается в узком зазоре, у маленьких — у самого сообщения */}
+                {/* Чекбокс — кликабельный, отодвинут от пузыря */}
                 {(multiActive||selActive) && (
-                  <div style={{position:"absolute",right:"100%",top:"50%",transform:"translateY(-50%)",marginRight:2,zIndex:6,pointerEvents:"none"}}>
+                  <div onClick={(e)=>{ e.stopPropagation(); if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; if(selActive){ setMultiSelect([n.id]); setSelectMode(null); } else { handleMultiTap(n); } }}
+                    style={{position:"absolute",right:"100%",top:"50%",transform:"translateY(-50%)",marginRight:8,zIndex:6,cursor:"pointer",padding:4}}>
                     <div style={{width:25,height:25,borderRadius:"50%",flexShrink:0,
                       border:"2px solid "+((isMulti||selActive)?"#EF6C00":"#5A4C40"),
                       background:(isMulti||selActive)?"#EF6C00":"rgba(0,0,0,.2)",
@@ -2374,7 +2394,7 @@ export default function App() {
                   onMouseUp={(selectMode||multiActive)?undefined:(e=>bubbleLpEnd(n,e))}
                   onContextMenu={e=>{ e.preventDefault(); }}
                   style={{background:highlightId===n.id?"#4A3A1E":editId===n.id?"#2E2418":isMulti?"#332512":selActive?"#2E2418":"#241C16",
-                    borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&n.attachments[0].voice)?"2px 3px":"10px 14px",
+                    borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))?"3px":"10px 14px",
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:"border .4s,background .4s"}}>
@@ -2385,10 +2405,12 @@ export default function App() {
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
                   )}
-                  {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox}/>)}
+                  {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time}/>)}
+                  {!(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))&&(
                   <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:5}}>
                     <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
                   </div>
+                  )}
                 </div>
                 </div>
               </div>
@@ -2684,7 +2706,8 @@ export default function App() {
       <LinkDlg open={lnkDlg} selected={lnkSel} onClose={()=>setLnkDlg(false)} onInsert={insertLink}/>
       <PreviewModal open={prevSh} onClose={()=>setPrevSh(false)} onSend={composerCommit} text={note} atts={patts} color={subColor} isEdit={!!editId}/>
       <MediaBrowser open={mediaBrowser} onClose={()=>setMediaBrowser(false)} subf={subf} color={subColor}
-        onOpenImage={(u)=>{ setLightbox(u); setMediaBrowser(false); }}
+        onOpenImage={(u)=>{ lightboxFromBrowser.current=true; setLightbox(u); setMediaBrowser(false); }}
+        onJumpTo={(id)=>{ setMediaBrowser(false); if(id) setTimeout(()=>jumpTo(id),120); }}
         onChangeIcon={()=>{ setMediaBrowser(false); setModal(sid==="__top__"?"renF":"renS"); }}/>
       <Sheet open={pinnedOpen} onClose={()=>setPinnedOpen(false)} title="Закреплённые сообщения">
         {(()=>{
@@ -2723,10 +2746,10 @@ export default function App() {
 
       {/* Просмотр изображения на весь экран */}
       {lightbox&&(
-        <div onClick={()=>setLightbox(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:600,
+        <div onClick={closeLightbox} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:600,
           display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <img src={lightbox} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8}}/>
-          <button onClick={()=>setLightbox(null)} style={{position:"absolute",top:16,right:16,background:"rgba(0,0,0,.5)",
+          <button onClick={closeLightbox} style={{position:"absolute",top:16,right:16,background:"rgba(0,0,0,.5)",
             border:"none",borderRadius:"50%",width:40,height:40,color:"#fff",fontSize:20,cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
         </div>
