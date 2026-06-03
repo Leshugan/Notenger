@@ -120,8 +120,8 @@ const IC = {
   fMoon:   <Icon d="M20 14a8 8 0 1 1-9-11 7 7 0 0 0 9 11Z" stroke={2} />,
   fSun:    <Icon d={["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]} stroke={1.8} />,
   fDroplet:<Icon d="M12 3s6 6 6 11a6 6 0 0 1-12 0c0-5 6-11 6-11Z" stroke={2} />,
-  launch:  <Icon d={["M12 2v8","M7.5 5a8 8 0 1 0 9 0"]} stroke={2} />,
-  launchOff:<Icon d={["M12 2v6","M7.5 5a8 8 0 1 0 9 0","M3 3l18 18"]} stroke={2.2} />,
+  launch:  <Icon d={["M5 21V6a2 2 0 0 1 2-2h6l6 6v11","M13 4v6h6","M12 12l-2.5 2.5h5z"]} stroke={2} />,
+  launchOff:<Icon d={["M5 21V6a2 2 0 0 1 2-2h6l6 6v11","M13 4v6h6","M4 4l16 16"]} stroke={2.2} />,
 };
 
 
@@ -579,12 +579,12 @@ function VoiceMessage({ att, color, center, stamp, compact }){
     </div>
   );
 }
-function AttBubble({ att, onOpen, stamp }) {
+function AttBubble({ att, onOpen, stamp, selecting }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
     <div data-img data-imgsrc={att.dataUrl} style={{marginTop:0,position:"relative"}}
-      onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
+      onClick={(e)=>{ if(selecting) return; e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
       <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:9,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
-      {stamp&&<span style={{position:"absolute",right:6,bottom:6,fontSize:9,color:"#fff",background:"linear-gradient(transparent,rgba(20,12,6,.7))",borderRadius:7,padding:"2px 7px",pointerEvents:"none",backdropFilter:"blur(2px)",fontWeight:500}}>{stamp}</span>}
+      {stamp&&<span style={{position:"absolute",right:6,bottom:6,fontSize:9,color:"#fff",background:"rgba(20,12,6,.55)",borderRadius:6,padding:"0px 6px 1px",pointerEvents:"none",lineHeight:1.3,fontWeight:500}}>{stamp}</span>}
       {att.caption&&<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>}
     </div>
   );
@@ -786,7 +786,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
           padding:"12px 14px",color:"#F2EAE0",fontSize:15,marginBottom:14,outline:"none"}}/>
       <div style={{marginBottom:12}}>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:8}}>Иконка</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(6, 42px)",gap:8,justifyContent:"space-between"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, 42px)",gap:8,justifyContent:"center"}}>
           {icons.map(k=>(
             <button key={k} onClick={()=>setIcon(k)}
               style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+color:"1px solid #3A2E24",
@@ -1183,6 +1183,7 @@ export default function App() {
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
   const [fontSh, setFontSh] = useState(false); // шторка шрифтов
+  const [fontOpen, setFontOpen] = useState(null); // какой пункт шрифта раскрыт
   const FONT_KEY="napp_fonts_v1";
   // Встроенные тестовые шрифты (Google Fonts) + загруженные пользователем (data-URL ttf)
   const BUILTIN_FONTS=[
@@ -1644,6 +1645,18 @@ export default function App() {
   function clearSub(){
     updNotes(_n=>([]));
   }
+  function toggleSel(n){
+    if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop;
+    setTextArmed(false);
+    // объединяем текущее выделение (selectMode + multiSelect) в один набор
+    const cur = new Set(multiSelect);
+    if(selectMode) cur.add(selectMode);
+    if(cur.has(n.id)) cur.delete(n.id); else cur.add(n.id);
+    const arr=[...cur];
+    if(arr.length===0){ setMultiSelect([]); setSelectMode(null); }
+    else if(arr.length===1){ setMultiSelect([]); setSelectMode(arr[0]); }
+    else { setSelectMode(null); setMultiSelect(arr); }
+  }
   function handleMultiTap(n) {
     if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop;
     const next = multiSelect.includes(n.id)?multiSelect.filter(x=>x!==n.id):[...multiSelect,n.id];
@@ -2005,7 +2018,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v45</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v46</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2391,8 +2404,6 @@ export default function App() {
           </div>
         )}
         <div ref={scrollRef} onScroll={updateActiveNote}
-          onClickCapture={(e)=>{ const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el){ const src=el.getAttribute("data-imgsrc"); if(src){ e.stopPropagation(); setLightbox(src); } } }}
-          onPointerUpCapture={(e)=>{ const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el){ const src=el.getAttribute("data-imgsrc"); if(src){ if(imgTapGuard.current) return; imgTapGuard.current=true; setTimeout(()=>{imgTapGuard.current=false;},500); setLightbox(src); } } }}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3}}
           onClick={()=>setNoteCtx(null)}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -2410,18 +2421,13 @@ export default function App() {
 
               <div onClick={(e)=>{ if(e.target!==e.currentTarget) return;
                   const inSel = (multiSelect.length>0)||selectMode;
-                  if(inSel){ if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop;
-                    if(selectMode===n.id){ setMultiSelect([]); setSelectMode(null); }
-                    else if(selectMode){ setMultiSelect([selectMode,n.id]); setSelectMode(null); }
-                    else if(multiSelect.includes(n.id)){ const nx=multiSelect.filter(x=>x!==n.id); if(nx.length===1){setMultiSelect([]);setSelectMode(nx[0]);} else if(nx.length===0){setMultiSelect([]);} else setMultiSelect(nx); }
-                    else { setMultiSelect([...multiSelect,n.id]); }
-                  }
+                  if(inSel){ toggleSel(n); }
                 }}
                 style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative"}}>
                 <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 38px)"}}>
                 {/* Чекбокс — кликабельный, отодвинут от пузыря */}
                 {(multiActive||selActive) && (
-                  <div onClick={(e)=>{ e.stopPropagation(); if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; if(selActive){ setMultiSelect([n.id]); setSelectMode(null); } else { handleMultiTap(n); } }}
+                  <div onClick={(e)=>{ e.stopPropagation(); toggleSel(n); }}
                     style={{position:"absolute",right:"100%",top:"50%",transform:"translateY(-50%)",marginRight:2.5,zIndex:6,cursor:"pointer",padding:4}}>
                     <div style={{width:25,height:25,borderRadius:"50%",flexShrink:0,
                       border:"2px solid "+((isMulti||selActive)?"#EF6C00":"#5A4C40"),
@@ -2435,13 +2441,12 @@ export default function App() {
                 {/* Пузырь */}
                 <div
                   onClick={e=>{
-                    if(justEnteredSel.current===n.id){ e.stopPropagation(); return; } // хвостовой клик по только что выделенному
-                    if(multiActive){ e.stopPropagation(); handleMultiTap(n); return; }
-                    if(selectMode && selectMode!==n.id){ e.stopPropagation(); handleSelTap(n,e); return; }
-                    if(selActive){ // одиночный тап по выделенному → снять выделение
+                    if(justEnteredSel.current===n.id){ e.stopPropagation(); return; } // хвостовой клик после входа в выделение
+                    if(multiActive){ e.stopPropagation(); toggleSel(n); return; }
+                    if(selectMode && selectMode!==n.id){ e.stopPropagation(); toggleSel(n); return; }
+                    if(selActive){ // одиночный тап по выделенному → снять выделение (даже если был выделен текст)
                       e.stopPropagation();
-                      if(justEnteredSel.current===n.id) return; // не считать хвостовой клик после входа
-                      if(textArmed) return; // идёт выделение текста — не снимаем
+                      if(textArmed){ setTextArmed(false); try{window.getSelection&&window.getSelection().removeAllRanges();}catch{} }
                       setSelectMode(null);
                     }
                   }}
@@ -2464,7 +2469,7 @@ export default function App() {
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
                   )}
-                  {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time}/>)}
+                  {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time} selecting={multiActive||selActive}/>)}
                   {!(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))&&(
                   <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:5}}>
                     <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
@@ -2859,32 +2864,40 @@ export default function App() {
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
       <Sheet open={fontSh} onClose={()=>setFontSh(false)} title="Шрифты">
-        <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
-          style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          <span style={{display:"flex"}}>{IC.imp}</span> Загрузить шрифт (.ttf)
-        </button>
+        <div onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
+          style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",marginBottom:14}}>
+          <span style={{display:"flex",color:"#EF6C00"}}>{IC.imp}</span>
+          <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить свой шрифт (.ttf)</span>
+        </div>
         {FONT_TARGETS.map(t=>{
           const curId=fonts.assign?.[t.key]||"sys";
+          const curFont=allFonts.find(f=>f.id===curId)||allFonts[0];
+          const isOpen=fontOpen===t.key;
           return (
-            <div key={t.key} style={{marginBottom:18}}>
-              <div style={{fontSize:13,color:"#F2EAE0",fontWeight:600,marginBottom:8}}>{t.label}</div>
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {allFonts.map(f=>(
-                  <div key={f.id} onClick={()=>setFontAssign(t.key,f.id)}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",
-                      border:curId===f.id?"1px solid #EF6C00":"1px solid transparent"}}>
-                    <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(curId===f.id?"#EF6C00":"#5A4C40"),
-                      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      {curId===f.id&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
-                    </div>
-                    <span style={{fontSize:15,color:"#F2EAE0",fontFamily:f.css}}>{f.name}</span>
-                  </div>
-                ))}
+            <div key={t.key} style={{marginBottom:8,background:"#241C16",borderRadius:10,overflow:"hidden"}}>
+              <div onClick={()=>setFontOpen(isOpen?null:t.key)}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",cursor:"pointer"}}>
+                <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{t.label}</span>
+                <span style={{fontSize:13,color:"#B0A498",fontFamily:curFont.css}}>{curFont.name}</span>
+                <span style={{display:"flex",color:"#8A7A65",transform:isOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
               </div>
+              {isOpen&&(
+                <div style={{borderTop:"1px solid #2E251C"}}>
+                  {allFonts.map(f=>(
+                    <div key={f.id} onClick={()=>{ setFontAssign(t.key,f.id); }}
+                      style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer"}}>
+                      <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(curId===f.id?"#EF6C00":"#5A4C40"),
+                        display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        {curId===f.id&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}
+                      </div>
+                      <span style={{fontSize:14,color:"#F2EAE0",fontFamily:f.css}}>{f.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
-        <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px 8px",lineHeight:1.5}}>Загруженные .ttf шрифты появятся в списках выше и сохранятся между запусками.</div>
       </Sheet>
 
       <Sheet open={modal==="mkF"}  onClose={()=>setModal(null)}><FolderForm title="Новая категория"            icons={ICONS_F} btnLabel="Создать" onSubmit={mkF}/></Sheet>
