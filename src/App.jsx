@@ -928,6 +928,7 @@ export default function App() {
   const recStartY = useRef(0);
   const micStream = useRef(null);
   const recSecRef = useRef(0);
+  const nativeAudio = useRef(false);
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   function sendPendingVoice(){
     const pv=pendingVoice; if(!pv) return;
@@ -943,6 +944,18 @@ export default function App() {
     recCancel.current=false;
     if(e&&e.touches&&e.touches[0]) recStartY.current=e.touches[0].clientY;
     if(recording) return; // уже идёт
+    // НАТИВНАЯ запись (Android, минуя WebView/getUserMedia)
+    if(window.AndroidRec && typeof window.AndroidRec.startRec==="function"){
+      let ok=false;
+      try{ ok=window.AndroidRec.startRec(); }catch{ ok=false; }
+      if(ok){
+        nativeAudio.current=true;
+        setRecording(true); setRecSec(0); recSecRef.current=0;
+        recTimer.current=setInterval(()=>{ recSecRef.current+=1; setRecSec(recSecRef.current); },1000);
+        try{navigator.vibrate&&navigator.vibrate(12);}catch{}
+        return;
+      } else { tst("Не удалось включить микрофон"); return; }
+    }
     // Жёстко освобождаем любой прежний поток/рекордер
     try{ if(mediaRec.current && mediaRec.current.state!=="inactive") mediaRec.current.stop(); }catch{}
     mediaRec.current=null;
@@ -1014,8 +1027,23 @@ export default function App() {
   }
   function stopRec(cancel){
     recCancel.current=!!cancel;
+    // Нативная запись
+    if(nativeAudio.current){
+      nativeAudio.current=false;
+      if(recTimer.current){ clearInterval(recTimer.current); recTimer.current=null; }
+      const secs=recSecRef.current;
+      setRecording(false); setRecSec(0); recSecRef.current=0;
+      if(cancel){ try{ window.AndroidRec&&window.AndroidRec.cancelRec(); }catch{} return; }
+      let dataUrl=null;
+      try{ dataUrl=window.AndroidRec.stopRec(); }catch{}
+      if(!dataUrl){ tst("Запись не получилась"); return; }
+      if(secs<1){ return; }
+      const att={type:"audio/mp4",name:`Голосовое ${secs}s`,dataUrl,size:Math.round((dataUrl.length*3)/4),voice:true,dur:secs};
+      setPendingVoice({att, origin:composerOrigin.current||{fid,sid}});
+      return;
+    }
     const mr=mediaRec.current;
-    if(mr && mr.state!=="inactive"){ try{ mr.stop(); }catch{ /* fallback */ try{ if(micStream.current){micStream.current.getTracks().forEach(t=>t.stop());micStream.current=null;} }catch{} setRecording(false); } }
+    if(mr && mr.state!=="inactive"){ try{ mr.stop(); }catch{ try{ if(micStream.current){micStream.current.getTracks().forEach(t=>t.stop());micStream.current=null;} }catch{} setRecording(false); } }
     else {
       try{ if(micStream.current){ micStream.current.getTracks().forEach(t=>t.stop()); micStream.current=null; } }catch{}
       setRecording(false);
@@ -1633,8 +1661,10 @@ export default function App() {
   }
   function bubbleLpMove()  { lpScrolled.current=true; clearTimeout(lpTimer.current); }
   function bubbleLpEnd(n, e) {
-    if(e&&e.target&&e.target.closest&&e.target.closest("[data-img]")){ clearTimeout(lpTimer.current); return; } // открытие картинки обрабатывает сама картинка
     clearTimeout(lpTimer.current);
+    // Тап по картинке → открыть на весь экран
+    const imgEl = e&&e.target&&e.target.closest&&e.target.closest("[data-img]");
+    if(imgEl){ const src=imgEl.getAttribute("src"); if(src){ if(!lpFired.current) setLightbox(src); } lpFired.current=false; lastTap.current={id:null,t:0}; return; }
     const isTouch = e.type==="touchend";
     if(!isTouch && touchUsed.current){ setTimeout(()=>{touchUsed.current=false;},400); return; }
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
