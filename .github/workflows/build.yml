@@ -113,6 +113,13 @@ jobs:
                   filePathCallback.onReceiveValue(uris);
                   filePathCallback = null;
                 });
+              // Настройки WebView для корректного захвата аудио/медиа
+              try {
+                android.webkit.WebSettings ws = this.bridge.getWebView().getSettings();
+                ws.setMediaPlaybackRequiresUserGesture(false);
+                ws.setJavaScriptEnabled(true);
+                ws.setDomStorageEnabled(true);
+              } catch (Exception ignore) {}
               this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
                 @Override
                 public void onPermissionRequest(final PermissionRequest request) {
