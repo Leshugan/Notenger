@@ -524,6 +524,7 @@ function VoiceMessage({ att, color, center }){
   const [playing,setPlaying]=useState(false);
   const [cur,setCur]=useState(0);
   const [dur,setDur]=useState(att.dur||0);
+  const [started,setStarted]=useState(false);
   const audioRef=useRef(null);
   const rafRef=useRef(0);
   const trackRef=useRef(null);
@@ -532,7 +533,7 @@ function VoiceMessage({ att, color, center }){
     const a=new Audio(att.dataUrl);
     audioRef.current=a;
     a.onloadedmetadata=()=>{ if(isFinite(a.duration)&&a.duration>0) setDur(a.duration); };
-    a.onended=()=>{ setPlaying(false); setCur(0); cancelAnimationFrame(rafRef.current); };
+    a.onended=()=>{ setPlaying(false); setCur(0); setStarted(false); cancelAnimationFrame(rafRef.current); };
     return ()=>{ try{a.pause();}catch{} cancelAnimationFrame(rafRef.current); audioRef.current=null; };
   },[att.dataUrl]);
   useEffect(()=>{
@@ -541,37 +542,38 @@ function VoiceMessage({ att, color, center }){
     rafRef.current=requestAnimationFrame(tick);
     return ()=>cancelAnimationFrame(rafRef.current);
   },[playing]);
-  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>{ setCur(a.currentTime); setPlaying(true); }).catch(()=>{}); } };
+  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>{ setCur(a.currentTime); setStarted(true); setPlaying(true); }).catch(()=>{}); } };
   const pct=dur>0?Math.min(100,(cur/dur)*100):0;
   const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
   const seekToClientX=(clientX)=>{ const el=trackRef.current; const a=audioRef.current; if(!el||!a||!dur)return; const r=el.getBoundingClientRect(); const x=Math.max(0,Math.min(1,(clientX-r.left)/r.width)); const t=x*dur; a.currentTime=t; setCur(t); };
-  const onDown=(e)=>{ e.stopPropagation(); draggingRef.current=true; seekToClientX(e.clientX); };
-  const onMove=(e)=>{ if(draggingRef.current){ e.stopPropagation(); seekToClientX(e.clientX); } };
-  const onUp=(e)=>{ if(draggingRef.current){ e.stopPropagation(); draggingRef.current=false; } };
+  const onDown=(e)=>{ e.stopPropagation(); draggingRef.current=true; try{e.currentTarget.setPointerCapture&&e.currentTarget.setPointerCapture(e.pointerId);}catch{} seekToClientX(e.clientX); };
+  const onMove=(e)=>{ if(!draggingRef.current)return; e.stopPropagation(); seekToClientX(e.clientX); };
+  const onUp=(e)=>{ if(!draggingRef.current)return; e.stopPropagation(); draggingRef.current=false; try{e.currentTarget.releasePointerCapture&&e.currentTarget.releasePointerCapture(e.pointerId);}catch{} };
   const bars=[7,11,8,15,10,17,9,14,12,19,8,13,16,10,18,11,9,15,12,8,14,10,17,9];
   const c=color||"#EF6C00";
-  const Bars=({fill})=>(
-    <div style={{display:"flex",alignItems:"center",gap:2,height:24,position:"absolute",inset:0}}>
-      {bars.map((h,i)=><div key={i} style={{width:3,height:h,borderRadius:2,background:fill,flexShrink:0}}/>)}
-    </div>
-  );
   return (
-    <div onClick={e=>e.stopPropagation()} style={{marginTop:8,display:"flex",alignItems:"center",gap:11,background:"#15100C",borderRadius:14,padding:"9px 13px",minWidth:190,maxWidth:250,...(center?{margin:"0 auto",width:"fit-content"}:{})}}>
-      <button onClick={toggle} style={{width:38,height:38,flexShrink:0,borderRadius:"50%",background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
+    <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:10,background:"#15100C",borderRadius:14,padding:"6px 10px",width:"fit-content",maxWidth:250,...(center?{margin:"0 auto"}:{})}}>
+      <button onClick={toggle} style={{width:36,height:36,flexShrink:0,borderRadius:"50%",background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
         {playing
-          ? <Icon size={16} d={["M7 5h3v14H7z","M14 5h3v14h-3z"]} fill="solid" />
-          : <Icon size={16} d="M7 4l13 8-13 8z" fill="solid" />}
+          ? <Icon size={15} d={["M7 5h3v14H7z","M14 5h3v14h-3z"]} fill="solid" />
+          : <Icon size={15} d="M7 4l13 8-13 8z" fill="solid" />}
       </button>
-      <div style={{flex:1,minWidth:0}}>
+      <div style={{flexShrink:0}}>
         <div ref={trackRef}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-          style={{position:"relative",height:24,cursor:"pointer",touchAction:"none",width:160,maxWidth:"100%"}}>
-          <Bars fill="#3A2E24" />
-          <div style={{position:"absolute",inset:0,clipPath:`inset(0 ${100-pct}% 0 0)`,transition:draggingRef.current?"none":"clip-path .12s linear",willChange:"clip-path"}}>
-            <Bars fill={c} />
-          </div>
+          style={{display:"flex",alignItems:"center",gap:2,height:22,cursor:"pointer",touchAction:"none",width:150}}>
+          {bars.map((h,i)=>{
+            const barStart=(i/bars.length)*100, barEnd=((i+1)/bars.length)*100;
+            let fillRatio=0;
+            if(pct>=barEnd) fillRatio=1; else if(pct<=barStart) fillRatio=0; else fillRatio=(pct-barStart)/(barEnd-barStart);
+            return (
+              <div key={i} style={{width:3,height:h,borderRadius:2,position:"relative",background:"#3A2E24",overflow:"hidden",flexShrink:0}}>
+                <div style={{position:"absolute",left:0,top:0,bottom:0,width:(fillRatio*100)+"%",background:c,transition:(started&&!draggingRef.current)?"width .15s linear":"none"}}/>
+              </div>
+            );
+          })}
         </div>
-        <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums"}}>{playing||cur>0?fmt(cur):fmt(dur)}</div>
+        <div style={{fontSize:11,color:"#B0A498",marginTop:2,fontVariantNumeric:"tabular-nums"}}>{playing||cur>0?fmt(cur):fmt(dur)}</div>
       </div>
     </div>
   );
@@ -579,8 +581,7 @@ function VoiceMessage({ att, color, center }){
 function AttBubble({ att, onOpen }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
     <div data-img data-imgsrc={att.dataUrl} style={{marginTop:8}}
-      onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}
-      onPointerUp={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
+      onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
       <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
       {att.caption?<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>
         :<div style={{fontSize:11,color:"#B0A498",marginTop:3}}>{att.name}</div>}
@@ -593,7 +594,7 @@ function AttBubble({ att, onOpen }) {
     </div>
   );
   if(att.dataUrl&&att.type?.startsWith("audio/")) return (
-    <div style={{marginTop:8}}>
+    <div style={{marginTop:2}}>
       <VoiceMessage att={att} />
       {att.caption&&<div style={{fontSize:12,color:"#D8CCBE",marginTop:3}}>{att.caption}</div>}
     </div>
@@ -2367,7 +2368,7 @@ export default function App() {
                   onMouseUp={(selectMode||multiActive)?undefined:(e=>bubbleLpEnd(n,e))}
                   onContextMenu={e=>{ e.preventDefault(); }}
                   style={{background:highlightId===n.id?"#4A3A1E":editId===n.id?"#2E2418":isMulti?"#332512":selActive?"#2E2418":"#241C16",
-                    borderRadius:"16px 4px 16px 16px",padding:"10px 14px",
+                    borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&n.attachments[0].voice)?"4px 6px":"10px 14px",
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:"border .4s,background .4s"}}>
