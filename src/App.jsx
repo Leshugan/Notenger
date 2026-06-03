@@ -120,6 +120,8 @@ const IC = {
   fMoon:   <Icon d="M20 14a8 8 0 1 1-9-11 7 7 0 0 0 9 11Z" stroke={2} />,
   fSun:    <Icon d={["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]} stroke={1.8} />,
   fDroplet:<Icon d="M12 3s6 6 6 11a6 6 0 0 1-12 0c0-5 6-11 6-11Z" stroke={2} />,
+  launch:  <Icon d={["M12 2v8","M7.5 5a8 8 0 1 0 9 0"]} stroke={2} />,
+  launchOff:<Icon d={["M12 2v6","M7.5 5a8 8 0 1 0 9 0","M3 3l18 18"]} stroke={2.2} />,
 };
 
 
@@ -542,7 +544,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
     rafRef.current=requestAnimationFrame(tick);
     return ()=>cancelAnimationFrame(rafRef.current);
   },[playing]);
-  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>{ setCur(a.currentTime); setStarted(true); setPlaying(true); }).catch(()=>{}); } };
+  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { a.play().then(()=>{ setStarted(true); setPlaying(true); const tick=()=>{ const au=audioRef.current; if(au&&!draggingRef.current){ setCur(au.currentTime); } rafRef.current=requestAnimationFrame(tick); }; cancelAnimationFrame(rafRef.current); rafRef.current=requestAnimationFrame(tick); }).catch(()=>{}); } };
   const pct=dur>0?Math.min(100,(cur/dur)*100):0;
   const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
   const seekToClientX=(clientX)=>{ const el=trackRef.current; const a=audioRef.current; if(!el||!a||!dur)return; const r=el.getBoundingClientRect(); const x=Math.max(0,Math.min(1,(clientX-r.left)/r.width)); const t=x*dur; a.currentTime=t; setCur(t); };
@@ -554,7 +556,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
   const BARW=compact?2:3, GAP=2, TRACKW=bars.length*(BARW+GAP); const PB=compact?42:48;
   return (
     <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:9,background:"#1C1510",borderRadius:16,padding:"8px 9px",width:"fit-content",maxWidth:270,...(center?{margin:"0 auto"}:{})}}>
-      <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end"}}>
+      <div style={{flexShrink:0,display:"flex",flexDirection:"column"}}>
         <div ref={trackRef}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
           style={{position:"relative",height:compact?22:26,cursor:"pointer",touchAction:"none",width:TRACKW,display:"flex",alignItems:"center"}}>
@@ -567,7 +569,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
             </div>
           </div>
         </div>
-        <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums",display:"flex",gap:6,alignItems:"center",alignSelf:"flex-end"}}>{stamp&&<span style={{fontSize:8.5,opacity:.8}}>{stamp}</span>}<span>{playing||cur>0?fmt(cur):fmt(dur)}</span></div>
+        <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums",display:"flex",gap:6,alignItems:"center",justifyContent:"space-between",width:TRACKW}}><span>{playing||cur>0?fmt(cur):fmt(dur)}</span>{stamp&&<span style={{fontSize:8.5,opacity:.8}}>{stamp}</span>}</div>
       </div>
       <button onClick={toggle} style={{width:PB,height:PB,flexShrink:0,borderRadius:"50%",background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",boxShadow:"0 2px 8px "+c+"55"}}>
         {playing
@@ -582,7 +584,7 @@ function AttBubble({ att, onOpen, stamp }) {
     <div data-img data-imgsrc={att.dataUrl} style={{marginTop:0,position:"relative"}}
       onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }}>
       <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:9,display:"block",cursor:"pointer",pointerEvents:"none"}}/>
-      {stamp&&<span style={{position:"absolute",right:6,bottom:6,fontSize:9,color:"#fff",background:"rgba(0,0,0,.45)",borderRadius:6,padding:"1px 5px",pointerEvents:"none"}}>{stamp}</span>}
+      {stamp&&<span style={{position:"absolute",right:6,bottom:6,fontSize:9,color:"#fff",background:"linear-gradient(transparent,rgba(20,12,6,.7))",borderRadius:7,padding:"2px 7px",pointerEvents:"none",backdropFilter:"blur(2px)",fontWeight:500}}>{stamp}</span>}
       {att.caption&&<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>}
     </div>
   );
@@ -757,7 +759,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
       {ctxMenu&&(
         <div onClick={(e)=>{e.stopPropagation();setCtxMenu(null);}} style={{position:"fixed",inset:0,zIndex:500}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
-            left:Math.min(ctxMenu.x,window.innerWidth-210),top:Math.min(ctxMenu.y,window.innerHeight-90),
+            left:Math.max(8,Math.min(ctxMenu.x-100,window.innerWidth-210)),top:Math.max(8,ctxMenu.y-72),
             background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
             <button onClick={()=>{ const id=ctxMenu.item.noteId; setCtxMenu(null); onClose&&onClose(); onJumpTo&&onJumpTo(id); }}
               style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:"#F2EAE0",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
@@ -784,7 +786,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
           padding:"12px 14px",color:"#F2EAE0",fontSize:15,marginBottom:14,outline:"none"}}/>
       <div style={{marginBottom:12}}>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:8}}>Иконка</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(6, 42px)",gap:8,justifyContent:"space-between"}}>
           {icons.map(k=>(
             <button key={k} onClick={()=>setIcon(k)}
               style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+color:"1px solid #3A2E24",
@@ -1172,12 +1174,59 @@ export default function App() {
   const dlaunchApplied = useRef(false);
   function setDefaultLaunch(target){ try{ if(target) localStorage.setItem(DLAUNCH_KEY, JSON.stringify(target)); else localStorage.removeItem(DLAUNCH_KEY); }catch{} tst(target?"Будет открываться при запуске":"Запуск сброшен на главный экран"); }
   function getDefaultLaunch(){ try{ const r=localStorage.getItem(DLAUNCH_KEY); return r?JSON.parse(r):null; }catch{ return null; } }
+  function isDefaultLaunch(tFid,tSid){ const d=getDefaultLaunch(); if(!d) return false; return d.fid===tFid && (d.sid||null)===(tSid||null); }
+  function toggleDefaultLaunch(tFid,tSid){ if(isDefaultLaunch(tFid,tSid)) setDefaultLaunch(null); else setDefaultLaunch({fid:tFid,sid:tSid||null}); }
   function toggleDelAnim(){ setNoDelAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noDelAnim",nv?"1":"0");}catch{} return nv; }); }
   function toggleInputAnim(){ setNoInputAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noInputAnim",nv?"1":"0");}catch{} return nv; }); }
   const swipeRef = useRef(null);
   const composerOrigin = useRef(null); // {fid,sid} откуда начато сообщение/правка
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
+  const [fontSh, setFontSh] = useState(false); // шторка шрифтов
+  const FONT_KEY="napp_fonts_v1";
+  // Встроенные тестовые шрифты (Google Fonts) + загруженные пользователем (data-URL ttf)
+  const BUILTIN_FONTS=[
+    {id:"sys",name:"По умолчанию",css:"'Noto Sans',sans-serif"},
+    {id:"comfortaa",name:"Comfortaa",css:"'Comfortaa',cursive",url:"https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap"},
+    {id:"roboto",name:"Roboto",css:"'Roboto',sans-serif",url:"https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"},
+    {id:"comic",name:"Comic Sans",css:"'Comic Neue',cursive",url:"https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap"},
+  ];
+  // Цели, для которых можно задать шрифт
+  const FONT_TARGETS=[
+    {key:"messages",label:"Текст сообщений"},
+    {key:"ui",label:"Интерфейс (кнопки, меню)"},
+    {key:"titles",label:"Заголовки тем и категорий"},
+    {key:"input",label:"Поле ввода"},
+  ];
+  function loadFonts(){ try{ const r=localStorage.getItem(FONT_KEY); return r?JSON.parse(r):{assign:{},custom:[]}; }catch{ return {assign:{},custom:[]}; } }
+  const [fonts,setFonts]=useState(loadFonts);
+  function saveFonts(f){ try{ localStorage.setItem(FONT_KEY,JSON.stringify(f)); }catch{} setFonts(f); }
+  const allFonts=[...BUILTIN_FONTS, ...(fonts.custom||[])];
+  function fontCssFor(key){ const id=fonts.assign?.[key]; const f=allFonts.find(x=>x.id===id); return f?f.css:"'Noto Sans',sans-serif"; }
+  // Подгружаем веб-шрифты и регистрируем кастомные @font-face
+  useEffect(()=>{
+    // встроенные через <link>
+    BUILTIN_FONTS.forEach(f=>{ if(f.url && !document.getElementById("font-"+f.id)){ const l=document.createElement("link"); l.id="font-"+f.id; l.rel="stylesheet"; l.href=f.url; document.head.appendChild(l); } });
+    // кастомные через @font-face (data-URL)
+    let css="";
+    (fonts.custom||[]).forEach(f=>{ if(f.dataUrl){ css+=`@font-face{font-family:'${f.id}';src:url('${f.dataUrl}');}`; } });
+    let st=document.getElementById("custom-fonts"); if(!st){ st=document.createElement("style"); st.id="custom-fonts"; document.head.appendChild(st); } st.textContent=css;
+  },[fonts.custom]);
+  const fontFileRef=useRef(null);
+  function onFontFile(e){
+    const f=e.target.files&&e.target.files[0]; if(!f){return;}
+    const r=new FileReader();
+    r.onload=ev=>{
+      const id="cf_"+Date.now().toString(36);
+      const name=f.name.replace(/\.(ttf|otf|woff2?|TTF|OTF)$/,"");
+      const nf={id,name,css:`'${id}',sans-serif`,dataUrl:ev.target.result};
+      const next={...fonts,custom:[...(fonts.custom||[]),nf]};
+      saveFonts(next);
+      tst("Шрифт добавлен: "+name);
+    };
+    r.readAsDataURL(f); e.target.value="";
+  }
+  function setFontAssign(key,id){ const next={...fonts,assign:{...(fonts.assign||{}),[key]:id}}; saveFonts(next); }
   const histRef = useRef({stack:[""],idx:0,skip:false});
   // фиксируем изменения note в историю (с дебаунсом по словам)
   useEffect(()=>{
@@ -1349,7 +1398,7 @@ export default function App() {
   }
   // Аппаратная кнопка «Назад» (Android). Возвращает true, если что-то закрыли.
   function closeAllMenus(){ setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); }
-  function closeLightbox(){ setLightbox(null); if(lightboxFromBrowser.current){ lightboxFromBrowser.current=false; setMediaBrowser(true); } }
+  function closeLightbox(){ setLightbox(null); }
   function handleHardwareBack(){
     if(lightbox){ closeLightbox(); return true; }
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
@@ -1898,7 +1947,8 @@ export default function App() {
   return (
     <div
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
-        display:"flex",flexDirection:"column",fontFamily:"'Noto Sans',sans-serif",
+        display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
+        "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),
         color:"#F2EAE0",overflow:"hidden",position:"relative"}}
       data-ver-badge
       onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);}}
@@ -1955,7 +2005,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v44</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v45</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2038,6 +2088,7 @@ export default function App() {
                   {ic:IC.save,label:"Сохранить / экспорт",fn:()=>setExpSh(true)},
                   {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                   {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
+                {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
                 ]}/>}
             </div>
           )}
@@ -2172,7 +2223,7 @@ export default function App() {
                       {ic:f.pinned?IC.pinOff:IC.pin,label:f.pinned?"Открепить":"Закрепить",fn:()=>pinFolder(f.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setFid(f.id);setModal("renF");}},
-                      {ic:IC.sendUp,label:"Открывать при запуске",fn:()=>setDefaultLaunch({fid:f.id,sid:f.isTheme?"__top__":null})},
+                      {ic:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?IC.launchOff:IC.launch,label:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(f.id,f.isTheme?"__top__":null)},
                       {ic:IC.trash,label:f.isTheme?"Удалить тему":"Удалить категорию",danger:true,fn:()=>{setFid(f.id);setDlg({msg:`Удалить «${f.name}»?`,yes:()=>delF(f.id),anchor:folderMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
@@ -2197,8 +2248,7 @@ export default function App() {
                 {ic:IC.save,label:"Сохранить / экспорт",fn:()=>setExpSh(true)},
                 {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                 {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
-                {sep:true},
-                {ic:IC.sendUp,label:"Сбросить запуск по умолчанию",fn:()=>setDefaultLaunch(null)},
+                {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
@@ -2263,7 +2313,7 @@ export default function App() {
                       {ic:s.pinned?IC.pinOff:IC.pin,label:s.pinned?"Открепить":"Закрепить",fn:()=>pinSub(s.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setSid(s.id);setModal("renS");}},
-                      {ic:IC.sendUp,label:"Открывать при запуске",fn:()=>setDefaultLaunch({fid:fid,sid:s.id})},
+                      {ic:isDefaultLaunch(fid,s.id)?IC.launchOff:IC.launch,label:isDefaultLaunch(fid,s.id)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(fid,s.id)},
                       {ic:IC.trash,label:"Удалить",danger:true,fn:()=>{setSid(s.id);setDlg({msg:`Удалить «${s.name}»?`,yes:()=>delS(s.id),anchor:subMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
@@ -2391,12 +2441,13 @@ export default function App() {
                     if(selActive){ // одиночный тап по выделенному → снять выделение
                       e.stopPropagation();
                       if(justEnteredSel.current===n.id) return; // не считать хвостовой клик после входа
+                      if(textArmed) return; // идёт выделение текста — не снимаем
                       setSelectMode(null);
                     }
                   }}
-                  onTouchStart={(selectMode||multiActive)?undefined:(e=>bubbleLpStart(n,e))}
-                  onTouchMove={(selectMode||multiActive)?undefined:bubbleLpMove}
-                  onTouchEnd={(selectMode||multiActive)?undefined:(e=>bubbleLpEnd(n,e))}
+                  onTouchStart={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ setTextArmed(true); try{navigator.vibrate&&navigator.vibrate(10);}catch{} },350); } else bubbleLpStart(n,e); })}
+                  onTouchMove={multiActive?undefined:(e=>{ clearTimeout(lpTimer.current); bubbleLpMove(); })}
+                  onTouchEnd={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); } else bubbleLpEnd(n,e); })}
                   onMouseDown={(selectMode||multiActive)?undefined:(e=>bubbleLpStart(n,e))}
                   onMouseMove={(selectMode||multiActive)?undefined:bubbleLpMove}
                   onMouseUp={(selectMode||multiActive)?undefined:(e=>bubbleLpEnd(n,e))}
@@ -2408,7 +2459,7 @@ export default function App() {
                     transition:"border .4s,background .4s"}}>
                   {n.text&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
-                      style={{fontSize:15,lineHeight:1.6,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",
+                      style={{fontSize:15,lineHeight:1.6,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
@@ -2491,7 +2542,7 @@ export default function App() {
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
               autoFocus placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
               style={{flex:1,width:"100%",background:"#1A1410",border:"none",outline:"none",
-                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",
+                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",fontFamily:"var(--font-input)",
                 boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             </div>
@@ -2714,7 +2765,7 @@ export default function App() {
       <LinkDlg open={lnkDlg} selected={lnkSel} onClose={()=>setLnkDlg(false)} onInsert={insertLink}/>
       <PreviewModal open={prevSh} onClose={()=>setPrevSh(false)} onSend={composerCommit} text={note} atts={patts} color={subColor} isEdit={!!editId}/>
       <MediaBrowser open={mediaBrowser} onClose={()=>setMediaBrowser(false)} subf={subf} color={subColor}
-        onOpenImage={(u)=>{ lightboxFromBrowser.current=true; setLightbox(u); setMediaBrowser(false); }}
+        onOpenImage={(u)=>{ setLightbox(u); }}
         onJumpTo={(id)=>{ setMediaBrowser(false); if(id) setTimeout(()=>jumpTo(id),120); }}
         onChangeIcon={()=>{ setMediaBrowser(false); setModal(sid==="__top__"?"renF":"renS"); }}/>
       <Sheet open={pinnedOpen} onClose={()=>setPinnedOpen(false)} title="Закреплённые сообщения">
@@ -2804,6 +2855,36 @@ export default function App() {
           </div>
         </div>
         <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px",lineHeight:1.5}}>Когда включено — поле написания открывается и закрывается мгновенно, без анимации скольжения.</div>
+      </Sheet>
+
+      <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
+      <Sheet open={fontSh} onClose={()=>setFontSh(false)} title="Шрифты">
+        <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
+          style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <span style={{display:"flex"}}>{IC.imp}</span> Загрузить шрифт (.ttf)
+        </button>
+        {FONT_TARGETS.map(t=>{
+          const curId=fonts.assign?.[t.key]||"sys";
+          return (
+            <div key={t.key} style={{marginBottom:18}}>
+              <div style={{fontSize:13,color:"#F2EAE0",fontWeight:600,marginBottom:8}}>{t.label}</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {allFonts.map(f=>(
+                  <div key={f.id} onClick={()=>setFontAssign(t.key,f.id)}
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",
+                      border:curId===f.id?"1px solid #EF6C00":"1px solid transparent"}}>
+                    <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(curId===f.id?"#EF6C00":"#5A4C40"),
+                      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      {curId===f.id&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
+                    </div>
+                    <span style={{fontSize:15,color:"#F2EAE0",fontFamily:f.css}}>{f.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+        <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px 8px",lineHeight:1.5}}>Загруженные .ttf шрифты появятся в списках выше и сохранятся между запусками.</div>
       </Sheet>
 
       <Sheet open={modal==="mkF"}  onClose={()=>setModal(null)}><FolderForm title="Новая категория"            icons={ICONS_F} btnLabel="Создать" onSubmit={mkF}/></Sheet>
