@@ -563,13 +563,10 @@ function VoiceMessage({ att, color, center }){
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
           style={{display:"flex",alignItems:"center",gap:2,height:22,cursor:"pointer",touchAction:"none",width:150}}>
           {bars.map((h,i)=>{
-            const barStart=(i/bars.length)*100, barEnd=((i+1)/bars.length)*100;
-            let fillRatio=0;
-            if(pct>=barEnd) fillRatio=1; else if(pct<=barStart) fillRatio=0; else fillRatio=(pct-barStart)/(barEnd-barStart);
+            const barMid=((i+0.5)/bars.length)*100;
+            const on = pct>=barMid;
             return (
-              <div key={i} style={{width:3,height:h,borderRadius:2,position:"relative",background:"#3A2E24",overflow:"hidden",flexShrink:0}}>
-                <div style={{position:"absolute",left:0,top:0,bottom:0,width:(fillRatio*100)+"%",background:c,transition:(started&&!draggingRef.current)?"width .15s linear":"none"}}/>
-              </div>
+              <div key={i} style={{width:3,height:h,borderRadius:2,background:on?c:"#3A2E24",flexShrink:0}}/>
             );
           })}
         </div>
@@ -1197,6 +1194,7 @@ export default function App() {
   const justEnteredSel = useRef(null); // id пузыря, чей хвостовой клик глушим
   const bubbleEls    = useRef({}); // note id -> element
   const scrollRef    = useRef(null); // chat scroll container
+  const imgTapGuard  = useRef(false);
   const inputAreaRef = useRef(null); // input area for height measure
   const scrollPos    = useRef({}); // sid -> scrollTop (запоминаем позицию)
 
@@ -1879,6 +1877,7 @@ export default function App() {
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
         display:"flex",flexDirection:"column",fontFamily:"'Noto Sans',sans-serif",
         color:"#F2EAE0",overflow:"hidden",position:"relative"}}
+      data-ver-badge
       onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);}}
     >
       {/* Глобальная панель пересылки — снизу, над полем ввода */}
@@ -1933,6 +1932,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v40</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2318,6 +2318,8 @@ export default function App() {
           </div>
         )}
         <div ref={scrollRef} onScroll={updateActiveNote}
+          onClickCapture={(e)=>{ const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el){ const src=el.getAttribute("data-imgsrc"); if(src){ e.stopPropagation(); setLightbox(src); } } }}
+          onPointerUpCapture={(e)=>{ const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el){ const src=el.getAttribute("data-imgsrc"); if(src){ if(imgTapGuard.current) return; imgTapGuard.current=true; setTimeout(()=>{imgTapGuard.current=false;},500); setLightbox(src); } } }}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3}}
           onClick={()=>setNoteCtx(null)}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -2530,7 +2532,7 @@ export default function App() {
               <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#241C16",borderTop:"1px solid #3A2E24",
                 padding:"12px 14px",zIndex:24,display:"flex",flexDirection:"column",gap:10}}>
                 <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
-                <VoiceMessage att={pendingVoice.att} center />
+                <div style={{display:"flex",justifyContent:"flex-end"}}><VoiceMessage att={pendingVoice.att} /></div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={discardPendingVoice}
                     style={{flex:1,background:"#2E251C",border:"1px solid #3A2E24",borderRadius:10,padding:"11px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
