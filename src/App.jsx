@@ -523,7 +523,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
 function AttBubble({ att, onOpen }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
     <div style={{marginTop:8}}>
-      <img src={att.dataUrl} alt={att.name} onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }} onTouchEnd={(e)=>{ e.stopPropagation(); e.preventDefault(); onOpen&&onOpen(att.dataUrl); }} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer"}}/>
+      <img data-img src={att.dataUrl} alt={att.name} onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer"}}/>
       {att.caption?<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>
         :<div style={{fontSize:11,color:"#B0A498",marginTop:3}}>{att.name}</div>}
     </div>
@@ -957,9 +957,10 @@ export default function App() {
     let stream;
     // Пробуем по очереди разные запросы — первый сработавший выигрывает
     const attempts=[
-      {audio:true},
       {audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
-      {audio:{channelCount:1,sampleRate:16000}},
+      {audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}},
+      {audio:true},
+      {audio:{channelCount:1}},
     ];
     let lastErr=null;
     for(const c of attempts){
@@ -1622,6 +1623,7 @@ export default function App() {
   }
 
   function bubbleLpStart(n, e) {
+    if(e&&e.target&&e.target.closest&&e.target.closest("[data-img]")) return; // тап по картинке — не вмешиваемся
     if(editId) return;
     const isTouch = e.type==="touchstart";
     if(isTouch) touchUsed.current=true;
@@ -1631,6 +1633,7 @@ export default function App() {
   }
   function bubbleLpMove()  { lpScrolled.current=true; clearTimeout(lpTimer.current); }
   function bubbleLpEnd(n, e) {
+    if(e&&e.target&&e.target.closest&&e.target.closest("[data-img]")){ clearTimeout(lpTimer.current); return; } // открытие картинки обрабатывает сама картинка
     clearTimeout(lpTimer.current);
     const isTouch = e.type==="touchend";
     if(!isTouch && touchUsed.current){ setTimeout(()=>{touchUsed.current=false;},400); return; }
