@@ -1194,6 +1194,7 @@ export default function App() {
   const justEnteredSel = useRef(null); // id пузыря, чей хвостовой клик глушим
   const bubbleEls    = useRef({}); // note id -> element
   const scrollRef    = useRef(null); // chat scroll container
+  const imgTapGuard  = useRef(false);
   const inputAreaRef = useRef(null); // input area for height measure
   const scrollPos    = useRef({}); // sid -> scrollTop (запоминаем позицию)
 
@@ -2315,6 +2316,8 @@ export default function App() {
           </div>
         )}
         <div ref={scrollRef} onScroll={updateActiveNote}
+          onClickCapture={(e)=>{ const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el){ const src=el.getAttribute("data-imgsrc"); if(src){ e.stopPropagation(); setLightbox(src); } } }}
+          onPointerUpCapture={(e)=>{ const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el){ const src=el.getAttribute("data-imgsrc"); if(src){ if(imgTapGuard.current) return; imgTapGuard.current=true; setTimeout(()=>{imgTapGuard.current=false;},500); setLightbox(src); } } }}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3}}
           onClick={()=>setNoteCtx(null)}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -2376,7 +2379,7 @@ export default function App() {
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
                   )}
-                  {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={(u)=>{ tst("тап по фото OK"); setLightbox(u); }}/>)}
+                  {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox}/>)}
                   <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:5}}>
                     <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
                   </div>
