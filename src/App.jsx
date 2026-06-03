@@ -551,30 +551,28 @@ function VoiceMessage({ att, color, center, stamp, compact }){
   const onUp=(e)=>{ if(!draggingRef.current)return; e.stopPropagation(); draggingRef.current=false; try{e.currentTarget.releasePointerCapture&&e.currentTarget.releasePointerCapture(e.pointerId);}catch{} };
   const bars=[6,10,8,14,9,16,7,13,11,18,8,12,15,9,17,10,8,14,11,7,13,9,16,8,12,10,15,9];
   const c=color||"#EF6C00";
-  const BARW=compact?2:3, GAP=2, TRACKW=bars.length*(BARW+GAP); const PB=compact?40:48;
+  const BARW=compact?2:3, GAP=2, TRACKW=bars.length*(BARW+GAP); const PB=compact?42:48;
   return (
-    <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:11,background:"#1C1510",borderRadius:16,padding:"8px 9px",width:"fit-content",maxWidth:270,...(center?{margin:"0 auto"}:{})}}>
-      <div style={{flexShrink:0}}>
+    <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:9,background:"#1C1510",borderRadius:16,padding:"8px 9px",width:"fit-content",maxWidth:270,...(center?{margin:"0 auto"}:{})}}>
+      <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"flex-end"}}>
         <div ref={trackRef}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
           style={{position:"relative",height:compact?22:26,cursor:"pointer",touchAction:"none",width:TRACKW,display:"flex",alignItems:"center"}}>
-          {/* серая дорожка */}
           <div style={{display:"flex",alignItems:"center",gap:GAP,position:"absolute",inset:0}}>
             {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:"#3A2E24",flexShrink:0}}/>)}
           </div>
-          {/* цветная дорожка — та же сетка, клип по ширине (полоски совпадают 1-в-1) */}
-          <div style={{position:"absolute",top:0,left:0,bottom:0,overflow:"hidden",width:pct+"%",transition:draggingRef.current?"none":(started?"width .08s linear":"none")}}>
+          <div style={{position:"absolute",top:0,left:0,bottom:0,overflow:"hidden",width:pct+"%"}}>
             <div style={{display:"flex",alignItems:"center",gap:GAP,height:"100%",width:TRACKW}}>
               {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:c,flexShrink:0}}/>)}
             </div>
           </div>
         </div>
-        <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums",display:"flex",gap:6,alignItems:"center"}}><span>{playing||cur>0?fmt(cur):fmt(dur)}</span>{stamp&&<span style={{fontSize:8.5,opacity:.8}}>{stamp}</span>}</div>
+        <div style={{fontSize:11,color:"#B0A498",marginTop:3,fontVariantNumeric:"tabular-nums",display:"flex",gap:6,alignItems:"center",alignSelf:"flex-end"}}>{stamp&&<span style={{fontSize:8.5,opacity:.8}}>{stamp}</span>}<span>{playing||cur>0?fmt(cur):fmt(dur)}</span></div>
       </div>
-      <button onClick={toggle} style={{width:PB,height:PB,flexShrink:0,borderRadius:14,background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",boxShadow:"0 2px 8px "+c+"55"}}>
+      <button onClick={toggle} style={{width:PB,height:PB,flexShrink:0,borderRadius:"50%",background:c,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",boxShadow:"0 2px 8px "+c+"55"}}>
         {playing
-          ? <Icon size={21} d={["M7 5h3.4v14H7z","M13.6 5H17v14h-3.4z"]} fill="solid" />
-          : <Icon size={21} d="M8 5l11 7-11 7z" fill="solid" />}
+          ? <svg width={26} height={26} viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.6" fill="#fff"/><rect x="14" y="5" width="4" height="14" rx="1.6" fill="#fff"/></svg>
+          : <svg width={26} height={26} viewBox="0 0 24 24"><path d="M8 6.5 L18 12 L8 17.5 Z" fill="#fff" stroke="#fff" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round"/></svg>}
       </button>
     </div>
   );
@@ -1195,6 +1193,7 @@ export default function App() {
   function redoNote(){ const h=histRef.current; if(h.idx<h.stack.length-1){ h.idx++; h.skip=true; setNote(h.stack[h.idx]); } }
   // double-tap text selection mode (note id)
   const [selectMode, setSelectMode] = useState(null);
+  const [textArmed, setTextArmed] = useState(false);
 
   // floating action buttons: which note is at the bottom of the viewport
   const [inputH, setInputH] = useState(96); // measured input-area height
@@ -1603,7 +1602,7 @@ export default function App() {
     else if(next.length===0){ setMultiSelect([]); setSelectMode(null); } // -> выход
     else { setMultiSelect(next); }
   }
-  function clearMulti() { if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setMultiSelect([]); }
+  function clearMulti() { if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setMultiSelect([]); setTextArmed(false); }
   function deleteMulti() {
     const ids=new Set(multiSelect);
     updNotes(_n=>(_n.filter(n=>!ids.has(n.id))));
@@ -1756,6 +1755,7 @@ export default function App() {
       justEnteredSel.current=n.id;
       setTimeout(()=>{ justEnteredSel.current=null; },450);
       setSelectMode(n.id);
+      setTextArmed(false);
       setNoteCtx(null);
       try{navigator.vibrate&&navigator.vibrate(15);}catch{}
     },400);
@@ -1770,7 +1770,7 @@ export default function App() {
     if(!isTouch && touchUsed.current){ setTimeout(()=>{touchUsed.current=false;},400); return; }
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
     if(lpScrolled.current){ lastTap.current={id:null,t:0}; lpScrolled.current=false; return; }
-    if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; return; } // удержание уже выделило
+    if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; setTimeout(()=>setTextArmed(true),50); return; } // удержание уже выделило; текст армируем после отпускания
   }
 
   // ── Links ──
@@ -1955,7 +1955,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v43</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v44</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2358,13 +2358,21 @@ export default function App() {
               style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:0,pointerEvents:destroying===n.id?"none":"auto"}}>
               {n.pinned&&<div style={{fontSize:11,color:subColor,marginBottom:2,paddingRight:2}}>📌 закреплено</div>}
 
-              <div onClick={(e)=>{ if(e.target!==e.currentTarget) return; const now=Date.now(); if(rowTap.current.id===n.id && now-rowTap.current.t<300){ if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; rowTap.current={id:null,t:0}; if(selectMode===n.id){ setSelectMode(null); } else if(multiSelect.includes(n.id)){ setMultiSelect(ms=>ms.filter(x=>x!==n.id)); } else { justEnteredSel.current=n.id; setTimeout(()=>{justEnteredSel.current=null;},450); setSelectMode(n.id); } } else { rowTap.current={id:n.id,t:now}; } }}
+              <div onClick={(e)=>{ if(e.target!==e.currentTarget) return;
+                  const inSel = (multiSelect.length>0)||selectMode;
+                  if(inSel){ if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop;
+                    if(selectMode===n.id){ setMultiSelect([]); setSelectMode(null); }
+                    else if(selectMode){ setMultiSelect([selectMode,n.id]); setSelectMode(null); }
+                    else if(multiSelect.includes(n.id)){ const nx=multiSelect.filter(x=>x!==n.id); if(nx.length===1){setMultiSelect([]);setSelectMode(nx[0]);} else if(nx.length===0){setMultiSelect([]);} else setMultiSelect(nx); }
+                    else { setMultiSelect([...multiSelect,n.id]); }
+                  }
+                }}
                 style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative"}}>
-                <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 30px)"}}>
+                <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 38px)"}}>
                 {/* Чекбокс — кликабельный, отодвинут от пузыря */}
                 {(multiActive||selActive) && (
                   <div onClick={(e)=>{ e.stopPropagation(); if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; if(selActive){ setMultiSelect([n.id]); setSelectMode(null); } else { handleMultiTap(n); } }}
-                    style={{position:"absolute",right:"100%",top:"50%",transform:"translateY(-50%)",marginRight:8,zIndex:6,cursor:"pointer",padding:4}}>
+                    style={{position:"absolute",right:"100%",top:"50%",transform:"translateY(-50%)",marginRight:2.5,zIndex:6,cursor:"pointer",padding:4}}>
                     <div style={{width:25,height:25,borderRadius:"50%",flexShrink:0,
                       border:"2px solid "+((isMulti||selActive)?"#EF6C00":"#5A4C40"),
                       background:(isMulti||selActive)?"#EF6C00":"rgba(0,0,0,.2)",
@@ -2399,9 +2407,9 @@ export default function App() {
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:"border .4s,background .4s"}}>
                   {n.text&&(
-                    <div className={(selActive||multiActive)?"selectable":undefined}
+                    <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.6,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",
-                      userSelect:(selActive||multiActive)?"text":"none",WebkitUserSelect:(selActive||multiActive)?"text":"none"}}>
+                      userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
                   )}
@@ -2600,7 +2608,7 @@ export default function App() {
       {scr==="chat"&&(multiSelect.length>0||selectMode)&&(()=>{
         const single = !multiSelect.length && selectMode;
         const selNote = single ? subf?.notes.find(x=>x.id===selectMode) : null;
-        const closePanel = ()=>{ if(single) setSelectMode(null); else clearMulti(); };
+        const closePanel = ()=>{ if(single){ setSelectMode(null); setTextArmed(false); } else clearMulti(); };
         return (
         <div style={{background:"#241C16",borderTop:"1px solid #3A2E24",padding:"0 10px",height:46,
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
