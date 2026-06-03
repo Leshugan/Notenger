@@ -563,7 +563,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
           <div style={{display:"flex",alignItems:"center",gap:GAP,position:"absolute",inset:0}}>
             {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:"#3A2E24",flexShrink:0}}/>)}
           </div>
-          <div style={{position:"absolute",top:0,left:0,bottom:0,overflow:"hidden",width:pct+"%"}}>
+          <div style={{position:"absolute",top:0,left:0,bottom:0,overflow:"hidden",width:pct+"%",transition:draggingRef.current?"none":"width .12s linear"}}>
             <div style={{display:"flex",alignItems:"center",gap:GAP,height:"100%",width:TRACKW}}>
               {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:c,flexShrink:0}}/>)}
             </div>
@@ -785,6 +785,14 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
           padding:"12px 14px",color:"#F2EAE0",fontSize:15,marginBottom:14,outline:"none"}}/>
       <div style={{marginBottom:12}}>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:8}}>Иконка</div>
+        {onBrowse&&(
+          <button onClick={onBrowse} title="Загрузить своё изображение"
+            style={{width:"100%",borderRadius:12,cursor:"pointer",border:"1px dashed #5A4C40",
+              background:"#2E251C",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",marginBottom:10}}>
+            <Icon d={["M12 16V4","M7 9l5-5 5 5","M5 20h14"]} stroke={2.2} size={20}/>
+            <span style={{fontSize:14,fontWeight:600}}>Загрузить своё изображение</span>
+          </button>
+        )}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, 42px)",gap:8,justifyContent:"center"}}>
           {icons.map(k=>(
             <button key={k} onClick={()=>setIcon(k)}
@@ -794,13 +802,6 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
               {IC[k]||IC.fFolder}
             </button>
           ))}
-          {onBrowse&&(
-            <button onClick={onBrowse} title="Загрузить своё изображение"
-              style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:"1px dashed #5A4C40",
-                background:"#2E251C",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <Icon d={["M12 16V4","M7 9l5-5 5 5","M5 20h14"]} stroke={2} />
-            </button>
-          )}
         </div>
       </div>
       <div style={{marginBottom:18}}>
@@ -1182,7 +1183,7 @@ export default function App() {
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
   const [fontSh, setFontSh] = useState(false); // шторка шрифтов
-  const [fontOpen, setFontOpen] = useState(null); // какой пункт шрифта раскрыт
+  const [fontOpen, setFontOpen] = useState(null); // {key,x,y} какой пункт шрифта раскрыт
   const FONT_KEY="napp_fonts_v1";
   // Встроенные тестовые шрифты (Google Fonts) + загруженные пользователем (data-URL ttf)
   const BUILTIN_FONTS=[
@@ -1828,9 +1829,6 @@ export default function App() {
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
     if(lpScrolled.current){ lastTap.current={id:null,t:0}; lpScrolled.current=false; return; }
     if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; setTimeout(()=>setTextArmed(true),50); return; } // удержание уже выделило
-    // обычный тап по картинке → открыть на весь экран
-    const imgEl = e&&e.target&&e.target.closest&&e.target.closest("[data-imgsrc]");
-    if(imgEl){ const src=imgEl.getAttribute("data-imgsrc"); if(src) setLightbox(src); }
   }
 
   // ── Links ──
@@ -2016,7 +2014,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v47</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v48</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2038,7 +2036,7 @@ export default function App() {
             ))}
           </div>
           {/* Панель поиска внизу — в едином стиле, высота 46 */}
-          <div style={{padding:"0 12px",flexShrink:0,background:"#241C16",borderTop:"1px solid #3A2E24",minHeight:46,display:"flex",alignItems:"center"}}>
+          <div style={{padding:"0 10px",flexShrink:0,background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,margin:"0 8px 8px",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
@@ -2247,7 +2245,7 @@ export default function App() {
       {/* НИЖНЯЯ ШАПКА ГЛАВНОГО: Notenger ▾ · поиск · [центр FAB +] */}
       {scr==="main"&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#241C16",borderTop:"1px solid #3A2E24",flexShrink:0,minHeight:46,overflow:"visible"}} onClick={e=>e.stopPropagation()}>
+          background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,margin:"0 8px 8px",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <div style={{position:"relative",flex:1,minWidth:0}}>
             <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(v=>!v); }}
               style={{fontSize:17,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
@@ -2336,7 +2334,7 @@ export default function App() {
 
       {/* Строка поиска по темам — внизу */}
       {scr==="sub"&&folder&&subSearch!=="" && !selectMode && multiSelect.length===0 && (
-        <div style={{padding:"0 12px",flexShrink:0,background:"#241C16",borderTop:"1px solid #3A2E24",minHeight:46,display:"flex",alignItems:"center"}}>
+        <div style={{padding:"0 10px",flexShrink:0,background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,margin:"0 8px 8px",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
           <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
             <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
@@ -2348,7 +2346,7 @@ export default function App() {
       {/* ═══ НИЖНЯЯ ШАПКА КАТЕГОРИИ — назад · категория · поиск · ⋯ · + ═══ */}
       {scr==="sub"&&folder&&subSearch===""&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#241C16",borderTop:"1px solid #3A2E24",flexShrink:0,minHeight:46,overflow:"visible"}} onClick={e=>e.stopPropagation()}>
+          background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,margin:"0 8px 8px",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <button onClick={back} title="Назад"
             style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -2403,7 +2401,7 @@ export default function App() {
         )}
         <div ref={scrollRef} onScroll={updateActiveNote}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3}}
-          onClick={()=>setNoteCtx(null)}>
+          onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
 
           {snotes.map(n=>{
@@ -2424,7 +2422,7 @@ export default function App() {
                 style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative"}}>
                 <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 38px)"}}>
                 {/* Чекбокс — кликабельный, отодвинут от пузыря */}
-                {(multiActive||selActive) && (
+                {(multiSelect.length>0||selectMode) && (
                   <div onClick={(e)=>{ e.stopPropagation(); toggleSel(n); }}
                     style={{position:"absolute",right:"100%",top:"50%",transform:"translateY(-50%)",marginRight:2.5,zIndex:6,cursor:"pointer",padding:4}}>
                     <div style={{width:25,height:25,borderRadius:"50%",flexShrink:0,
@@ -2664,7 +2662,7 @@ export default function App() {
         const selNote = single ? subf?.notes.find(x=>x.id===selectMode) : null;
         const closePanel = ()=>{ if(single){ setSelectMode(null); setTextArmed(false); } else clearMulti(); };
         return (
-        <div style={{background:"#241C16",borderTop:"1px solid #3A2E24",padding:"0 10px",height:46,
+        <div style={{background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,margin:"0 8px 8px",padding:"0 10px",height:46,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",
@@ -2701,7 +2699,7 @@ export default function App() {
       })()}
         {/* ── НИЖНЯЯ ШАПКА ЧАТА (единый блок: шапка ИЛИ поиск) ── */}
         {!selectMode && multiSelect.length===0 && !composerFull && chatSearch!=="" && (
-          <div style={{padding:"0 12px",flexShrink:0,background:"#241C16",borderTop:"1px solid #3A2E24",minHeight:46,display:"flex",alignItems:"center"}}>
+          <div style={{padding:"0 10px",flexShrink:0,background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,margin:"0 8px 8px",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
@@ -2713,7 +2711,7 @@ export default function App() {
         )}
         {!selectMode && multiSelect.length===0 && chatSearch==="" && !composerFull && (
           <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-            background:"#241C16",borderTop:"1px solid #3A2E24",flexShrink:0,minHeight:46,overflow:"visible"}}>
+            background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,margin:"0 8px 8px",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -2863,15 +2861,15 @@ export default function App() {
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
       <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
         <div onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
-          style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",marginBottom:14}}>
-          <span style={{display:"flex",color:"#EF6C00"}}>{IC.imp}</span>
-          <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить свой шрифт (.ttf)</span>
+          style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"16px",background:"#EF6C00",borderRadius:14,cursor:"pointer",marginBottom:16}}>
+          <span style={{display:"flex",color:"#fff"}}><Icon d={["M12 16V4","M7 9l5-5 5 5","M5 20h14"]} stroke={2.2} size={22}/></span>
+          <span style={{fontSize:15,color:"#fff",fontWeight:700}}>Загрузить свой шрифт</span>
         </div>
         {FONT_TARGETS.map(t=>{
           const curId=fonts.assign?.[t.key]||"sys";
           const curFont=allFonts.find(f=>f.id===curId)||allFonts[0];
           return (
-            <div key={t.key} onClick={()=>setFontOpen(t.key)}
+            <div key={t.key} onClick={(e)=>{ const r=e.currentTarget.getBoundingClientRect(); setFontOpen({key:t.key,x:r.left,y:r.top}); }}
               style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{t.label}</span>
               <span style={{fontSize:13,color:"#B0A498",fontFamily:curFont.css}}>{curFont.name}</span>
@@ -2882,13 +2880,15 @@ export default function App() {
       </Sheet>
       {/* Popup выбора шрифта поверх */}
       {fontOpen&&(
-        <div onClick={()=>setFontOpen(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px",backdropFilter:"blur(3px)"}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#241C16",borderRadius:16,width:"100%",maxWidth:340,maxHeight:"70vh",overflowY:"auto",animation:"fS .15s ease",border:"1px solid #3A2E24"}}>
-            <div style={{padding:"16px 18px 10px",fontSize:15,fontWeight:700,color:"#F2EAE0"}}>{FONT_TARGETS.find(t=>t.key===fontOpen)?.label}</div>
+        <div onClick={()=>setFontOpen(null)} style={{position:"fixed",inset:0,zIndex:700}}>
+          <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
+            left:Math.min(fontOpen.x,window.innerWidth-270),top:Math.max(8,Math.min(fontOpen.y-10,window.innerHeight-320)),
+            background:"#241C16",borderRadius:14,width:250,maxHeight:"60vh",overflowY:"auto",animation:"fS .12s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
+            <div style={{padding:"12px 16px 8px",fontSize:13,fontWeight:700,color:"#8A7A65"}}>{FONT_TARGETS.find(t=>t.key===fontOpen.key)?.label}</div>
             {allFonts.map(f=>{
-              const curId=fonts.assign?.[fontOpen]||"sys";
+              const curId=fonts.assign?.[fontOpen.key]||"sys";
               return (
-                <div key={f.id} onClick={()=>{ setFontAssign(fontOpen,f.id); setFontOpen(null); }}
+                <div key={f.id} onClick={()=>{ setFontAssign(fontOpen.key,f.id); setFontOpen(null); }}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",cursor:"pointer"}}>
                   <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(curId===f.id?"#EF6C00":"#5A4C40"),
                     display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
