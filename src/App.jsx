@@ -489,11 +489,9 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
   if(!open) return null;
   return (
     <div style={{position:"fixed",inset:0,background:"#1A1410",zIndex:600,display:"flex",flexDirection:"column"}}>
-      {/* Шапка */}
-      <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderBottom:"1px solid #241C16",flexShrink:0}}>
-        <button onClick={onClose} title="Назад к редактированию"
-          style={{background:"none",border:"none",color:"#F2EAE0",cursor:"pointer",width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
-        <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0",flex:1}}>Предпросмотр</div>
+      {/* Шапка без стрелки */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid #241C16",flexShrink:0}}>
+        <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Предпросмотр</div>
       </div>
       {/* Содержимое — как пузырь сообщения */}
       <div style={{flex:1,overflowY:"auto",padding:"16px 12px",display:"flex",flexDirection:"column"}}>
@@ -506,13 +504,12 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
           </div>
         </div>
       </div>
-      {/* Нижняя панель: аккуратная кнопка отправки */}
-      <div style={{display:"flex",alignItems:"center",padding:"3px 12px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46}}>
-        <button onClick={onClose}
-          style={{background:"#2E251C",border:"1px solid #3A2E24",borderRadius:10,padding:"9px 16px",color:"#B0A498",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",gap:6}}>
-          <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span> Изменить
+      {/* Нижняя панель: компактная «Изменить» рядом с «Отправить» */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"3px 12px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46,borderRadius:"16px 16px 0 0"}}>
+        <button onClick={onClose} title="Изменить"
+          style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span>
         </button>
-        <div style={{flex:1}}/>
         <button onClick={()=>{onSend();onClose();}} title={isEdit?"Сохранить":"Отправить"}
           style={{width:48,height:48,borderRadius:"50%",background:"#EF6C00",border:"none",cursor:"pointer",
             color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)"}}>{isEdit?IC.check:IC.send}</button>
@@ -527,6 +524,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
   const [cur,setCur]=useState(0);
   const [dur,setDur]=useState(att.dur||0);
   const [started,setStarted]=useState(false);
+  const [finished,setFinished]=useState(false);
   const audioRef=useRef(null);
   const rafRef=useRef(0);
   const trackRef=useRef(null);
@@ -535,7 +533,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
     const a=new Audio(att.dataUrl);
     audioRef.current=a;
     a.onloadedmetadata=()=>{ if(isFinite(a.duration)&&a.duration>0) setDur(a.duration); };
-    a.onended=()=>{ setPlaying(false); setCur(a.duration||dur); cancelAnimationFrame(rafRef.current); };
+    a.onended=()=>{ setPlaying(false); setCur(a.duration||dur); setFinished(true); cancelAnimationFrame(rafRef.current); };
     return ()=>{ try{a.pause();}catch{} cancelAnimationFrame(rafRef.current); audioRef.current=null; };
   },[att.dataUrl]);
   useEffect(()=>{
@@ -544,7 +542,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
     rafRef.current=requestAnimationFrame(tick);
     return ()=>cancelAnimationFrame(rafRef.current);
   },[playing]);
-  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { if(a.currentTime>=(a.duration||dur)-0.05){ a.currentTime=0; setCur(0); } a.play().then(()=>{ setStarted(true); setPlaying(true); const tick=()=>{ const au=audioRef.current; if(au&&!draggingRef.current){ setCur(au.currentTime); } rafRef.current=requestAnimationFrame(tick); }; cancelAnimationFrame(rafRef.current); rafRef.current=requestAnimationFrame(tick); }).catch(()=>{}); } };
+  const toggle=(e)=>{ e&&e.stopPropagation(); const a=audioRef.current; if(!a)return; if(playing){ a.pause(); setPlaying(false); } else { if(a.currentTime>=(a.duration||dur)-0.05){ a.currentTime=0; } setCur(a.currentTime); setFinished(false); a.play().then(()=>{ setStarted(true); setPlaying(true); const tick=()=>{ const au=audioRef.current; if(au&&!draggingRef.current){ setCur(au.currentTime); } rafRef.current=requestAnimationFrame(tick); }; cancelAnimationFrame(rafRef.current); rafRef.current=requestAnimationFrame(tick); }).catch(()=>{}); } };
   const pct=dur>0?Math.min(100,(cur/dur)*100):0;
   const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
   const seekToClientX=(clientX)=>{ const el=trackRef.current; const a=audioRef.current; if(!el||!a||!dur)return; const r=el.getBoundingClientRect(); const x=Math.max(0,Math.min(1,(clientX-r.left)/r.width)); const t=x*dur; a.currentTime=t; setCur(t); };
@@ -565,7 +563,7 @@ function VoiceMessage({ att, color, center, stamp, compact }){
           </div>
           <div style={{position:"absolute",top:0,left:0,bottom:0,overflow:"hidden",width:pct+"%"}}>
             <div style={{display:"flex",alignItems:"center",gap:GAP,height:"100%",width:TRACKW}}>
-              {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:c,flexShrink:0}}/>)}
+              {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:finished?"#6A5A48":c,flexShrink:0}}/>)}
             </div>
           </div>
         </div>
@@ -583,7 +581,7 @@ function AttBubble({ att, onOpen, stamp, selecting }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
     <div data-imgsrc={att.dataUrl} style={{marginTop:0,position:"relative"}}>
       <img src={att.dataUrl} alt={att.name} draggable={false} style={{maxWidth:220,width:"100%",borderRadius:9,display:"block",pointerEvents:"none"}}/>
-      {stamp&&<span style={{position:"absolute",right:0,bottom:0,left:0,fontSize:9,color:"#fff",background:"linear-gradient(transparent,rgba(20,12,6,.75))",borderRadius:"0 0 9px 9px",padding:"8px 8px 3px",pointerEvents:"none",lineHeight:1.2,fontWeight:500,textAlign:"right"}}>{stamp}</span>}
+      {stamp&&<span style={{position:"absolute",right:0,bottom:0,left:0,fontSize:9,color:"#B0A498",background:"linear-gradient(transparent,rgba(20,12,6,.8))",borderRadius:"0 0 9px 9px",padding:"8px 8px 3px",pointerEvents:"none",lineHeight:1.2,fontWeight:500,textAlign:"right"}}>{stamp}</span>}
       {att.caption&&<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>}
     </div>
   );
@@ -636,7 +634,7 @@ function PinnedBanner({ note, color, onJump }) {
 function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, onJumpTo }) {
   const [ctxMenu,setCtxMenu]=useState(null); // {item,x,y}
   const lpRef=useRef(null);
-  const startLp=(item,e)=>{ const t=e.touches?e.touches[0]:e; const x=t.clientX,y=t.clientY; lpRef.current=setTimeout(()=>{ try{navigator.vibrate&&navigator.vibrate(15);}catch{} setCtxMenu({item,x,y}); },450); };
+  const startLp=(item,e)=>{ const t=e.touches?e.touches[0]:e; const x=t.clientX,y=t.clientY; lpRef.current=setTimeout(()=>{ buzz(15); setCtxMenu({item,x,y}); },450); };
   const cancelLp=()=>{ clearTimeout(lpRef.current); };
   const [tab,setTab]=useState("photo");
   if(!open||!subf) return null;
@@ -1031,7 +1029,7 @@ export default function App() {
       // показываем UI записи МГНОВЕННО, не дожидаясь нативного prepare()
       nativeAudio.current=true;
       setRecording(true); setRecSec(0); recSecRef.current=0;
-      try{navigator.vibrate&&navigator.vibrate(12);}catch{}
+      buzz(12);
       recTimer.current=setInterval(()=>{ recSecRef.current+=1; setRecSec(recSecRef.current); },1000);
       let ok=false;
       try{ ok=window.AndroidRec.startRec(); }catch{ ok=false; }
@@ -1110,7 +1108,7 @@ export default function App() {
     try{ mr.start(); }catch{ tst("Не удалось начать запись"); try{stream.getTracks().forEach(t=>t.stop());}catch{} micStream.current=null; mediaRec.current=null; return; }
     setRecording(true); setRecSec(0); recSecRef.current=0;
     recTimer.current=setInterval(()=>{ recSecRef.current+=1; setRecSec(recSecRef.current); },1000);
-    try{navigator.vibrate&&navigator.vibrate(12);}catch{}
+    buzz(12);
   }
   function stopRec(cancel){
     recCancel.current=!!cancel;
@@ -1139,6 +1137,7 @@ export default function App() {
     }
   }
   function fmtRec(s){ const m=Math.floor(s/60), ss=s%60; return m+":"+String(ss).padStart(2,"0"); }
+  function buzz(ms=15){ try{ if(window.AndroidRec&&window.AndroidRec.vibrate){ window.AndroidRec.vibrate(ms); return; } }catch{} try{ navigator.vibrate&&navigator.vibrate(ms); }catch{} }
   async function clipWrite(t){
     clipText.current=t;
     let ok=false;
@@ -1498,7 +1497,7 @@ export default function App() {
     })}));
   }
   // Перетаскивание касанием (long-press + drag): определяем строку под пальцем
-  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); try{navigator.vibrate&&navigator.vibrate(12);}catch{}} },550)}; }
+  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function folderDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
@@ -1516,7 +1515,7 @@ export default function App() {
     }
   }
   function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
-  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); try{navigator.vibrate&&navigator.vibrate(12);}catch{}} },550)}; }
+  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function subDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
@@ -1818,7 +1817,7 @@ export default function App() {
       setSelectMode(n.id);
       setTextArmed(false);
       setNoteCtx(null);
-      try{navigator.vibrate&&navigator.vibrate(15);}catch{}
+      buzz(15);
     },400);
   }
   function bubbleLpMove()  { lpScrolled.current=true; clearTimeout(lpTimer.current); }
@@ -2014,7 +2013,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v49</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v50</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2436,7 +2435,7 @@ export default function App() {
                       setSelectMode(null);
                     }
                   }}
-                  onTouchStart={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ setTextArmed(true); try{navigator.vibrate&&navigator.vibrate(10);}catch{} },350); } else bubbleLpStart(n,e); })}
+                  onTouchStart={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ setTextArmed(true); buzz(10); },350); } else bubbleLpStart(n,e); })}
                   onTouchMove={multiActive?undefined:(e=>{ clearTimeout(lpTimer.current); bubbleLpMove(); })}
                   onTouchEnd={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); } else bubbleLpEnd(n,e); })}
                   onMouseDown={(selectMode||multiActive)?undefined:(e=>bubbleLpStart(n,e))}
@@ -2539,8 +2538,8 @@ export default function App() {
             </div>
             {/* Всплывающая панель ББ-кодов */}
             {fullFmt&&(
-              <div style={{position:"absolute",left:0,right:0,bottom:54,background:"#241C16",borderRadius:"16px 16px 0 0",padding:"8px 10px",
-                display:"flex",gap:6,justifyContent:"space-around",boxShadow:"0 -4px 16px rgba(0,0,0,.4)",borderTop:"1px solid #3A2E24",zIndex:6}}>
+              <div style={{position:"absolute",left:10,bottom:54,background:"#241C16",borderRadius:12,padding:"5px 6px",
+                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid #3A2E24",zIndex:6}}>
                 {[
                   {ic:<Icon size={18} d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" stroke={2} />, b:"[b]",a:"[/b]",x:"текст",t:"Жирный"},
                   {ic:<Icon size={18} d={["M15 5h-5","M14 19H9","M14 5l-4 14"]} stroke={2} />, b:"[i]",a:"[/i]",x:"текст",t:"Курсив"},
@@ -2559,12 +2558,10 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46,overflowX:"auto"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>Aa</button>
-              <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
               <button onClick={undoNote} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
               <button onClick={redoNote} title="Вернуть"
@@ -2572,6 +2569,8 @@ export default function App() {
               <button onClick={()=>setAttSh(true)} title="Прикрепить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.clip}</button>
               <div style={{flex:1}}/>
+              <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
+                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.eye}</button>
               <button onClick={()=>{ const o=composerOrigin.current||{fid,sid}; const dk=o.sid==="__top__"?"__top__"+o.fid:o.sid; if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); } if(editId) cancelEdit(); setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false); if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),360); } }} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.close}</button>
               {(note.trim()||patts.length>0||editId)
@@ -2688,7 +2687,7 @@ export default function App() {
         );
       })()}
         {/* ── НИЖНЯЯ ШАПКА ЧАТА (единый блок: шапка ИЛИ поиск) ── */}
-        {!selectMode && multiSelect.length===0 && !composerFull && chatSearch!=="" && (
+        {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
           <div style={{padding:"0 10px",flexShrink:0,background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
@@ -2699,7 +2698,7 @@ export default function App() {
             </div>
           </div>
         )}
-        {!selectMode && multiSelect.length===0 && chatSearch==="" && !composerFull && (
+        {!selectMode && multiSelect.length===0 && chatSearch==="" && (!composerFull||composerPeek) && (
           <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
             background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <button onClick={back} title="Назад"
@@ -2807,7 +2806,7 @@ export default function App() {
       {/* Attach picker — Telegram-style categories */}
       {attSh&&(
         <div onClick={()=>setAttSh(false)} style={{position:"fixed",inset:0,zIndex:450}}>
-          <div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:10,bottom:74,
+          <div onClick={e=>e.stopPropagation()} style={{position:"absolute",left:14,bottom:74,
             background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,padding:10,
             boxShadow:"0 10px 36px rgba(0,0,0,.6)",animation:"fS .15s ease"}}>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3, 78px)",gridAutoRows:"72px",gap:6}}>
@@ -2850,10 +2849,12 @@ export default function App() {
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
       <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
-        <div onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
-          style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#241C16",border:"1px solid #3A2E24",borderRadius:10,cursor:"pointer",marginBottom:14}}>
-          <span style={{display:"flex",color:"#EF6C00"}}><Icon d={["M12 16V4","M7 9l5-5 5 5","M5 20h14"]} stroke={2} size={18}/></span>
-          <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить шрифт</span>
+        <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
+          <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
+            style={{display:"inline-flex",alignItems:"center",gap:8,padding:"9px 18px",background:"#2E251C",border:"1px solid #5A4C40",borderRadius:22,cursor:"pointer"}}>
+            <span style={{display:"flex",color:"#EF6C00"}}><Icon d={["M12 16V4","M7 9l5-5 5 5","M5 20h14"]} stroke={2} size={17}/></span>
+            <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить шрифт</span>
+          </button>
         </div>
         {FONT_TARGETS.map(t=>{
           const curId=fonts.assign?.[t.key]||"sys";
@@ -2867,13 +2868,14 @@ export default function App() {
             </div>
           );
         })}
+        <button onClick={()=>{setFontSh(false);setFontOpen(null);}} style={{width:"100%",marginTop:8,background:"#241C16",border:"none",borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
       </Sheet>
       {/* Popup выбора шрифта поверх */}
       {fontOpen&&(
         <div onClick={()=>setFontOpen(null)} style={{position:"fixed",inset:0,zIndex:700}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
             left:Math.max(8,Math.min(fontOpen.x+fontOpen.w/2-125,window.innerWidth-258)),top:Math.max(8,Math.min(fontOpen.y-20,window.innerHeight-340)),
-            background:"#241C16",borderRadius:14,width:250,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
+            background:"#241C16",borderRadius:14,width:"max-content",minWidth:180,maxWidth:280,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
             <div style={{padding:"12px 16px 8px",fontSize:13,fontWeight:700,color:"#8A7A65"}}>{FONT_TARGETS.find(t=>t.key===fontOpen.key)?.label}</div>
             <div style={{overflowY:"auto",flex:1}}>
             {allFonts.map(f=>{
@@ -2890,7 +2892,6 @@ export default function App() {
               );
             })}
             </div>
-            <button onClick={()=>setFontOpen(null)} style={{borderTop:"1px solid #3A2E24",background:"none",border:"none",padding:"12px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
           </div>
         </div>
       )}
