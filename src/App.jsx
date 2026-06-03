@@ -523,7 +523,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
 function AttBubble({ att, onOpen }) {
   if(att.dataUrl&&att.type?.startsWith("image/")) return (
     <div style={{marginTop:8}}>
-      <img src={att.dataUrl} alt={att.name} onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer"}}/>
+      <img src={att.dataUrl} alt={att.name} onClick={(e)=>{ e.stopPropagation(); onOpen&&onOpen(att.dataUrl); }} onTouchEnd={(e)=>{ e.stopPropagation(); e.preventDefault(); onOpen&&onOpen(att.dataUrl); }} style={{maxWidth:220,width:"100%",borderRadius:10,display:"block",cursor:"pointer"}}/>
       {att.caption?<div style={{fontSize:13,color:"#D8CCBE",marginTop:5,lineHeight:1.4}}>{att.caption}</div>
         :<div style={{fontSize:11,color:"#B0A498",marginTop:3}}>{att.name}</div>}
     </div>
@@ -540,9 +540,11 @@ function AttBubble({ att, onOpen }) {
       {att.caption&&<div style={{fontSize:12,color:"#D8CCBE",marginTop:3}}>{att.caption}</div>}
     </div>
   );
+  const openFile=(e)=>{ e.stopPropagation(); try{ const a=document.createElement("a"); a.href=att.dataUrl; a.download=att.name||"file"; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch{} };
   return (
-    <div style={{marginTop:8,background:"#15100C",borderRadius:10,padding:"8px 12px",
-      display:"flex",alignItems:"center",gap:8,maxWidth:230}}>
+    <div onClick={openFile} title={att.name}
+      style={{marginTop:8,background:"#15100C",borderRadius:10,padding:"8px 12px",
+      display:"flex",alignItems:"center",gap:8,maxWidth:230,cursor:"pointer"}}>
       <span style={{color:"#EF6C00",display:"flex"}}>{ficon(att.type)}</span>
       <div style={{minWidth:0}}>
         <div style={{fontSize:13,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{att.name}</div>
@@ -771,19 +773,38 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       }catch{setMsg("❌ Ошибка шифрования");setBusy(false);return;}
     }
     const dt=new Date().toISOString().slice(0,10);
+    const fname=`notenger_${dt}.${ext}`;
     const blob=new Blob([content],{type:mime});
+    // 1) Современный API (десктоп-браузеры)
     if(window.showSaveFilePicker){
       try{
-        const fh=await window.showSaveFilePicker({suggestedName:`notes_${dt}.${ext}`,types:[{description:"Notes",accept:{[mime]:[`.${ext}`]}}]});
+        const fh=await window.showSaveFilePicker({suggestedName:fname,types:[{description:"Notenger",accept:{[mime]:[`.${ext}`]}}]});
         const w=await fh.createWritable();await w.write(blob);await w.close();
         setMsg("✅ Сохранено");
       }catch(e){if(e&&e.name!=="AbortError")setMsg("❌ "+(e.message||"Ошибка"));}
-    }else{
-      const u=URL.createObjectURL(blob),a=document.createElement("a");
-      a.href=u;a.download=`notes_${dt}.${ext}`;a.click();URL.revokeObjectURL(u);
-      setMsg("📥 Файл скачан");
+      setBusy(false);return;
     }
-    setBusy(false);
+    // 2) WebView/мобильные: data-URL через ссылку (ловится DownloadListener в Android)
+    try{
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const a=document.createElement("a");
+        a.href=reader.result; // data:...;base64,...
+        a.download=fname;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setMsg("📥 Сохранено в Загрузки");
+        setBusy(false);
+      };
+      reader.onerror=()=>{ setMsg("❌ Ошибка сохранения"); setBusy(false); };
+      reader.readAsDataURL(blob);
+    }catch(e){
+      // 3) Запасной вариант: blob-URL
+      try{ const u=URL.createObjectURL(blob),a=document.createElement("a"); a.href=u;a.download=fname;a.click();URL.revokeObjectURL(u); setMsg("📥 Файл сохранён"); }
+      catch{ setMsg("❌ Не удалось сохранить"); }
+      setBusy(false);
+    }
   }
 
   return (
@@ -930,15 +951,26 @@ export default function App() {
     recChunks.current=[];
     recSecRef.current=0;
     if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){ tst("Запись не поддерживается"); return; }
+    // ДИАГНОСТИКА: сколько аудио-входов видит система
+    let micCount=-1;
+    try{ if(navigator.mediaDevices.enumerateDevices){ const ds=await navigator.mediaDevices.enumerateDevices(); micCount=ds.filter(d=>d.kind==="audioinput").length; } }catch{}
     let stream;
-    try{
-      stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-    }catch(err){
-      const n=err&&err.name;
-      if(n==="NotAllowedError"||n==="SecurityError") tst("Нет доступа к микрофону");
-      else if(n==="NotReadableError"||n==="AbortError") tst("Микрофон недоступен");
-      else tst("Микрофон: "+(n||"ошибка"));
-      try{ if(stream) stream.getTracks().forEach(t=>t.stop()); }catch{}
+    // Пробуем по очереди разные запросы — первый сработавший выигрывает
+    const attempts=[
+      {audio:true},
+      {audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
+      {audio:{channelCount:1,sampleRate:16000}},
+    ];
+    let lastErr=null;
+    for(const c of attempts){
+      try{ stream=await navigator.mediaDevices.getUserMedia(c); lastErr=null; break; }
+      catch(err){ lastErr=err; if(err&&err.name==="NotAllowedError") break; await new Promise(r=>setTimeout(r,250)); }
+    }
+    if(!stream){
+      const n=lastErr&&lastErr.name||"?";
+      const m=lastErr&&lastErr.message?(" / "+lastErr.message):"";
+      // показываем ПОЛНУЮ причину для диагностики
+      tst("МИК ["+n+"] входов:"+micCount+m);
       return;
     }
     micStream.current=stream;
@@ -1136,7 +1168,7 @@ export default function App() {
       return n;
     });
   }
-  function tst(m) { setToast(m); setTimeout(()=>setToast(null),2200); }
+  function tst(m) { setToast(m); const dur=(typeof m==="string"&&m.indexOf("МИК")===0)?6000:2200; setTimeout(()=>setToast(null),dur); }
 
   // ── Nav ──
   function openF(f) {
@@ -1202,6 +1234,7 @@ export default function App() {
   // Аппаратная кнопка «Назад» (Android). Возвращает true, если что-то закрыли.
   function closeAllMenus(){ setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); }
   function handleHardwareBack(){
+    if(lightbox){ setLightbox(null); return true; }
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
     if(composerFull){ if(composerPeek){ setComposerPeek(false); return true; } setComposerFull(false); return true; }
     if(dlg){ setDlg(null); return true; }
