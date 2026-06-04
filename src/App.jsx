@@ -121,7 +121,7 @@ const IC = {
   fSun:    <Icon d={["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]} stroke={1.8} />,
   fDroplet:<Icon d="M12 3s6 6 6 11a6 6 0 0 1-12 0c0-5 6-11 6-11Z" stroke={2} />,
   launch:  <Icon d={["M5 21V6a2 2 0 0 1 2-2h6l6 6v11","M13 4v6h6","M12 12l-2.5 2.5h5z"]} stroke={2} />,
-  launchOff:<Icon d={["M5 21V6a2 2 0 0 1 2-2h6l6 6v11","M13 4v6h6","M4 4l16 16"]} stroke={2.2} />,
+  launchOff:<Icon d={["M12 19V5","M6 11l6-6 6 6","M4 4l16 16"]} stroke={2.2} />,
 };
 
 
@@ -511,7 +511,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span>
         </button>
         <button onClick={()=>{onSend();onClose();}} title={isEdit?"Сохранить":"Отправить"}
-          style={{width:48,height:48,borderRadius:"50%",background:"#EF6C00",border:"none",cursor:"pointer",
+          style={{width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",cursor:"pointer",
             color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)"}}>{isEdit?IC.check:IC.send}</button>
       </div>
     </div>
@@ -1377,7 +1377,7 @@ export default function App() {
   }, []);
   // Результаты глобального поиска по всем сообщениям
   function globalResults(q){
-    if(!q || !q.trim()) return [];
+    if(!q || q.trim().length<3) return [];
     const ql=q.toLowerCase(); const out=[];
     data.folders.forEach(f=>{
       if(f.isTheme){
@@ -1990,6 +1990,8 @@ export default function App() {
         ::-webkit-scrollbar{width:0;}
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
+        @keyframes scrIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+        .scrAnim{animation:scrIn .5s cubic-bezier(.32,.72,0,1);}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#3A2E24;}
@@ -2013,7 +2015,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v50</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v51</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2023,8 +2025,8 @@ export default function App() {
         <div style={{position:"fixed",inset:0,background:"#1A1410",zIndex:420,display:"flex",flexDirection:"column"}}>
           {/* Результаты сверху */}
           <div style={{flex:1,overflowY:"auto",padding:"6px 0"}}>
-            {globalSearch.trim()==="" && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Введите текст для поиска</div>}
-            {globalSearch.trim()!=="" && globalResults(globalSearch).length===0 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Ничего не найдено</div>}
+            {globalSearch.trim().length<3 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Введите минимум 3 символа</div>}
+            {globalSearch.trim().length>=3 && globalResults(globalSearch).length===0 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Ничего не найдено</div>}
             {globalResults(globalSearch).map((r,i)=>(
               <div key={i} onClick={()=>openThemeAt(r.folderId,r.subId,r.note.id)}
                 style={{padding:"10px 16px",borderBottom:"1px solid #241C16",cursor:"pointer"}}>
@@ -2050,10 +2052,10 @@ export default function App() {
       {composerFull && composerPeek && (
         <button onClick={()=>setComposerPeek(false)} title="Вернуться к сообщению (свайп влево)"
           style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",zIndex:430,
-            background:"rgba(46,37,28,.85)",border:"1px solid #3A2E24",borderRight:"none",color:"#B0A498",cursor:"pointer",
-            width:22,height:64,borderRadius:"10px 0 0 10px",display:"flex",alignItems:"center",justifyContent:"center",
-            boxShadow:"-2px 0 10px rgba(0,0,0,.3)"}}>
-          <span style={{display:"flex",transform:"scale(.7)"}}>{IC.arrLeft}</span>
+            background:"rgba(46,37,28,.9)",border:"1px solid #3A2E24",borderRight:"none",color:"#EF6C00",cursor:"pointer",
+            width:30,height:80,borderRadius:"12px 0 0 12px",display:"flex",alignItems:"center",justifyContent:"center",
+            boxShadow:"-2px 0 12px rgba(0,0,0,.4)"}}>
+          <span style={{display:"flex",transform:"scale(.8)"}}>{IC.arrLeft}</span>
         </button>
       )}
 
@@ -2189,7 +2191,7 @@ export default function App() {
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div className="scrAnim" key="scr-main" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
@@ -2232,7 +2234,7 @@ export default function App() {
                       {ic:f.pinned?IC.pinOff:IC.pin,label:f.pinned?"Открепить":"Закрепить",fn:()=>pinFolder(f.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setFid(f.id);setModal("renF");}},
-                      {ic:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?IC.launchOff:IC.launch,label:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(f.id,f.isTheme?"__top__":null)},
+                      {ic:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?IC.launchOff:IC.sendUp,label:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(f.id,f.isTheme?"__top__":null)},
                       {ic:IC.trash,label:f.isTheme?"Удалить тему":"Удалить категорию",danger:true,fn:()=>{setFid(f.id);setDlg({msg:`Удалить «${f.name}»?`,yes:()=>delF(f.id),anchor:folderMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
@@ -2278,7 +2280,7 @@ export default function App() {
 
       {/* ═══ SUBFOLDERS ═══ */}
       {scr==="sub"&&folder&&(
-        <div style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div className="scrAnim" key="scr-sub" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
@@ -2323,7 +2325,7 @@ export default function App() {
                       {ic:s.pinned?IC.pinOff:IC.pin,label:s.pinned?"Открепить":"Закрепить",fn:()=>pinSub(s.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setSid(s.id);setModal("renS");}},
-                      {ic:isDefaultLaunch(fid,s.id)?IC.launchOff:IC.launch,label:isDefaultLaunch(fid,s.id)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(fid,s.id)},
+                      {ic:isDefaultLaunch(fid,s.id)?IC.launchOff:IC.sendUp,label:isDefaultLaunch(fid,s.id)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(fid,s.id)},
                       {ic:IC.trash,label:"Удалить",danger:true,fn:()=>{setSid(s.id);setDlg({msg:`Удалить «${s.name}»?`,yes:()=>delS(s.id),anchor:subMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
@@ -2400,7 +2402,7 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={updateActiveNote}
+        <div ref={scrollRef} onScroll={updateActiveNote} className="scrAnim" key={"scr-chat-"+sid}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -2852,7 +2854,7 @@ export default function App() {
         <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
           <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
             style={{display:"inline-flex",alignItems:"center",gap:8,padding:"9px 18px",background:"#2E251C",border:"1px solid #5A4C40",borderRadius:22,cursor:"pointer"}}>
-            <span style={{display:"flex",color:"#EF6C00"}}><Icon d={["M12 16V4","M7 9l5-5 5 5","M5 20h14"]} stroke={2} size={17}/></span>
+            <span style={{display:"flex",color:"#EF6C00"}}><Icon d={["M12 4v12","M7 11l5 5 5-5","M5 20h14"]} stroke={2} size={17}/></span>
             <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить шрифт</span>
           </button>
         </div>
