@@ -14,10 +14,10 @@ function Icon({d, size=22, color="currentColor", stroke=0, fill="none", vb="0 0 
 }
 const IC = {
   send:  (<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
-    <path d="M18.5 12 6 6.5 10 11 10 13 6 17.5Z" fill="currentColor" stroke="currentColor" strokeWidth="6" strokeLinejoin="round" strokeLinecap="round"/>
+    <path d="M12 4.2c.55 0 1.05.3 1.35.78l6.1 11.7c.5.95-.5 1.98-1.46 1.5L13 17.4c-.62-.3-1.38-.3-2 0l-5.0 1.78c-.96.48-1.96-.55-1.46-1.5l6.1-11.7c.3-.48.8-.78 1.36-.78Z" fill="currentColor"/>
   </svg>),
-  sendUp:(<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block",transform:"rotate(-90deg)"}}>
-    <path d="M18.5 12 6 6.5 10 11 10 13 6 17.5Z" fill="currentColor" stroke="currentColor" strokeWidth="6" strokeLinejoin="round" strokeLinecap="round"/>
+  sendUp:(<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
+    <path d="M12 4.2c.55 0 1.05.3 1.35.78l6.1 11.7c.5.95-.5 1.98-1.46 1.5L13 17.4c-.62-.3-1.38-.3-2 0l-5.0 1.78c-.96.48-1.96-.55-1.46-1.5l6.1-11.7c.3-.48.8-.78 1.36-.78Z" fill="currentColor"/>
   </svg>),
   mic:   <Icon d={["M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z","M19 11a7 7 0 0 1-14 0","M12 18v3"]} stroke={2} />,
   stop:  <Icon d="M7 7h10v10H7z" stroke={2} />,
@@ -120,8 +120,8 @@ const IC = {
   fMoon:   <Icon d="M20 14a8 8 0 1 1-9-11 7 7 0 0 0 9 11Z" stroke={2} />,
   fSun:    <Icon d={["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]} stroke={1.8} />,
   fDroplet:<Icon d="M12 3s6 6 6 11a6 6 0 0 1-12 0c0-5 6-11 6-11Z" stroke={2} />,
-  launch:  <Icon d={["M4 12l16-7-7 16-2-7-7-2Z"]} stroke={2} />,
-  launchOff:<Icon d={["M4 12l16-7-7 16-2-7-7-2Z","M3 3l18 18"]} stroke={2} />,
+  launch:  (<svg width={24} height={24} viewBox="0 0 24 24" style={{display:"block"}}><path d="M12 4.2c.55 0 1.05.3 1.35.78l6.1 11.7c.5.95-.5 1.98-1.46 1.5L13 17.4c-.62-.3-1.38-.3-2 0l-5.0 1.78c-.96.48-1.96-.55-1.46-1.5l6.1-11.7c.3-.48.8-.78 1.36-.78Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>),
+  launchOff:(<svg width={24} height={24} viewBox="0 0 24 24" style={{display:"block"}}><path d="M12 4.2c.55 0 1.05.3 1.35.78l6.1 11.7c.5.95-.5 1.98-1.46 1.5L13 17.4c-.62-.3-1.38-.3-2 0l-5.0 1.78c-.96.48-1.96-.55-1.46-1.5l6.1-11.7c.3-.48.8-.78 1.36-.78Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/><path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>),
 };
 
 
@@ -1408,7 +1408,8 @@ export default function App() {
   function handleHardwareBack(){
     if(lightbox){ closeLightbox(); return true; }
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
-    if(composerFull){ if(composerPeek){ setComposerPeek(false); return true; } setComposerFull(false); return true; }
+    if(composerFull && !composerPeek){ setComposerFull(false); return true; }
+    // при peek: кнопка назад листает каталоги слева (в черновик — только свайп/гребешок)
     if(dlg){ setDlg(null); return true; }
     if(modal){ setModal(null); return true; }
     if(pinnedOpen){ setPinnedOpen(false); return true; }
@@ -1417,11 +1418,11 @@ export default function App() {
     if(expSh){ setExpSh(false); return true; }
     if(settingsMenu||plusMenu||hdrMenu||folderMenu||subMenu){ setSettingsMenu(false);setPlusMenu(false);setHdrMenu(null);setFolderMenu(null);setSubMenu(null); return true; }
     if(moveBuffer){ setMoveBuffer(null); return true; }
-    if(chatSearch!==""){ setChatSearch(""); return true; }
+    if(chatSearch!==""&&!composerPeek){ setChatSearch(""); return true; }
     if(multiSelect.length){ setMultiSelect([]); return true; }
     if(selectMode){ setSelectMode(null); return true; }
-    if(editId){ cancelEdit(); return true; }
-    if(scr==="chat"){ if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} setChatSearch(""); return true; }
+    if(editId && !composerFull){ cancelEdit(); return true; }
+    if(scr==="chat"){ if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} if(!composerFull) setChatSearch(""); return true; }
     if(scr==="sub"){ setScr("main"); return true; }
     return false; // на главном экране — не обработали (разрешаем выход по двойному нажатию)
   }
@@ -2021,7 +2022,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v52</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v53</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2428,9 +2429,10 @@ export default function App() {
                   const inSel = (multiSelect.length>0)||selectMode;
                   if(inSel){ toggleSel(n); }
                 }}
-                style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative"}}>
+                style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative",
+                  background:(isMulti||selActive)?"rgba(239,108,0,.12)":"transparent",
+                  padding:"2px 0",margin:"0 -10px 0 -4px",paddingLeft:4,paddingRight:10,boxSizing:"border-box"}}>
                 <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 8px)"}}>
-                {/* Чекбокс — кликабельный, отодвинут от пузыря */}
                 {/* Пузырь */}
                 <div
                   onClick={e=>{
@@ -2454,7 +2456,7 @@ export default function App() {
                     borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))?"3px":"10px 14px",
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
-                    transition:"border .4s,background .4s"}}>
+                    transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
                   {n.text&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.6,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
