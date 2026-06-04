@@ -14,10 +14,10 @@ function Icon({d, size=22, color="currentColor", stroke=0, fill="none", vb="0 0 
 }
 const IC = {
   send:  (<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
-    <path d="M12 3.2 Q4.2 11 3.6 19.2 L12 16.6 L20.4 19.2 Q19.8 11 12 3.2 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+    <path d="M10.73 6.87 Q12 4.6 13.27 6.87 L17.93 15.13 Q19.2 17.4 16.68 16.77 L14.52 16.23 Q12 15.6 9.48 16.23 L7.32 16.77 Q4.8 17.4 6.07 15.13 Z" fill="currentColor"/>
   </svg>),
   sendUp:(<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
-    <path d="M12 3.2 Q4.2 11 3.6 19.2 L12 16.6 L20.4 19.2 Q19.8 11 12 3.2 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+    <path d="M10.73 6.87 Q12 4.6 13.27 6.87 L17.93 15.13 Q19.2 17.4 16.68 16.77 L14.52 16.23 Q12 15.6 9.48 16.23 L7.32 16.77 Q4.8 17.4 6.07 15.13 Z" fill="currentColor"/>
   </svg>),
   mic:   <Icon d={["M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z","M19 11a7 7 0 0 1-14 0","M12 18v3"]} stroke={2} />,
   stop:  <Icon d="M7 7h10v10H7z" stroke={2} />,
@@ -120,8 +120,8 @@ const IC = {
   fMoon:   <Icon d="M20 14a8 8 0 1 1-9-11 7 7 0 0 0 9 11Z" stroke={2} />,
   fSun:    <Icon d={["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]} stroke={1.8} />,
   fDroplet:<Icon d="M12 3s6 6 6 11a6 6 0 0 1-12 0c0-5 6-11 6-11Z" stroke={2} />,
-  launch:  (<svg width={24} height={24} viewBox="0 0 24 24" style={{display:"block"}}><path d="M12 3.2 Q4.2 11 3.6 19.2 L12 16.6 L20.4 19.2 Q19.8 11 12 3.2 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>),
-  launchOff:(<svg width={24} height={24} viewBox="0 0 24 24" style={{display:"block"}}><path d="M12 3.2 Q4.2 11 3.6 19.2 L12 16.6 L20.4 19.2 Q19.8 11 12 3.2 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/><path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>),
+  launch:  (<svg width={24} height={24} viewBox="0 0 24 24" style={{display:"block"}}><path d="M10.73 6.87 Q12 4.6 13.27 6.87 L17.93 15.13 Q19.2 17.4 16.68 16.77 L14.52 16.23 Q12 15.6 9.48 16.23 L7.32 16.77 Q4.8 17.4 6.07 15.13 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>),
+  launchOff:(<svg width={24} height={24} viewBox="0 0 24 24" style={{display:"block"}}><path d="M10.73 6.87 Q12 4.6 13.27 6.87 L17.93 15.13 Q19.2 17.4 16.68 16.77 L14.52 16.23 Q12 15.6 9.48 16.23 L7.32 16.77 Q4.8 17.4 6.07 15.13 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/><path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>),
 };
 
 
@@ -2028,7 +2028,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v56</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v58</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
