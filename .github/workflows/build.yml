@@ -139,6 +139,8 @@ jobs:
           public class MainActivity extends BridgeActivity {
             private ValueCallback<Uri[]> filePathCallback;
             private ActivityResultLauncher<Intent> fileChooserLauncher;
+            private ActivityResultLauncher<Intent> saveFileLauncher;
+            private byte[] pendingSaveBytes;
             private MediaRecorder audioRec;
             private String audioPath;
             @Override
@@ -162,6 +164,21 @@ jobs:
                   }
                   filePathCallback.onReceiveValue(uris);
                   filePathCallback = null;
+                });
+              saveFileLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                  try {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null && pendingSaveBytes != null) {
+                      Uri uri = result.getData().getData();
+                      java.io.OutputStream os = getContentResolver().openOutputStream(uri);
+                      os.write(pendingSaveBytes); os.flush(); os.close();
+                      runOnUiThread(() -> android.widget.Toast.makeText(this, "Сохранено", android.widget.Toast.LENGTH_SHORT).show());
+                    }
+                  } catch (Exception e) {
+                    runOnUiThread(() -> android.widget.Toast.makeText(this, "Ошибка сохранения", android.widget.Toast.LENGTH_SHORT).show());
+                  }
+                  pendingSaveBytes = null;
                 });
               // Настройки WebView для корректного захвата аудио/медиа
               try {
@@ -204,6 +221,17 @@ jobs:
                       else { v.vibrate(ms); }
                     }
                   }catch(Exception e){}
+                }
+                @JavascriptInterface
+                public void saveFileDialog(String name, String mime, String b64){
+                  try{
+                    pendingSaveBytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
+                    Intent it = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    it.addCategory(Intent.CATEGORY_OPENABLE);
+                    it.setType(mime==null||mime.isEmpty()?"application/octet-stream":mime);
+                    it.putExtra(Intent.EXTRA_TITLE, name);
+                    runOnUiThread(() -> { try { saveFileLauncher.launch(it); } catch(Exception e){} });
+                  }catch(Exception e){ pendingSaveBytes=null; }
                 }
               }, "AndroidRec");
               this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
