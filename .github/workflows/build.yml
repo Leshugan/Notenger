@@ -106,6 +106,9 @@ jobs:
           echo "=== build.gradle (id) ==="; grep -E "applicationId|namespace" "$GRADLE"
           # Защита: если appId всё ещё не наш — остановить сборку с понятной ошибкой
           if ! grep -q "leshugan.notenger" "$GRADLE"; then echo "ОШИБКА: appId не установлен!"; exit 1; fi
+          if ! grep -q "play-services-auth" "$GRADLE"; then
+            sed -i 's|dependencies {|dependencies {\n    implementation "com.google.android.gms:play-services-auth:21.2.0"|' "$GRADLE"
+          fi
           echo "=== Manifest head ==="; head -30 "$MANIFEST"
 
       - name: Разрешить WebView доступ + авто-запрос разрешений
@@ -136,13 +139,23 @@ jobs:
           import java.io.FileInputStream;
           import java.util.ArrayList;
           import com.getcapacitor.BridgeActivity;
+          import com.google.android.gms.auth.api.signin.GoogleSignIn;
+          import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+          import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+          import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+          import com.google.android.gms.common.api.Scope;
+          import com.google.android.gms.auth.GoogleAuthUtil;
+          import android.accounts.Account;
           public class MainActivity extends BridgeActivity {
             private ValueCallback<Uri[]> filePathCallback;
             private ActivityResultLauncher<Intent> fileChooserLauncher;
             private ActivityResultLauncher<Intent> saveFileLauncher;
+            private ActivityResultLauncher<Intent> signInLauncher;
             private byte[] pendingSaveBytes;
             private MediaRecorder audioRec;
             private String audioPath;
+            private GoogleSignInClient gsiClient;
+            private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
             @Override
             public void onCreate(Bundle savedInstanceState) {
               super.onCreate(savedInstanceState);
@@ -179,6 +192,22 @@ jobs:
                     runOnUiThread(() -> android.widget.Toast.makeText(this, "Ошибка сохранения", android.widget.Toast.LENGTH_SHORT).show());
                   }
                   pendingSaveBytes = null;
+                });
+              // Google Sign-In с запросом scope для Drive appData
+              GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestScopes(new Scope(DRIVE_SCOPE))
+                .build();
+              gsiClient = GoogleSignIn.getClient(this, gso);
+              signInLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                  try {
+                    GoogleSignInAccount acct = GoogleSignIn.getSignedInAccountFromIntent(result.getData()).getResult();
+                    fetchTokenAsync(acct);
+                  } catch (Exception e) {
+                    resolveToken(null);
+                  }
                 });
               // Настройки WebView для корректного захвата аудио/медиа
               try {
@@ -234,6 +263,28 @@ jobs:
                   }catch(Exception e){ pendingSaveBytes=null; }
                 }
               }, "AndroidRec");
+              // Мост авторизации Google для JS
+              this.bridge.getWebView().addJavascriptInterface(new Object(){
+                @JavascriptInterface
+                public void getToken(final boolean interactive){
+                  runOnUiThread(() -> {
+                    try {
+                      GoogleSignInAccount acct = GoogleSignIn.getLastSignedInAccount(MainActivity.this);
+                      if (acct != null && GoogleSignIn.hasPermissions(acct, new Scope(DRIVE_SCOPE))) {
+                        fetchTokenAsync(acct);
+                      } else if (interactive) {
+                        signInLauncher.launch(gsiClient.getSignInIntent());
+                      } else {
+                        resolveToken(null);
+                      }
+                    } catch (Exception e) { resolveToken(null); }
+                  });
+                }
+                @JavascriptInterface
+                public void signOut(){
+                  try { gsiClient.signOut(); } catch (Exception e) {}
+                }
+              }, "NotengerAuthNative");
               this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
                 @Override
                 public void onPermissionRequest(final PermissionRequest request) {
@@ -303,6 +354,27 @@ jobs:
               try{ if(audioPath!=null){ new File(audioPath).delete(); } }catch(Exception ignore){}
               audioPath=null;
               return result;
+            }
+            private void fetchTokenAsync(final GoogleSignInAccount acct){
+              new Thread(() -> {
+                String token = null;
+                try {
+                  Account a = acct.getAccount();
+                  token = GoogleAuthUtil.getToken(MainActivity.this, a, "oauth2:" + DRIVE_SCOPE);
+                } catch (Exception e) { token = null; }
+                resolveToken(token);
+              }).start();
+            }
+            private void resolveToken(final String token){
+              final String js;
+              if (token != null) {
+                js = "window.__ntgrResolveToken && window.__ntgrResolveToken(" + org.json.JSONObject.quote(token) + ");";
+              } else {
+                js = "window.__ntgrResolveToken && window.__ntgrResolveToken(null);";
+              }
+              runOnUiThread(() -> {
+                try { this.bridge.getWebView().evaluateJavascript(js, null); } catch (Exception e) {}
+              });
             }
             private void requestStartupPermissions() {
               ArrayList<String> need = new ArrayList<>();
