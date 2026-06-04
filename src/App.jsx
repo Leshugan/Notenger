@@ -14,10 +14,10 @@ function Icon({d, size=22, color="currentColor", stroke=0, fill="none", vb="0 0 
 }
 const IC = {
   send:  (<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
-    <path d="M12 4 L19.5 18 Q19.8 18.8 19 18.5 L12.6 16 Q12 15.8 11.4 16 L5 18.5 Q4.2 18.8 4.5 18 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    <path d="M12 3.4 Q6.5 9.5 4.3 18.6 L12 16.3 L19.7 18.6 Q17.5 9.5 12 3.4 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
   </svg>),
   sendUp:(<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
-    <path d="M12 4 L19.5 18 Q19.8 18.8 19 18.5 L12.6 16 Q12 15.8 11.4 16 L5 18.5 Q4.2 18.8 4.5 18 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    <path d="M12 3.4 Q6.5 9.5 4.3 18.6 L12 16.3 L19.7 18.6 Q17.5 9.5 12 3.4 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
   </svg>),
   mic:   <Icon d={["M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z","M19 11a7 7 0 0 1-14 0","M12 18v3"]} stroke={2} />,
   stop:  <Icon d="M7 7h10v10H7z" stroke={2} />,
@@ -1170,6 +1170,12 @@ export default function App() {
   const [destroying, setDestroying] = useState(null);
   const [noInputAnim, setNoInputAnim] = useState(()=>{ try{return localStorage.getItem("napp_noInputAnim")==="1";}catch{return false;} });
   const [noDelAnim, setNoDelAnim] = useState(()=>{ try{return localStorage.getItem("napp_noDelAnim")==="1";}catch{return false;} });
+  const [noScrAnim, setNoScrAnim] = useState(()=>{ try{return localStorage.getItem("napp_noScrAnim")==="1";}catch{return false;} });
+  // Множители скорости анимаций (0.3 = быстрее/короче … 1 = базовая длительность). Храним как множитель длительности.
+  const [animSpeed, setAnimSpeed] = useState(()=>{ try{ return JSON.parse(localStorage.getItem("napp_animSpeed")||"{}"); }catch{ return {}; } });
+  function setSpeed(key,val){ setAnimSpeed(s=>{ const ns={...s,[key]:val}; try{localStorage.setItem("napp_animSpeed",JSON.stringify(ns));}catch{} return ns; }); }
+  const spd=(key,base)=>{ const m=animSpeed[key]; return (typeof m==="number"?m:1)*base; };
+  function toggleScrAnim(){ setNoScrAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noScrAnim",nv?"1":"0");}catch{} return nv; }); }
   const dlaunchApplied = useRef(false);
   function setDefaultLaunch(target){ try{ if(target) localStorage.setItem(DLAUNCH_KEY, JSON.stringify(target)); else localStorage.removeItem(DLAUNCH_KEY); }catch{} tst(target?"Будет открываться при запуске":"Запуск сброшен на главный экран"); }
   function getDefaultLaunch(){ try{ const r=localStorage.getItem(DLAUNCH_KEY); return r?JSON.parse(r):null; }catch{ return null; } }
@@ -1963,7 +1969,7 @@ export default function App() {
     <div
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
-        "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),
+        "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.42)+"s",
         color:"#F2EAE0",overflow:"hidden",position:"relative"}}
       data-ver-badge
       onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);}}
@@ -1998,7 +2004,7 @@ export default function App() {
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
         @keyframes scrIn{from{opacity:0;transform:translateX(30px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
-        .scrAnim{animation:scrIn .42s cubic-bezier(.05,.7,.1,1);}
+        .scrAnim{animation:scrIn var(--scr-dur,.42s) cubic-bezier(.05,.7,.1,1);}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#3A2E24;}
@@ -2022,7 +2028,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v54</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v55</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2198,7 +2204,7 @@ export default function App() {
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div className="scrAnim" key="scr-main" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div className={noScrAnim?undefined:"scrAnim"} key="scr-main" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
@@ -2287,7 +2293,7 @@ export default function App() {
 
       {/* ═══ SUBFOLDERS ═══ */}
       {scr==="sub"&&folder&&(
-        <div className="scrAnim" key="scr-sub" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div className={noScrAnim?undefined:"scrAnim"} key="scr-sub" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
@@ -2409,7 +2415,7 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={updateActiveNote} className="scrAnim" key={"scr-chat-"+sid}
+        <div ref={scrollRef} onScroll={updateActiveNote} className={noScrAnim?undefined:"scrAnim"} key={"scr-chat-"+sid}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -2506,7 +2512,7 @@ export default function App() {
             onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); } swipeRef.current=null; }}
             style={{position:"fixed",inset:0,background:"#1A1410",zIndex:400,display:"flex",flexDirection:"column",
               transform: noInputAnim ? "translateX(0)" : (composerPeek?"translateX(100%)":"translateX(0)"),
-              transition: noInputAnim ? "none" : "transform .3s cubic-bezier(.32,.72,0,1)",
+              transition: noInputAnim ? "none" : ("transform "+spd("input",0.3)+"s cubic-bezier(.32,.72,0,1)"),
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
             {/* Верхняя строка: заголовок темы */}
@@ -2842,6 +2848,32 @@ export default function App() {
 
       <ExportSheet open={expSh} onClose={()=>setExpSh(false)} data={data} asSettings={asSettings} setAsSettings={setAsSettings}noInputAnim={noInputAnim} toggleInputAnim={toggleInputAnim}/>
       <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Настройка анимаций">
+        <div onClick={toggleScrAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
+          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию переходов между экранами</span>
+          <div style={{width:46,height:26,borderRadius:13,background:noScrAnim?"#3A2E24":"#EF6C00",position:"relative",transition:"background .2s",flexShrink:0}}>
+            <div style={{position:"absolute",top:2,left:noScrAnim?2:22,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+          </div>
+        </div>
+        <div style={{height:1,background:"#241C16",margin:"8px 0"}}/>
+        <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 10px"}}>Скорость анимаций (0.3 — быстро, 1 — медленно)</div>
+        {[
+          {key:"scr",label:"Переходы экранов",base:0.42},
+          {key:"input",label:"Поле ввода",base:0.3},
+        ].map(it=>{
+          const v=typeof animSpeed[it.key]==="number"?animSpeed[it.key]:1;
+          return (
+            <div key={it.key} style={{padding:"8px 4px 14px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{fontSize:14,color:"#F2EAE0"}}>{it.label}</span>
+                <span style={{fontSize:13,color:"#EF6C00",fontVariantNumeric:"tabular-nums"}}>{v.toFixed(2)}×</span>
+              </div>
+              <input type="range" min="0.3" max="1" step="0.05" value={v}
+                onChange={e=>setSpeed(it.key,parseFloat(e.target.value))}
+                style={{width:"100%",accentColor:"#EF6C00"}}/>
+            </div>
+          );
+        })}
+        <div style={{height:1,background:"#241C16",margin:"8px 0"}}/>
         <div onClick={toggleInputAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию для поля ввода</span>
           <div style={{width:46,height:26,borderRadius:13,background:noInputAnim?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
@@ -2854,7 +2886,6 @@ export default function App() {
             <div style={{position:"absolute",top:2,left:noDelAnim?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
           </div>
         </div>
-        <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px",lineHeight:1.5}}>Когда включено — поле написания открывается и закрывается мгновенно, без анимации скольжения.</div>
       </Sheet>
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
