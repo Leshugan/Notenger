@@ -944,9 +944,6 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
           color:"#F2EAE0",fontSize:14,marginBottom:12,outline:"none"}}/>}
       {msg&&<div style={{fontSize:13,color:"#7EC87E",marginBottom:10}}>{msg}</div>}
       <div style={{display:"flex",gap:10}}>
-        <button onClick={()=>doSave(false)} disabled={busy}
-          style={{flex:1,background:"#241C16",border:"none",borderRadius:12,padding:13,
-            color:"#F2EAE0",cursor:"pointer",fontSize:14,opacity:busy?0.5:1}}>⬇ JSON</button>
         <button onClick={()=>doSave(usePwd)} disabled={busy}
           style={{flex:1,background:usePwd?"#9B59B6":"#EF6C00",border:"none",borderRadius:12,
             padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,opacity:busy?0.5:1}}>
@@ -1294,14 +1291,24 @@ export default function App() {
   // Пока абстракция: window.NotengerAuth.getToken() -> Promise<string> | null
   async function getAccessToken(interactive){
     try{
+      if(window.NotengerAuthNative && window.NotengerAuthNative.getToken){
+        return await Promise.race([
+          new Promise(resolve=>{
+            window.__ntgrResolveToken=(t)=>{ window.__ntgrResolveToken=null; resolve(t||null); };
+            try{ window.NotengerAuthNative.getToken(!!interactive); }catch(e){ resolve(null); }
+          }),
+          new Promise(res=>setTimeout(()=>res(null), 60000))
+        ]);
+      }
+      // запасной путь (если кто-то реализует window.NotengerAuth.getToken)
       if(window.NotengerAuth && window.NotengerAuth.getToken){
         return await Promise.race([
           window.NotengerAuth.getToken(!!interactive),
-          new Promise(res=>setTimeout(()=>res(null), 30000))
+          new Promise(res=>setTimeout(()=>res(null), 60000))
         ]);
       }
     }catch(e){}
-    return null; // вход недоступен (плагин не подключён в этой среде)
+    return null;
   }
 
   // Отфильтровать вложения в заметках по выбранным медиа-категориям
@@ -2238,7 +2245,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v67</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v68</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
