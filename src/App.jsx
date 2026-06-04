@@ -120,8 +120,8 @@ const IC = {
   fMoon:   <Icon d="M20 14a8 8 0 1 1-9-11 7 7 0 0 0 9 11Z" stroke={2} />,
   fSun:    <Icon d={["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]} stroke={1.8} />,
   fDroplet:<Icon d="M12 3s6 6 6 11a6 6 0 0 1-12 0c0-5 6-11 6-11Z" stroke={2} />,
-  launch:  <Icon d={["M5 21V6a2 2 0 0 1 2-2h6l6 6v11","M13 4v6h6","M12 12l-2.5 2.5h5z"]} stroke={2} />,
-  launchOff:<Icon d={["M12 19V5","M6 11l6-6 6 6","M4 4l16 16"]} stroke={2.2} />,
+  launch:  <Icon d={["M4 12l16-7-7 16-2-7-7-2Z"]} stroke={2} />,
+  launchOff:<Icon d={["M4 12l16-7-7 16-2-7-7-2Z","M3 3l18 18"]} stroke={2} />,
 };
 
 
@@ -1337,6 +1337,11 @@ export default function App() {
 
   // ── Nav ──
   function openF(f) {
+    if(composerFull){ // живой редактор справа — не трогаем черновик, только навигация
+      if(f.isTheme){ setFid(f.id); setSid("__top__"); setScr("chat"); }
+      else { setFid(f.id); setScr("sub"); setSubSearch(""); }
+      return;
+    }
     if(f.isTheme){ setFid(f.id); setSid("__top__"); setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]); setIsTyping(false);
       setNote(drafts.current["__top__"+f.id]||"");
       return;
@@ -1344,6 +1349,7 @@ export default function App() {
     setFid(f.id); setScr("sub"); setSubSearch("");
   }
   function openS(s) {
+    if(composerFull){ setSid(s.id); setScr("chat"); return; } // живой редактор — только навигация
     setSid(s.id); setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]); setIsTyping(false);
     setNote(drafts.current[s.id] || "");
   }
@@ -1393,7 +1399,7 @@ export default function App() {
   function back()   {
     if(multiSelect.length){setMultiSelect([]);return;}
     if(selectMode){setSelectMode(null);return;}
-    if(scr==="chat"){ if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} cancelEdit();setChatSearch(""); }
+    if(scr==="chat"){ if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} if(!composerFull){ cancelEdit(); } setChatSearch(""); }
     else if(scr==="sub")setScr("main");
   }
   // Аппаратная кнопка «Назад» (Android). Возвращает true, если что-то закрыли.
@@ -1990,8 +1996,8 @@ export default function App() {
         ::-webkit-scrollbar{width:0;}
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
-        @keyframes scrIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
-        .scrAnim{animation:scrIn .5s cubic-bezier(.32,.72,0,1);}
+        @keyframes scrIn{from{opacity:0;transform:translateX(30px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
+        .scrAnim{animation:scrIn .42s cubic-bezier(.05,.7,.1,1);}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#3A2E24;}
@@ -2015,7 +2021,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v51</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v52</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2234,7 +2240,7 @@ export default function App() {
                       {ic:f.pinned?IC.pinOff:IC.pin,label:f.pinned?"Открепить":"Закрепить",fn:()=>pinFolder(f.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setFid(f.id);setModal("renF");}},
-                      {ic:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?IC.launchOff:IC.sendUp,label:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(f.id,f.isTheme?"__top__":null)},
+                      {ic:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?IC.launchOff:IC.launch,label:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(f.id,f.isTheme?"__top__":null)},
                       {ic:IC.trash,label:f.isTheme?"Удалить тему":"Удалить категорию",danger:true,fn:()=>{setFid(f.id);setDlg({msg:`Удалить «${f.name}»?`,yes:()=>delF(f.id),anchor:folderMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
@@ -2325,7 +2331,7 @@ export default function App() {
                       {ic:s.pinned?IC.pinOff:IC.pin,label:s.pinned?"Открепить":"Закрепить",fn:()=>pinSub(s.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setSid(s.id);setModal("renS");}},
-                      {ic:isDefaultLaunch(fid,s.id)?IC.launchOff:IC.sendUp,label:isDefaultLaunch(fid,s.id)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(fid,s.id)},
+                      {ic:isDefaultLaunch(fid,s.id)?IC.launchOff:IC.launch,label:isDefaultLaunch(fid,s.id)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(fid,s.id)},
                       {ic:IC.trash,label:"Удалить",danger:true,fn:()=>{setSid(s.id);setDlg({msg:`Удалить «${s.name}»?`,yes:()=>delS(s.id),anchor:subMenu?.rect});}},
                     ]}/> ); })()}
                 </div>
