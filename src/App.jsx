@@ -14,10 +14,10 @@ function Icon({d, size=22, color="currentColor", stroke=0, fill="none", vb="0 0 
 }
 const IC = {
   send:  (<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
-    <path d="M12 4.2c.55 0 1.05.3 1.35.78l6.1 11.7c.5.95-.5 1.98-1.46 1.5L13 17.4c-.62-.3-1.38-.3-2 0l-5.0 1.78c-.96.48-1.96-.55-1.46-1.5l6.1-11.7c.3-.48.8-.78 1.36-.78Z" fill="currentColor"/>
+    <path d="M12 4 L19.5 18 Q19.8 18.8 19 18.5 L12.6 16 Q12 15.8 11.4 16 L5 18.5 Q4.2 18.8 4.5 18 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
   </svg>),
   sendUp:(<svg width={28} height={28} viewBox="0 0 24 24" style={{display:"block"}}>
-    <path d="M12 4.2c.55 0 1.05.3 1.35.78l6.1 11.7c.5.95-.5 1.98-1.46 1.5L13 17.4c-.62-.3-1.38-.3-2 0l-5.0 1.78c-.96.48-1.96-.55-1.46-1.5l6.1-11.7c.3-.48.8-.78 1.36-.78Z" fill="currentColor"/>
+    <path d="M12 4 L19.5 18 Q19.8 18.8 19 18.5 L12.6 16 Q12 15.8 11.4 16 L5 18.5 Q4.2 18.8 4.5 18 Z" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
   </svg>),
   mic:   <Icon d={["M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z","M19 11a7 7 0 0 1-14 0","M12 18v3"]} stroke={2} />,
   stop:  <Icon d="M7 7h10v10H7z" stroke={2} />,
@@ -2022,7 +2022,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v53</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v54</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
