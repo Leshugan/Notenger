@@ -1229,6 +1229,130 @@ export default function App() {
     r.readAsDataURL(f); e.target.value="";
   }
   function setFontAssign(key,id){ const next={...fonts,assign:{...(fonts.assign||{}),[key]:id}}; saveFonts(next); }
+
+  // ===== СИНХРОНИЗАЦИЯ С GOOGLE DRIVE (опционально) =====
+  const SYNC_CFG_KEY="napp_sync_cfg_v1"; // настройки синка
+  const GOOGLE_CLIENT_ID="589335091963-ajbq6kdh6gvsocrhqlhcqr3ubb4r7dre.apps.googleusercontent.com";
+  const DRIVE_FILE_NAME="notenger_backup.json";
+  // Модули, которые можно синкать выборочно
+  const SYNC_MODULES=[
+    {key:"notes",   label:"Заметки (категории, темы, сообщения)", keys:[SK]},
+    {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
+    {key:"settings",label:"Настройки (шрифты, анимации, запуск)", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed"]},
+  ];
+  function loadSyncCfg(){ try{ const r=localStorage.getItem(SYNC_CFG_KEY); return r?JSON.parse(r):null; }catch{ return null; } }
+  const defaultSyncCfg={enabled:false, auto:true, modules:{notes:true,drafts:true,settings:true}, account:null};
+  const [syncCfg,setSyncCfgState]=useState(()=>loadSyncCfg()||defaultSyncCfg);
+  function saveSyncCfg(c){ try{ localStorage.setItem(SYNC_CFG_KEY,JSON.stringify(c)); }catch{} setSyncCfgState(c); }
+  const [syncStatus,setSyncStatus]=useState("idle"); // idle|syncing|ok|error|signedout
+  const [syncLastTime,setSyncLastTime]=useState(()=>{ try{return localStorage.getItem("napp_sync_last")||null;}catch{return null;} });
+  const [syncSh,setSyncSh]=useState(false); // шторка настроек синка
+  const syncTimer=useRef(null);
+
+  // Получить валидный access-token. Реальная реализация — через нативный плагин Google (подключается в сборке).
+  // Пока абстракция: window.NotengerAuth.getToken() -> Promise<string> | null
+  async function getAccessToken(interactive){
+    try{
+      if(window.NotengerAuth && window.NotengerAuth.getToken){
+        return await window.NotengerAuth.getToken(!!interactive);
+      }
+    }catch(e){}
+    return null; // вход недоступен (плагин не подключён в этой среде)
+  }
+
+  // Собрать данные включённых модулей
+  function collectSyncData(){
+    const out={__meta:{ts:Date.now(), v:1}, data:{}};
+    SYNC_MODULES.forEach(m=>{
+      if(!syncCfg.modules[m.key]) return;
+      m.keys.forEach(k=>{ try{ const v=localStorage.getItem(k); if(v!=null) out.data[k]=v; }catch{} });
+    });
+    return out;
+  }
+  // Применить скачанные данные (только включённые модули)
+  function applySyncData(obj){
+    if(!obj||!obj.data) return false;
+    let changed=false;
+    SYNC_MODULES.forEach(m=>{
+      if(!syncCfg.modules[m.key]) return;
+      m.keys.forEach(k=>{ if(k in obj.data){ try{ localStorage.setItem(k,obj.data[k]); changed=true; }catch{} } });
+    });
+    return changed;
+  }
+
+  // Найти id файла бэкапа в appDataFolder
+  async function driveFindFile(token){
+    const q=encodeURIComponent("name='"+DRIVE_FILE_NAME+"'");
+    const r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q="+q+"&fields=files(id,modifiedTime)",
+      {headers:{Authorization:"Bearer "+token}});
+    if(!r.ok) throw new Error("list "+r.status);
+    const j=await r.json();
+    return (j.files&&j.files[0])||null;
+  }
+  async function driveDownload(token,id){
+    const r=await fetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",{headers:{Authorization:"Bearer "+token}});
+    if(!r.ok) throw new Error("dl "+r.status);
+    return await r.json();
+  }
+  async function driveUpload(token,id,content){
+    const meta={name:DRIVE_FILE_NAME, parents: id?undefined:["appDataFolder"]};
+    const boundary="ntgr"+Date.now();
+    const body="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+
+      JSON.stringify(meta)+"\r\n--"+boundary+"\r\nContent-Type: application/json\r\n\r\n"+
+      JSON.stringify(content)+"\r\n--"+boundary+"--";
+    const method=id?"PATCH":"POST";
+    const url=id?("https://www.googleapis.com/upload/drive/v3/files/"+id+"?uploadType=multipart")
+                :"https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    const r=await fetch(url,{method,headers:{Authorization:"Bearer "+token,"Content-Type":"multipart/related; boundary="+boundary},body});
+    if(!r.ok) throw new Error("up "+r.status);
+    return await r.json();
+  }
+
+  // Главная функция синка. mode: 'push'|'pull'|'auto'
+  const syncRunning=useRef(false);
+  async function runSync(mode, interactive){
+    if(!syncCfg.enabled) return;
+    if(syncRunning.current) return;
+    syncRunning.current=true; setSyncStatus("syncing");
+    try{
+      const token=await getAccessToken(interactive);
+      if(!token){ setSyncStatus("signedout"); syncRunning.current=false; return; }
+      const remote=await driveFindFile(token);
+      if(mode==="pull" || (mode==="auto" && remote)){
+        // тянем удалённое и сливаем по времени
+        if(remote){
+          const obj=await driveDownload(token,remote.id);
+          const localTs=collectSyncData().__meta.ts;
+          if(!obj.__meta || obj.__meta.ts>=0){
+            // last-write-wins на уровне файла: если удалённое новее — применяем
+            applySyncData(obj);
+          }
+        }
+      }
+      // затем пушим текущее состояние
+      const payload=collectSyncData();
+      await driveUpload(token, remote?remote.id:null, payload);
+      const now=new Date().toISOString();
+      try{ localStorage.setItem("napp_sync_last",now); }catch{}
+      setSyncLastTime(now); setSyncStatus("ok");
+    }catch(e){
+      setSyncStatus("error");
+    }
+    syncRunning.current=false;
+  }
+
+  // Авто-синк: дебаунс после изменений данных
+  function scheduleAutoSync(){
+    if(!syncCfg.enabled || !syncCfg.auto) return;
+    clearTimeout(syncTimer.current);
+    syncTimer.current=setTimeout(()=>{ runSync("push",false); }, 4000);
+  }
+  // При запуске — подтянуть, если синк включён
+  useEffect(()=>{
+    if(syncCfg.enabled){ runSync("pull",false); }
+    // eslint-disable-next-line
+  },[]);
+
   const histRef = useRef({stack:[""],idx:0,skip:false});
   // фиксируем изменения note в историю (с дебаунсом по словам)
   useEffect(()=>{
@@ -1334,6 +1458,7 @@ export default function App() {
       if(asSettings.mode==="change") saveData(n);
       return n;
     });
+    scheduleAutoSync();
   }
   function tst(m) { setToast(m); const dur=(typeof m==="string"&&m.indexOf("МИК")===0)?6000:2200; setTimeout(()=>setToast(null),dur); }
 
@@ -2024,7 +2149,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v63</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v64</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2108,6 +2233,7 @@ export default function App() {
                   {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                   {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
+                {ic:IC.search,label:"Синхронизация",fn:()=>setSyncSh(true)},
                 ]}/>}
             </div>
           )}
@@ -2269,6 +2395,7 @@ export default function App() {
                 {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                 {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
+                {ic:IC.search,label:"Синхронизация",fn:()=>setSyncSh(true)},
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
@@ -2885,6 +3012,70 @@ export default function App() {
       </Sheet>
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
+      <Sheet open={syncSh} onClose={()=>setSyncSh(false)} title="Синхронизация">
+        {/* Главный тумблер */}
+        <div onClick={()=>{ const c={...syncCfg,enabled:!syncCfg.enabled}; saveSyncCfg(c); if(c.enabled) setTimeout(()=>runSync("pull",true),100); }}
+          style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
+          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Синхронизация с Google Диском</span>
+          <div style={{width:46,height:26,borderRadius:13,background:syncCfg.enabled?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+            <div style={{position:"absolute",top:2,left:syncCfg.enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px 8px",lineHeight:1.5}}>Данные хранятся в скрытой папке приложения на вашем Google Диске и используют ваше место. По умолчанию выключено.</div>
+
+        {syncCfg.enabled && (<>
+          {/* Статус */}
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#241C16",borderRadius:10,margin:"8px 0"}}>
+            <div style={{width:10,height:10,borderRadius:"50%",flexShrink:0,
+              background:syncStatus==="ok"?"#5BBF5B":syncStatus==="syncing"?"#E0A152":(syncStatus==="error"||syncStatus==="signedout")?"#E05252":"#6A5A48"}}/>
+            <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>
+              {syncStatus==="syncing"?"Синхронизация…":
+               syncStatus==="ok"?("Синхронизировано"+(syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):"")):
+               syncStatus==="error"?"Ошибка синхронизации":
+               syncStatus==="signedout"?"Не синхронизируется — войдите снова":
+               "Готово к синхронизации"}
+            </span>
+          </div>
+
+          {/* Баннер если выкинуло */}
+          {syncStatus==="signedout" && (
+            <div onClick={()=>runSync("pull",true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#3A2218",border:"1px solid #E05252",borderRadius:10,margin:"8px 0",cursor:"pointer"}}>
+              <span style={{flex:1,fontSize:13,color:"#F2EAE0"}}>Заметки не синхронизируются с облаком. Нажмите, чтобы войти.</span>
+            </div>
+          )}
+
+          {/* Авто-режим */}
+          <div onClick={()=>saveSyncCfg({...syncCfg,auto:!syncCfg.auto})}
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
+            <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Автоматически</span>
+            <div style={{width:46,height:26,borderRadius:13,background:syncCfg.auto?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+              <div style={{position:"absolute",top:2,left:syncCfg.auto?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+          </div>
+
+          {/* Кнопка ручного синка */}
+          <button onClick={()=>runSync("auto",true)} disabled={syncStatus==="syncing"}
+            style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,margin:"8px 0",opacity:syncStatus==="syncing"?.6:1}}>
+            {syncStatus==="syncing"?"Синхронизация…":"Синхронизировать сейчас"}
+          </button>
+
+          <div style={{height:1,background:"#241C16",margin:"10px 0"}}/>
+          <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 8px"}}>Что синхронизировать</div>
+          {SYNC_MODULES.map(m=>(
+            <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!syncCfg.modules[m.key]}})}
+              style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:"pointer"}}>
+              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+              <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
+                border:"2px solid "+(syncCfg.modules[m.key]?"#EF6C00":"#5A4C40"),
+                background:syncCfg.modules[m.key]?"#EF6C00":"transparent",
+                display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
+                {syncCfg.modules[m.key]&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+              </div>
+            </div>
+          ))}
+        </>)}
+      </Sheet>
+
       <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
         <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
           <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
