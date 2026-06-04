@@ -1275,9 +1275,15 @@ export default function App() {
     {key:"videos", label:"Видео",       test:a=>a&&a.type&&a.type.startsWith("video/")},
     {key:"files",  label:"Файлы (прочее)", test:a=>a&&(!a.type || (!a.type.startsWith("image/")&&!a.type.startsWith("video/")&&!a.voice&&!a.type.startsWith("audio/")))},
   ];
-  function loadSyncCfg(){ try{ const r=localStorage.getItem(SYNC_CFG_KEY); return r?JSON.parse(r):null; }catch{ return null; } }
   const defaultSyncCfg={enabled:false, auto:true, modules:{settings:true,notes:true,drafts:true}, media:{images:true,videos:true,files:true}, account:null};
-  const [syncCfg,setSyncCfgState]=useState(()=>loadSyncCfg()||defaultSyncCfg);
+  function loadSyncCfg(){
+    try{ const r=localStorage.getItem(SYNC_CFG_KEY); const p=r?JSON.parse(r):{};
+      return {...defaultSyncCfg, ...p,
+        modules:{...defaultSyncCfg.modules, ...(p&&p.modules||{})},
+        media:{...defaultSyncCfg.media, ...(p&&p.media||{})}};
+    }catch{ return {...defaultSyncCfg}; }
+  }
+  const [syncCfg,setSyncCfgState]=useState(()=>loadSyncCfg());
   function saveSyncCfg(c){ try{ localStorage.setItem(SYNC_CFG_KEY,JSON.stringify(c)); }catch{} setSyncCfgState(c); }
   const [syncStatus,setSyncStatus]=useState("idle"); // idle|syncing|ok|error|signedout
   const [syncLastTime,setSyncLastTime]=useState(()=>{ try{return localStorage.getItem("napp_sync_last")||null;}catch{return null;} });
@@ -1289,7 +1295,10 @@ export default function App() {
   async function getAccessToken(interactive){
     try{
       if(window.NotengerAuth && window.NotengerAuth.getToken){
-        return await window.NotengerAuth.getToken(!!interactive);
+        return await Promise.race([
+          window.NotengerAuth.getToken(!!interactive),
+          new Promise(res=>setTimeout(()=>res(null), 30000))
+        ]);
       }
     }catch(e){}
     return null; // вход недоступен (плагин не подключён в этой среде)
@@ -2229,7 +2238,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v66</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v67</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2310,7 +2319,6 @@ export default function App() {
                 style={{position:"absolute",top:"calc(100% + 8px)",left:0}}
                 items={[
                   {ic:IC.save,label:"Сохранить / экспорт",fn:()=>setExpSh(true)},
-                  {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                   {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
                 ]}/>}
@@ -2471,7 +2479,6 @@ export default function App() {
               style={{position:"absolute",bottom:"calc(100% + 8px)",left:0}}
               items={[
                 {ic:IC.save,label:"Сохранить / экспорт",fn:()=>setExpSh(true)},
-                {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                 {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
               ]}/>}
@@ -3098,27 +3105,27 @@ export default function App() {
               <div style={{height:1,background:"#241C16",margin:"10px 0"}}/>
               <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 8px"}}>Что синхронизировать</div>
               {SYNC_MODULES.map(m=>(
-                <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!syncCfg.modules[m.key]}})}
+                <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
                   style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:"pointer"}}>
                   <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
                   <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                    border:"2px solid "+(syncCfg.modules[m.key]?"#EF6C00":"#5A4C40"),
-                    background:syncCfg.modules[m.key]?"#EF6C00":"transparent",
+                    border:"2px solid "+((syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#5A4C40"),
+                    background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"transparent",
                     display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
-                    {syncCfg.modules[m.key]&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+                    {(syncCfg.modules&&syncCfg.modules[m.key])&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
                   </div>
                 </div>
               ))}
-              <div style={{fontSize:13,color:"#8A7A65",padding:"12px 4px 8px"}}>Медиафайлы {syncCfg.modules.notes?"":"(включите «Заметки»)"}</div>
+              <div style={{fontSize:13,color:"#8A7A65",padding:"12px 4px 8px"}}>Медиафайлы {(syncCfg.modules&&syncCfg.modules.notes)?"":"(включите «Заметки»)"}</div>
               {MEDIA_MODULES.map(m=>(
-                <div key={m.key} onClick={()=>{ if(!syncCfg.modules.notes) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!syncCfg.media[m.key]}}); }}
-                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:syncCfg.modules.notes?"pointer":"default",opacity:syncCfg.modules.notes?1:.4}}>
+                <div key={m.key} onClick={()=>{ if(!(syncCfg.modules&&syncCfg.modules.notes)) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!(syncCfg.media&&syncCfg.media[m.key])}}); }}
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:(syncCfg.modules&&syncCfg.modules.notes)?"pointer":"default",opacity:(syncCfg.modules&&syncCfg.modules.notes)?1:.4}}>
                   <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
                   <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                    border:"2px solid "+(syncCfg.media[m.key]?"#EF6C00":"#5A4C40"),
-                    background:syncCfg.media[m.key]?"#EF6C00":"transparent",
+                    border:"2px solid "+((syncCfg.media&&syncCfg.media[m.key])?"#EF6C00":"#5A4C40"),
+                    background:(syncCfg.media&&syncCfg.media[m.key])?"#EF6C00":"transparent",
                     display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
-                    {syncCfg.media[m.key]&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+                    {(syncCfg.media&&syncCfg.media[m.key])&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
                   </div>
                 </div>
               ))}
@@ -3218,14 +3225,14 @@ export default function App() {
           <div style={{height:1,background:"#241C16",margin:"10px 0"}}/>
           <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 8px"}}>Что синхронизировать</div>
           {SYNC_MODULES.map(m=>(
-            <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!syncCfg.modules[m.key]}})}
+            <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
               style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:"pointer"}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
               <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                border:"2px solid "+(syncCfg.modules[m.key]?"#EF6C00":"#5A4C40"),
-                background:syncCfg.modules[m.key]?"#EF6C00":"transparent",
+                border:"2px solid "+((syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#5A4C40"),
+                background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"transparent",
                 display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
-                {syncCfg.modules[m.key]&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+                {(syncCfg.modules&&syncCfg.modules[m.key])&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
               </div>
             </div>
           ))}
