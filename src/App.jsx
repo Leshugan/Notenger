@@ -817,7 +817,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
 
 
 // ─── Export sheet ─────────────────────────────────────────────
-function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAnim, toggleInputAnim }) {
+function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAnim, toggleInputAnim, syncSection }) {
   const [usePwd,setUsePwd]=useState(false);
   const [pwd,setPwd]=useState("");
   const [busy,setBusy]=useState(false);
@@ -847,6 +847,21 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
     const dt=new Date().toISOString().slice(0,10);
     const fname=`notenger_${dt}.${ext}`;
     const blob=new Blob([content],{type:mime});
+    // 0) Android SAF: системный выбор папки через нативный мост
+    if(window.AndroidRec && window.AndroidRec.saveFileDialog){
+      try{
+        const reader=new FileReader();
+        reader.onload=()=>{
+          const b64=String(reader.result).split(",")[1]||"";
+          try{ window.AndroidRec.saveFileDialog(fname, mime, b64); setMsg("Выберите папку для сохранения…"); }
+          catch(e){ setMsg("❌ "+(e.message||"Ошибка")); }
+          setBusy(false);
+        };
+        reader.onerror=()=>{ setMsg("❌ Ошибка чтения"); setBusy(false); };
+        reader.readAsDataURL(blob);
+        return;
+      }catch(e){}
+    }
     // 1) Современный API (десктоп-браузеры)
     if(window.showSaveFilePicker){
       try{
@@ -928,6 +943,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
           {busy?"⏳...":(usePwd?"🔒 Сохранить":"💾 Сохранить")}
         </button>
       </div>
+      {syncSection}
     </Sheet>
   );
 }
@@ -2149,7 +2165,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v64</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v65</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2233,7 +2249,6 @@ export default function App() {
                   {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                   {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
-                {ic:IC.search,label:"Синхронизация",fn:()=>setSyncSh(true)},
                 ]}/>}
             </div>
           )}
@@ -2395,7 +2410,6 @@ export default function App() {
                 {ic:IC.imp,label:"Импорт данных",fn:()=>importRef.current&&importRef.current.click()},
                 {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
-                {ic:IC.search,label:"Синхронизация",fn:()=>setSyncSh(true)},
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
@@ -2969,7 +2983,64 @@ export default function App() {
         </div>
       )}
 
-      <ExportSheet open={expSh} onClose={()=>setExpSh(false)} data={data} asSettings={asSettings} setAsSettings={setAsSettings}noInputAnim={noInputAnim} toggleInputAnim={toggleInputAnim}/>
+      <ExportSheet open={expSh} onClose={()=>setExpSh(false)} data={data} asSettings={asSettings} setAsSettings={setAsSettings} noInputAnim={noInputAnim} toggleInputAnim={toggleInputAnim}
+        syncSection={(
+          <>
+            <div style={{height:1,background:"#241C16",margin:"18px 0 14px"}}/>
+            <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Облачная синхронизация</div>
+            <div onClick={()=>{ const c={...syncCfg,enabled:!syncCfg.enabled}; saveSyncCfg(c); if(c.enabled) setTimeout(()=>runSync("pull",true),100); }}
+              style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
+              <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Синхронизация с Google Диском</span>
+              <div style={{width:46,height:26,borderRadius:13,background:syncCfg.enabled?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+                <div style={{position:"absolute",top:2,left:syncCfg.enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+              </div>
+            </div>
+            <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px 8px",lineHeight:1.5}}>Данные хранятся в скрытой папке приложения на вашем Google Диске и используют ваше место. По умолчанию выключено.</div>
+            {syncCfg.enabled && (<>
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#241C16",borderRadius:10,margin:"8px 0"}}>
+                <div style={{width:10,height:10,borderRadius:"50%",flexShrink:0,
+                  background:syncStatus==="ok"?"#5BBF5B":syncStatus==="syncing"?"#E0A152":(syncStatus==="error"||syncStatus==="signedout")?"#E05252":"#6A5A48"}}/>
+                <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>
+                  {syncStatus==="syncing"?"Синхронизация…":
+                   syncStatus==="ok"?("Синхронизировано"+(syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):"")):
+                   syncStatus==="error"?"Ошибка синхронизации":
+                   syncStatus==="signedout"?"Не синхронизируется — войдите снова":
+                   "Готово к синхронизации"}
+                </span>
+              </div>
+              {syncStatus==="signedout" && (
+                <div onClick={()=>runSync("pull",true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#3A2218",border:"1px solid #E05252",borderRadius:10,margin:"8px 0",cursor:"pointer"}}>
+                  <span style={{flex:1,fontSize:13,color:"#F2EAE0"}}>Заметки не синхронизируются с облаком. Нажмите, чтобы войти.</span>
+                </div>
+              )}
+              <div onClick={()=>saveSyncCfg({...syncCfg,auto:!syncCfg.auto})}
+                style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
+                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Автоматически</span>
+                <div style={{width:46,height:26,borderRadius:13,background:syncCfg.auto?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+                  <div style={{position:"absolute",top:2,left:syncCfg.auto?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                </div>
+              </div>
+              <button onClick={()=>runSync("auto",true)} disabled={syncStatus==="syncing"}
+                style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,margin:"8px 0",opacity:syncStatus==="syncing"?.6:1}}>
+                {syncStatus==="syncing"?"Синхронизация…":"Синхронизировать сейчас"}
+              </button>
+              <div style={{height:1,background:"#241C16",margin:"10px 0"}}/>
+              <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 8px"}}>Что синхронизировать</div>
+              {SYNC_MODULES.map(m=>(
+                <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!syncCfg.modules[m.key]}})}
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:"pointer"}}>
+                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+                  <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
+                    border:"2px solid "+(syncCfg.modules[m.key]?"#EF6C00":"#5A4C40"),
+                    background:syncCfg.modules[m.key]?"#EF6C00":"transparent",
+                    display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
+                    {syncCfg.modules[m.key]&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+                  </div>
+                </div>
+              ))}
+            </>)}
+          </>
+        )}/>
       <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Настройка анимаций">
         <div onClick={toggleScrAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию переходов между экранами</span>
@@ -3012,7 +3083,8 @@ export default function App() {
       </Sheet>
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
-      <Sheet open={syncSh} onClose={()=>setSyncSh(false)} title="Синхронизация">
+      {/* блок синхронизации перенесён в ExportSheet через syncSection */}
+      {false && (<Sheet open={false} onClose={()=>{}} title="Синхронизация">
         {/* Главный тумблер */}
         <div onClick={()=>{ const c={...syncCfg,enabled:!syncCfg.enabled}; saveSyncCfg(c); if(c.enabled) setTimeout(()=>runSync("pull",true),100); }}
           style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
@@ -3074,7 +3146,7 @@ export default function App() {
             </div>
           ))}
         </>)}
-      </Sheet>
+      </Sheet>)}
 
       <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
         <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
