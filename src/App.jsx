@@ -271,6 +271,15 @@ async function aesEncrypt(plain, pwd) {
   out.set(salt,0);out.set(iv,16);out.set(new Uint8Array(ct),28);
   return btoa(String.fromCharCode(...out));
 }
+async function aesDecrypt(b64, pwd) {
+  const enc=new TextEncoder();
+  const raw=Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+  const salt=raw.slice(0,16), iv=raw.slice(16,28), ct=raw.slice(28);
+  const km=await crypto.subtle.importKey("raw",enc.encode(pwd),"PBKDF2",false,["deriveKey"]);
+  const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:310000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv},key,ct);
+  return new TextDecoder().decode(pt);
+}
 
 // ═══════════════════════════════════════════════
 // UI PRIMITIVES
@@ -817,7 +826,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
 
 
 // ─── Export sheet ─────────────────────────────────────────────
-function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAnim, toggleInputAnim, syncSection }) {
+function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAnim, toggleInputAnim, syncSection, buildBackup, onImportClick }) {
   const [usePwd,setUsePwd]=useState(false);
   const [pwd,setPwd]=useState("");
   const [busy,setBusy]=useState(false);
@@ -834,7 +843,8 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
 
   async function doSave(encrypt) {
     setBusy(true);setMsg("");
-    const json=JSON.stringify(data,null,2);
+    const backup = buildBackup ? buildBackup() : data;
+    const json=JSON.stringify(backup,null,2);
     let content=json,ext="json",mime="application/json";
     if(encrypt){
       if(!pwd.trim()){setMsg("⚠️ Введите пароль");setBusy(false);return;}
@@ -943,6 +953,9 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
           {busy?"⏳...":(usePwd?"🔒 Сохранить":"💾 Сохранить")}
         </button>
       </div>
+      <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
+        style={{width:"100%",marginTop:10,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:13,
+          color:"#F2EAE0",cursor:"pointer",fontSize:14}}>📂 Импорт из файла</button>
       {syncSection}
     </Sheet>
   );
@@ -1250,14 +1263,20 @@ export default function App() {
   const SYNC_CFG_KEY="napp_sync_cfg_v1"; // настройки синка
   const GOOGLE_CLIENT_ID="589335091963-ajbq6kdh6gvsocrhqlhcqr3ubb4r7dre.apps.googleusercontent.com";
   const DRIVE_FILE_NAME="notenger_backup.json";
-  // Модули, которые можно синкать выборочно
+  // Модули, которые можно синкать/сохранять выборочно
   const SYNC_MODULES=[
-    {key:"notes",   label:"Заметки (категории, темы, сообщения)", keys:[SK]},
+    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed"]},
+    {key:"notes",   label:"Заметки", keys:[SK]},
     {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
-    {key:"settings",label:"Настройки (шрифты, анимации, запуск)", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed"]},
+  ];
+  // Медиа-категории (вложения внутри заметок) — фильтруются по типу при сборке
+  const MEDIA_MODULES=[
+    {key:"images", label:"Изображения", test:a=>a&&a.type&&a.type.startsWith("image/")},
+    {key:"videos", label:"Видео",       test:a=>a&&a.type&&a.type.startsWith("video/")},
+    {key:"files",  label:"Файлы (прочее)", test:a=>a&&(!a.type || (!a.type.startsWith("image/")&&!a.type.startsWith("video/")&&!a.voice&&!a.type.startsWith("audio/")))},
   ];
   function loadSyncCfg(){ try{ const r=localStorage.getItem(SYNC_CFG_KEY); return r?JSON.parse(r):null; }catch{ return null; } }
-  const defaultSyncCfg={enabled:false, auto:true, modules:{notes:true,drafts:true,settings:true}, account:null};
+  const defaultSyncCfg={enabled:false, auto:true, modules:{settings:true,notes:true,drafts:true}, media:{images:true,videos:true,files:true}, account:null};
   const [syncCfg,setSyncCfgState]=useState(()=>loadSyncCfg()||defaultSyncCfg);
   function saveSyncCfg(c){ try{ localStorage.setItem(SYNC_CFG_KEY,JSON.stringify(c)); }catch{} setSyncCfgState(c); }
   const [syncStatus,setSyncStatus]=useState("idle"); // idle|syncing|ok|error|signedout
@@ -1276,25 +1295,47 @@ export default function App() {
     return null; // вход недоступен (плагин не подключён в этой среде)
   }
 
-  // Собрать данные включённых модулей
-  function collectSyncData(){
-    const out={__meta:{ts:Date.now(), v:1}, data:{}};
+  // Отфильтровать вложения в заметках по выбранным медиа-категориям
+  function filterNotesMedia(notesJsonStr, mediaCfg){
+    try{
+      const d=JSON.parse(notesJsonStr);
+      const keep=a=>{
+        if(a&&(a.voice||(a.type&&a.type.startsWith("audio/")))) return true; // голосовые/аудио всегда с заметкой
+        for(const m of MEDIA_MODULES){ if(m.test(a)) return !!mediaCfg[m.key]; }
+        return true;
+      };
+      const walk=arr=>arr&&arr.forEach(f=>{
+        if(f.notes) f.notes.forEach(n=>{ if(n.attachments) n.attachments=n.attachments.filter(keep); });
+        if(f.subs) walk(f.subs);
+      });
+      if(d.folders) walk(d.folders);
+      return JSON.stringify(d);
+    }catch{ return notesJsonStr; }
+  }
+  // Собрать данные включённых модулей (cfg=syncCfg или произвольный выбор)
+  function collectBackup(cfg){
+    const out={__meta:{ts:Date.now(), v:2, app:"notenger"}, data:{}};
     SYNC_MODULES.forEach(m=>{
-      if(!syncCfg.modules[m.key]) return;
-      m.keys.forEach(k=>{ try{ const v=localStorage.getItem(k); if(v!=null) out.data[k]=v; }catch{} });
+      if(!cfg.modules[m.key]) return;
+      m.keys.forEach(k=>{ try{ let v=localStorage.getItem(k); if(v==null) return;
+        if(k===SK) v=filterNotesMedia(v, cfg.media||{images:true,videos:true,files:true});
+        out.data[k]=v; }catch{} });
     });
     return out;
   }
-  // Применить скачанные данные (только включённые модули)
-  function applySyncData(obj){
+  function collectSyncData(){ return collectBackup(syncCfg); }
+  // Применить скачанные данные (включённые модули)
+  function applyBackup(obj,cfg){
     if(!obj||!obj.data) return false;
-    let changed=false;
+    let changed=false, notesChanged=false;
     SYNC_MODULES.forEach(m=>{
-      if(!syncCfg.modules[m.key]) return;
-      m.keys.forEach(k=>{ if(k in obj.data){ try{ localStorage.setItem(k,obj.data[k]); changed=true; }catch{} } });
+      if(!cfg.modules[m.key]) return;
+      m.keys.forEach(k=>{ if(k in obj.data){ try{ localStorage.setItem(k,obj.data[k]); changed=true; if(k===SK) notesChanged=true; }catch{} } });
     });
+    if(notesChanged){ try{ setData(loadData()); }catch{} }
     return changed;
   }
+  function applySyncData(obj){ return applyBackup(obj,syncCfg); }
 
   // Найти id файла бэкапа в appDataFolder
   async function driveFindFile(token){
@@ -2025,11 +2066,34 @@ export default function App() {
     r.readAsDataURL(f); e.target.value="";
   }
   function browseIcon(target){ iconTarget.current=target; iconRef.current&&iconRef.current.click(); }
-  function onImport(e) {
+  async function onImport(e) {
     const f=e.target.files[0]; if(!f) return;
+    e.target.value="";
     const r=new FileReader();
-    r.onload=ev=>{try{const p=JSON.parse(ev.target.result);if(p&&p.folders){upd(()=>p);tst("✅ Импортировано");}else tst("❌ Неверный формат");}catch{tst("❌ Ошибка чтения");}};
-    r.readAsText(f); e.target.value="";
+    r.onload=async ev=>{
+      let txt=ev.target.result;
+      // если зашифровано — спросить пароль
+      if(f.name.endsWith(".aes256")){
+        const pw=prompt("Пароль для расшифровки:");
+        if(!pw){ tst("Импорт отменён"); return; }
+        try{ txt=await aesDecrypt(txt, pw.trim()); }catch{ tst("❌ Неверный пароль"); return; }
+      }
+      try{
+        const p=JSON.parse(txt);
+        if(p && p.__meta && p.data){
+          // новый формат — восстанавливаем все модули, что есть в файле
+          const allCfg={modules:{settings:true,notes:true,drafts:true}};
+          applyBackup(p, allCfg);
+          // перечитываем настройки в state
+          try{ setAsSettings(loadAS()); setFonts(loadFonts()); }catch{}
+          tst("✅ Импортировано (все данные)");
+        } else if(p && p.folders){
+          // старый формат — только заметки
+          upd(()=>p); tst("✅ Импортировано (заметки)");
+        } else tst("❌ Неверный формат");
+      }catch{ tst("❌ Ошибка чтения"); }
+    };
+    r.readAsText(f);
   }
 
   // ── Context menu helpers ──
@@ -2165,9 +2229,9 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v65</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v66</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
-      <input ref={importRef} type="file" accept=".json,application/json" style={{display:"none"}} onChange={onImport}/>
+      <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
 
       {/* Глобальный поиск по сообщениям */}
@@ -2984,6 +3048,7 @@ export default function App() {
       )}
 
       <ExportSheet open={expSh} onClose={()=>setExpSh(false)} data={data} asSettings={asSettings} setAsSettings={setAsSettings} noInputAnim={noInputAnim} toggleInputAnim={toggleInputAnim}
+        buildBackup={()=>collectBackup(syncCfg.enabled?syncCfg:{modules:{settings:true,notes:true,drafts:true},media:{images:true,videos:true,files:true}})} onImportClick={()=>importRef.current&&importRef.current.click()}
         syncSection={(
           <>
             <div style={{height:1,background:"#241C16",margin:"18px 0 14px"}}/>
@@ -3004,13 +3069,19 @@ export default function App() {
                   {syncStatus==="syncing"?"Синхронизация…":
                    syncStatus==="ok"?("Синхронизировано"+(syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):"")):
                    syncStatus==="error"?"Ошибка синхронизации":
-                   syncStatus==="signedout"?"Не синхронизируется — войдите снова":
+                   syncStatus==="signedout"?"Не выполнен вход в аккаунт":
                    "Готово к синхронизации"}
                 </span>
               </div>
+              {/* Кнопка входа в Google */}
+              <button onClick={()=>runSync("pull",true)}
+                style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"#fff",border:"none",borderRadius:12,padding:"12px",cursor:"pointer",margin:"4px 0 10px"}}>
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
+                <span style={{fontSize:14,color:"#222",fontWeight:600}}>{syncStatus==="ok"?"Аккаунт подключён":"Войти через Google"}</span>
+              </button>
               {syncStatus==="signedout" && (
-                <div onClick={()=>runSync("pull",true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#3A2218",border:"1px solid #E05252",borderRadius:10,margin:"8px 0",cursor:"pointer"}}>
-                  <span style={{flex:1,fontSize:13,color:"#F2EAE0"}}>Заметки не синхронизируются с облаком. Нажмите, чтобы войти.</span>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#3A2218",border:"1px solid #E05252",borderRadius:10,margin:"8px 0"}}>
+                  <span style={{flex:1,fontSize:13,color:"#F2EAE0"}}>Заметки не синхронизируются. Войдите в аккаунт выше.</span>
                 </div>
               )}
               <div onClick={()=>saveSyncCfg({...syncCfg,auto:!syncCfg.auto})}
@@ -3035,6 +3106,19 @@ export default function App() {
                     background:syncCfg.modules[m.key]?"#EF6C00":"transparent",
                     display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
                     {syncCfg.modules[m.key]&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+                  </div>
+                </div>
+              ))}
+              <div style={{fontSize:13,color:"#8A7A65",padding:"12px 4px 8px"}}>Медиафайлы {syncCfg.modules.notes?"":"(включите «Заметки»)"}</div>
+              {MEDIA_MODULES.map(m=>(
+                <div key={m.key} onClick={()=>{ if(!syncCfg.modules.notes) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!syncCfg.media[m.key]}}); }}
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:syncCfg.modules.notes?"pointer":"default",opacity:syncCfg.modules.notes?1:.4}}>
+                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+                  <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
+                    border:"2px solid "+(syncCfg.media[m.key]?"#EF6C00":"#5A4C40"),
+                    background:syncCfg.media[m.key]?"#EF6C00":"transparent",
+                    display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
+                    {syncCfg.media[m.key]&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
                   </div>
                 </div>
               ))}
