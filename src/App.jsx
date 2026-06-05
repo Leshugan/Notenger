@@ -299,7 +299,7 @@ function Sheet({ open, onClose, title="", children }) {
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:300,backdropFilter:"blur(3px)"}}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"#241C16",
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"#2A2017",
         borderRadius:"20px 20px 0 0",padding:"20px 20px 36px",animation:"sUp .22s ease",
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
@@ -320,10 +320,10 @@ function Dlg({ open, msg, onYes, onNo, anchor }) {
     let left=Math.min(Math.max(margin, anchor.right - W), window.innerWidth - W - margin);
     let top=anchor.bottom + 6;
     if(top + 150 > window.innerHeight) top = Math.max(margin, anchor.top - 150);
-    boxStyle={position:"fixed",top,left,width:W,background:"#241C16",borderRadius:14,padding:16,
+    boxStyle={position:"fixed",top,left,width:W,background:"#2A2017",borderRadius:14,padding:16,
       animation:"fS .15s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)",zIndex:600};
   } else {
-    boxStyle={background:"#241C16",borderRadius:16,padding:24,width:"100%",maxWidth:340,animation:"fS .18s ease"};
+    boxStyle={background:"#2A2017",borderRadius:16,padding:24,width:"100%",maxWidth:340,animation:"fS .18s ease"};
   }
   return (
     <div onClick={onNo} style={{position:"fixed",inset:0,background:anchor?"rgba(0,0,0,.35)":"rgba(0,0,0,.65)",
@@ -349,7 +349,7 @@ function DropMenu({ items, onClose, style:extraStyle={} }) {
     return()=>document.removeEventListener("mousedown",h);
   },[onClose]);
   return (
-    <div ref={ref} style={{background:"#241C16",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
+    <div ref={ref} style={{background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
       overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid #3A2E24",...extraStyle}}>
       {items.map((item,i)=>item.sep
         ?<div key={i} style={{height:1,background:"#3A2E24",margin:"2px 0"}}/>
@@ -383,7 +383,7 @@ function UndoToast({ onUndo, onDone }) {
   const R=13,C=2*Math.PI*R,dash=(pct/100)*C;
   return (
     <div style={{position:"fixed",bottom:72,left:10,right:10,zIndex:700,animation:"tIn .22s ease"}}>
-      <div style={{background:"#241C16",borderRadius:14,overflow:"hidden",
+      <div style={{background:"#2A2017",borderRadius:14,overflow:"hidden",
         boxShadow:"0 6px 28px rgba(0,0,0,.55)",border:"1px solid #3A2E24"}}>
         <div style={{height:3,background:"linear-gradient(90deg,#E05252,#FF6B6B)",width:pct+"%",transition:"width .08s linear"}}/>
         <div style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:12}}>
@@ -417,16 +417,16 @@ function LinkDlg({ open, selected, onClose, onInsert }) {
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",display:"flex",
       alignItems:"center",justifyContent:"center",zIndex:600,backdropFilter:"blur(4px)",padding:"0 20px"}}>
-      <div style={{background:"#241C16",borderRadius:16,padding:22,width:"100%",maxWidth:360,animation:"fS .18s ease"}}>
+      <div style={{background:"#2A2017",borderRadius:16,padding:22,width:"100%",maxWidth:360,animation:"fS .18s ease"}}>
         <div style={{fontWeight:700,fontSize:16,marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{display:"flex",color:"#EF6C00"}}>{IC.fLink}</span> Вставить ссылку</div>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:5}}>Текст</div>
         <input value={lbl} onChange={e=>setLbl(e.target.value)} placeholder="Текст ссылки"
-          style={{width:"100%",background:"#241C16",border:"none",borderRadius:10,padding:"10px 12px",color:"#F2EAE0",fontSize:14,marginBottom:12,outline:"none"}}/>
+          style={{width:"100%",background:"#2A2017",border:"none",borderRadius:10,padding:"10px 12px",color:"#F2EAE0",fontSize:14,marginBottom:12,outline:"none"}}/>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:5}}>URL</div>
         <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://"
-          style={{width:"100%",background:"#241C16",border:"none",borderRadius:10,padding:"10px 12px",color:"#F2EAE0",fontSize:14,marginBottom:18,outline:"none"}}/>
+          style={{width:"100%",background:"#2A2017",border:"none",borderRadius:10,padding:"10px 12px",color:"#F2EAE0",fontSize:14,marginBottom:18,outline:"none"}}/>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={onClose} style={{flex:1,background:"#241C16",border:"none",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
+          <button onClick={onClose} style={{flex:1,background:"#2A2017",border:"none",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
           <button onClick={()=>{if(url.trim()){onInsert(lbl.trim()||url.trim(),url.trim());onClose();}}}
             style={{flex:1,background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Вставить</button>
         </div>
@@ -454,7 +454,7 @@ function LinkPopup({ href, x, y, onClose }) {
   const shortHref=href.length>40?href.slice(0,38)+"…":href;
   return (
     <div ref={ref} style={{position:"fixed",top:pos.top,left:pos.left,
-      background:"#241C16",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.7)",
+      background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.7)",
       overflow:"hidden",zIndex:700,animation:"fS .15s ease",border:"1px solid #3A2E24",minWidth:200}}>
       <div style={{fontSize:11,color:"#B0A498",padding:"8px 14px 4px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shortHref}</div>
       {[
@@ -499,7 +499,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
   return (
     <div style={{position:"fixed",inset:0,background:"#1A1410",zIndex:600,display:"flex",flexDirection:"column"}}>
       {/* Шапка без стрелки */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid #241C16",flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
         <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Предпросмотр</div>
       </div>
       {/* Содержимое — как пузырь сообщения */}
@@ -514,7 +514,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
         </div>
       </div>
       {/* Нижняя панель: компактная «Изменить» рядом с «Отправить» */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"3px 12px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46,borderRadius:"16px 16px 0 0"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"3px 12px",borderTop:"1px solid #3A2E24",background:"#2A2017",flexShrink:0,minHeight:46,borderRadius:"16px 16px 0 0"}}>
         <button onClick={onClose} title="Изменить"
           style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span>
@@ -625,9 +625,9 @@ function AttBubble({ att, onOpen, stamp, selecting }) {
 function PinnedBanner({ note, color, onJump }) {
   if(!note) return null;
   return (
-    <div onClick={onJump} style={{background:"#241C16",borderLeft:`3px solid ${color}`,
+    <div onClick={onJump} style={{background:"#2A2017",borderLeft:`3px solid ${color}`,
       padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,
-      borderBottom:"1px solid #241C16",flexShrink:0}}>
+      borderBottom:"1px solid #2A2017",flexShrink:0}}>
       <span style={{fontSize:14}}>📌</span>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:11,color,fontWeight:600,marginBottom:1}}>Закреплено</div>
@@ -666,7 +666,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:400,backdropFilter:"blur(3px)"}}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"#241C16",
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"#2A2017",
         borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",animation:"sUp .22s ease"}}>
         {/* Шапка темы + действия с иконкой */}
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 14px 10px",flexShrink:0}}>
@@ -684,7 +684,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
           </button>
         </div>
         {/* Tab bar */}
-        <div style={{display:"flex",borderBottom:"1px solid #241C16",flexShrink:0}}>
+        <div style={{display:"flex",borderBottom:"1px solid #2A2017",flexShrink:0}}>
           {Object.entries(cats).map(([k,c])=>(
             <button key={k} onClick={()=>setTab(k)} style={{flex:1,background:"none",border:"none",
               padding:"12px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,
@@ -731,7 +731,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
               {current.items.map((a,i)=>(
                 <div key={i} onTouchStart={(e)=>startLp(a,e)} onTouchEnd={cancelLp} onTouchMove={cancelLp}
                   onContextMenu={(e)=>{e.preventDefault();setCtxMenu({item:a,x:e.clientX,y:e.clientY});}}
-                  style={{background:"#241C16",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
+                  style={{background:"#2A2017",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
                   <span style={{color:"#EF6C00",display:"flex"}}>{ficon(a.type)}</span>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
@@ -745,7 +745,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {current.items.map((l,i)=>(
                 <a key={i} href={l.href} target="_blank" rel="noreferrer"
-                  style={{background:"#241C16",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",
+                  style={{background:"#2A2017",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",
                     gap:10,textDecoration:"none",color:"inherit"}}>
                   <span style={{color:"#EF6C00",display:"flex",flexShrink:0}}>{IC.fLink}</span>
                   <div style={{flex:1,minWidth:0}}>
@@ -758,15 +758,15 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
             </div>
           )}
         </div>
-        <div style={{padding:"12px 16px 24px",borderTop:"1px solid #241C16",flexShrink:0}}>
-          <button onClick={onClose} style={{width:"100%",background:"#241C16",border:"none",borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
+        <div style={{padding:"12px 16px 24px",borderTop:"1px solid #2A2017",flexShrink:0}}>
+          <button onClick={onClose} style={{width:"100%",background:"#2A2017",border:"none",borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
         </div>
       </div>
       {ctxMenu&&(
         <div onClick={(e)=>{e.stopPropagation();setCtxMenu(null);}} style={{position:"fixed",inset:0,zIndex:500}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
             left:Math.max(8,Math.min(ctxMenu.x-100,window.innerWidth-210)),top:Math.max(8,ctxMenu.y-72),
-            background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
+            background:"#2A2017",border:"1px solid #3A2E24",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
             <button onClick={()=>{ const id=ctxMenu.item.noteId; setCtxMenu(null); onClose&&onClose(); onJumpTo&&onJumpTo(id); }}
               style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:"#F2EAE0",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
               <span style={{display:"flex",color:"#EF6C00"}}>{IC.arrRight}</span> Перейти к сообщению
@@ -788,7 +788,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
     <>
       <div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="Название"
-        style={{width:"100%",background:"#241C16",border:"none",borderRadius:12,
+        style={{width:"100%",background:"#2A2017",border:"none",borderRadius:12,
           padding:"12px 14px",color:"#F2EAE0",fontSize:15,marginBottom:14,outline:"none"}}/>
       <div style={{marginBottom:12}}>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:8}}>Иконка</div>
@@ -916,7 +916,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <div style={{marginBottom:8}}>
         <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Локальное автосохранение</div>
         <div onClick={()=>setAsOpen(true)}
-          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",border:"1px solid #3A2E24"}}>
+          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",border:"1px solid #3A2E24"}}>
           <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
           <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
         </div>
@@ -924,7 +924,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <Sheet open={asOpen} onClose={()=>setAsOpen(false)} title="Автосохранение">
         {AS_MODES.map(m=>(
           <div key={m.val} onClick={()=>{setAsSettings({mode:m.val});saveAS({mode:m.val});setAsOpen(false);}}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
             <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(asSettings.mode===m.val?"#EF6C00":"#5A4C40"),
               display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               {asSettings.mode===m.val&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
@@ -933,10 +933,10 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
           </div>
         ))}
       </Sheet>
-      <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
+      <div style={{height:1,background:"#2A2017",margin:"16px 0"}}/>
       <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Ручная копия</div>
       <div onClick={()=>setUsePwd(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,
-        background:"#241C16",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid #3A2E24"}}>
+        background:"#2A2017",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid #3A2E24"}}>
         <div style={{width:20,height:20,borderRadius:6,
           background:usePwd?"#9B59B6":"transparent",border:"2px solid "+(usePwd?"#9B59B6":"#5A4C40"),
           display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -945,12 +945,12 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
         <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Шифровать (AES-256)</span>
       </div>
       {usePwd&&<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="Пароль..."
-        style={{width:"100%",background:"#241C16",border:"1px solid #3A2E24",borderRadius:10,padding:"11px 14px",
+        style={{width:"100%",background:"#2A2017",border:"1px solid #3A2E24",borderRadius:10,padding:"11px 14px",
           color:"#F2EAE0",fontSize:14,marginBottom:10,outline:"none"}}/>}
       {msg&&<div style={{fontSize:13,color:"#7EC87E",marginBottom:10}}>{msg}</div>}
       <div style={{display:"flex",gap:10}}>
         <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
-          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:13,
+          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:12,padding:13,
             color:"#F2EAE0",cursor:"pointer",fontSize:14}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.imp}</span>Импорт
         </button>
@@ -1231,7 +1231,7 @@ export default function App() {
   }
   // Множители скорости анимаций (0.3 = быстрее/короче … 1 = базовая длительность). Храним как множитель длительности.
   const [animSpeed, setAnimSpeed] = useState(()=>{ try{ return JSON.parse(localStorage.getItem("napp_animSpeed")||"{}"); }catch{ return {}; } });
-  function setSpeed(key,val){ setAnimSpeed(s=>{ const ns={...s,[key]:val}; try{localStorage.setItem("napp_animSpeed",JSON.stringify(ns));}catch{} return ns; }); }
+  function setSpeed(key,val){ setAnimSpeed(s=>{ const ns={...s,[key]:val}; try{localStorage.setItem("napp_animSpeed",JSON.stringify(ns));}catch{} return ns; }); setNavTick(t=>t+1); }
   const spd=(key,base)=>{ const m=animSpeed[key]; return (typeof m==="number"?m:1)*base; };
   function toggleScrAnim(){ setNoScrAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noScrAnim",nv?"1":"0");}catch{} return nv; }); }
   const dlaunchApplied = useRef(false);
@@ -2045,41 +2045,24 @@ export default function App() {
   }
 
   function softDel(n) {
-    setUndo(null);
+    if(undo) commitDel(); // зафиксировать предыдущее удаление
     const arr = (sid==="__top__"&&folder?.isTheme)?(folder.notes||[]):(subf?.notes||[]);
     const idx = arr.findIndex(x=>x.id===n.id);
     setDestroying(n.id);
     setUndo({note:n,fid,sid,idx});
+    // сразу убираем из данных, чтобы пересылка/синк не воскресили; визуально анимируем уход
+    setTimeout(()=>{ updNotesAt(fid,sid,_n=>_n.filter(x=>x.id!==n.id)); }, 30);
   }
   function undoDel() {
     if(!undo) return;
-    const id=undo.note.id;
-    const el=document.querySelector(`[data-noteid="${id}"]`);
-    if(el){
-      // 1) Считываем где сообщение сейчас (в полёте)
-      const cs=getComputedStyle(el).transform;
-      const op=parseFloat(getComputedStyle(el).opacity)||0;
-      const fromT=(cs&&cs!=="none")?cs:"translateX(0px)";
-      // 2) Снимаем класс анимации СРАЗУ и переводим элемент в нормальное состояние (React больше не вмешается)
-      setDestroying(null);
-      setUndo(null);
-      // 3) В следующем кадре проигрываем возврат через Web Animations API из запомненной точки в 0
-      requestAnimationFrame(()=>{
-        const node=document.querySelector(`[data-noteid="${id}"]`)||el;
-        try{
-          const anim=node.animate(
-            [ {transform:fromT, opacity:op}, {transform:"translateX(0) rotate(0)", opacity:1} ],
-            {duration:420, easing:"cubic-bezier(.22,1,.36,1)", fill:"none"}
-          );
-        }catch{}
-      });
-    } else { setDestroying(null); setUndo(null); }
-  }
-  // фактическое удаление по истечении времени отмены
-  function commitDel(){
-    if(!undo) return;
     const u=undo;
-    updNotesAt(u.fid,u.sid,_n=>_n.filter(x=>x.id!==u.note.id));
+    setDestroying(null);
+    // вернуть заметку на прежнее место
+    updNotesAt(u.fid,u.sid,_n=>{ const arr=[..._n]; const at=Math.max(0,Math.min(u.idx, arr.length)); arr.splice(at,0,u.note); return arr; });
+    setUndo(null);
+  }
+  // удаление уже выполнено в softDel; здесь только закрываем окно отмены
+  function commitDel(){
     setDestroying(null);
     setUndo(null);
   }
@@ -2403,7 +2386,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v81</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v84</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2417,7 +2400,7 @@ export default function App() {
             {globalSearch.trim().length>=3 && globalResults(globalSearch).length===0 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Ничего не найдено</div>}
             {globalResults(globalSearch).map((r,i)=>(
               <div key={i} onClick={()=>openThemeAt(r.folderId,r.subId,r.note.id)}
-                style={{padding:"10px 16px",borderBottom:"1px solid #241C16",cursor:"pointer"}}>
+                style={{padding:"10px 16px",borderBottom:"1px solid #2A2017",cursor:"pointer"}}>
                 <div style={{fontSize:12,color:"#EF6C00",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.themeName}</div>
                 <div style={{fontSize:14,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{strip(r.note.text)}</div>
                 <div style={{fontSize:10,color:"#6A5A48",marginTop:3}}>{r.note.ts?fmtStamp(r.note.ts):r.note.time}</div>
@@ -2425,7 +2408,7 @@ export default function App() {
             ))}
           </div>
           {/* Панель поиска внизу — в едином стиле, высота 46 */}
-          <div style={{padding:"0 10px",flexShrink:0,background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
@@ -2455,7 +2438,7 @@ export default function App() {
 
       {/* Toast */}
       {toast&&<div style={{position:"fixed",bottom:84,left:"50%",transform:"translateX(-50%)",
-        background:"#241C16",color:"#F2EAE0",borderRadius:12,padding:"10px 18px",fontSize:14,
+        background:"#2A2017",color:"#F2EAE0",borderRadius:12,padding:"10px 18px",fontSize:14,
         zIndex:650,whiteSpace:"nowrap",animation:"tIn .2s ease",boxShadow:"0 4px 20px rgba(0,0,0,.4)"}}>
         {toast}</div>}
 
@@ -2465,11 +2448,11 @@ export default function App() {
 
       {/* ══ HEADER — hidden in typing mode ══ */}
       {false&&!(isTyping&&note.length>0)&&!selectMode&&multiSelect.length===0&&(
-        <div style={{background:"#241C16",padding:"0 12px",height:46,display:"flex",alignItems:"center",
-          gap:10,borderBottom:"1px solid #241C16",flexShrink:0}}>
+        <div style={{background:"#2A2017",padding:"0 12px",height:46,display:"flex",alignItems:"center",
+          gap:10,borderBottom:"1px solid #2A2017",flexShrink:0}}>
           {scr!=="main"
             ?<button onClick={back} title="Назад"
-               style={{width:38,height:38,borderRadius:"50%",background:"#241C16",border:"none",
+               style={{width:38,height:38,borderRadius:"50%",background:"#2A2017",border:"none",
                  color:"#F2EAE0",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",
                  justifyContent:"center",lineHeight:1,flexShrink:0}}>{IC.back}</button>
             :null}
@@ -2521,14 +2504,14 @@ export default function App() {
           <div style={{display:"flex",gap:6,marginLeft:"auto",flexShrink:0,position:"relative"}}>
             {scr==="main"&&(
               <button onClick={()=>setGlobalSearch("")} title="Поиск по сообщениям"
-                style={{width:38,height:38,background:"#241C16",border:"none",color:"#B0A498",borderRadius:"50%",
+                style={{width:38,height:38,background:"#2A2017",border:"none",color:"#B0A498",borderRadius:"50%",
                   cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.search}</button>
             )}
 
             {scr==="sub"&&(<>
               <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
                 <button data-menutrigger onClick={e=>openHdrMenu("folder",e)}
-                  style={{width:38,height:38,background:"#241C16",border:"none",color:"#B0A498",borderRadius:"50%",cursor:"pointer",fontSize:18,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.dots}</button>
+                  style={{width:38,height:38,background:"#2A2017",border:"none",color:"#B0A498",borderRadius:"50%",cursor:"pointer",fontSize:18,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.dots}</button>
                 {hdrMenu==="folder"&&<DropMenu onClose={()=>setHdrMenu(null)}
                   style={{position:"absolute",top:"calc(100% + 6px)",right:0}}
                   items={[
@@ -2552,11 +2535,11 @@ export default function App() {
             {scr==="chat"&&(<>
               {/* Search button (Telegram-style) */}
               <button onClick={e=>{e.stopPropagation(); if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setChatSearch(v=>v?"":" ");}} title="Поиск в теме"
-                style={{width:38,height:38,background:"#241C16",border:"none",color:"#B0A498",borderRadius:"50%",cursor:"pointer",fontSize:16,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.search}</button>
+                style={{width:38,height:38,background:"#2A2017",border:"none",color:"#B0A498",borderRadius:"50%",cursor:"pointer",fontSize:16,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.search}</button>
               {/* ⋯ menu — rename only (delete removed) */}
               <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
                 <button data-menutrigger onClick={e=>openHdrMenu("sub",e)}
-                  style={{width:38,height:38,background:"#241C16",border:"none",color:"#B0A498",borderRadius:"50%",cursor:"pointer",fontSize:18,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.dots}</button>
+                  style={{width:38,height:38,background:"#2A2017",border:"none",color:"#B0A498",borderRadius:"50%",cursor:"pointer",fontSize:18,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.dots}</button>
                 {hdrMenu==="sub"&&<DropMenu onClose={()=>setHdrMenu(null)}
                   style={{position:"absolute",top:"calc(100% + 6px)",right:0}}
                   items={[
@@ -2590,7 +2573,7 @@ export default function App() {
                 onTouchStart={f.pinned?(e=>folderDragTouchStart(f.id,e)):undefined}
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",position:"relative",
                   cursor:"pointer",margin:"3px 8px",
-                  background:dragActive===f.id?"#33271B":(f.pinned?"#2A2017":"#241C16"),
+                  background:dragActive===f.id?"#33271B":(f.pinned?"#312618":"#2A2017"),
                   border:"1px solid #3A2E24",
                   transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease, scale .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
@@ -2613,7 +2596,7 @@ export default function App() {
                   onPointerDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}>
                   <button className="menu-dots" data-menutrigger onClick={e=>openFolderMenu(f,e)}
                     style={{background:"none",border:"none",color:"#B0A498",fontSize:20,cursor:"pointer",width:34,height:34,opacity:.55,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.dots}</button>
-                  {folderMenu?.fid===f.id&&(()=>{ const est=200; const below=folderMenu.rect.bottom+4; const up=(below+est>window.innerHeight); return (
+                  {folderMenu?.fid===f.id&&(()=>{ const est=150; const below=folderMenu.rect.bottom+4; const up=(below+est>window.innerHeight); return (
                   <DropMenu onClose={()=>setFolderMenu(null)}
                     style={up
                       ?{position:"fixed",bottom:(window.innerHeight-folderMenu.rect.top+4),right:window.innerWidth-folderMenu.rect.right}
@@ -2635,7 +2618,7 @@ export default function App() {
       {/* НИЖНЯЯ ШАПКА ГЛАВНОГО: Notenger ▾ · поиск · [центр FAB +] */}
       {scr==="main"&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <div style={{position:"relative",flex:1,minWidth:0}}>
             <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(v=>!v); }}
               style={{fontSize:17,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
@@ -2684,7 +2667,7 @@ export default function App() {
                 onTouchStart={s.pinned?(e=>subDragTouchStart(s.id,e)):undefined}
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
                   cursor:"pointer",margin:"3px 8px",
-                  background:dragActive===s.id?"#33271B":(s.pinned?"#2A2017":"#241C16"),
+                  background:dragActive===s.id?"#33271B":(s.pinned?"#312618":"#2A2017"),
                   border:"1px solid #3A2E24",
                   transform:dragActive===s.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
@@ -2704,7 +2687,7 @@ export default function App() {
                   onPointerDown={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}>
                   <button className="menu-dots" data-menutrigger onClick={e=>openSubMenu(s,e)}
                     style={{background:"none",border:"none",color:"#B0A498",fontSize:20,cursor:"pointer",width:34,height:34,opacity:.55,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.dots}</button>
-                  {subMenu?.sid===s.id&&(()=>{ const est=200; const below=subMenu.rect.bottom+4; const up=(below+est>window.innerHeight); return (
+                  {subMenu?.sid===s.id&&(()=>{ const est=150; const below=subMenu.rect.bottom+4; const up=(below+est>window.innerHeight); return (
                   <DropMenu onClose={()=>setSubMenu(null)}
                     style={up
                       ?{position:"fixed",bottom:(window.innerHeight-subMenu.rect.top+4),right:window.innerWidth-subMenu.rect.right}
@@ -2725,7 +2708,7 @@ export default function App() {
 
       {/* Строка поиска по темам — внизу */}
       {scr==="sub"&&folder&&subSearch!=="" && !selectMode && multiSelect.length===0 && (
-        <div style={{padding:"0 10px",flexShrink:0,background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+        <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
           <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
             <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
@@ -2737,7 +2720,7 @@ export default function App() {
       {/* ═══ НИЖНЯЯ ШАПКА КАТЕГОРИИ — назад · категория · поиск · ⋯ · + ═══ */}
       {scr==="sub"&&folder&&subSearch===""&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <button onClick={back} title="Назад"
             style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -2791,7 +2774,7 @@ export default function App() {
           </div>
         )}
         <div ref={scrollRef} onScroll={updateActiveNote} className={noScrAnim?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
-          style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3,animationDuration:spd("scr",0.6)+"s"}}
+          style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s"}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
 
@@ -2815,7 +2798,7 @@ export default function App() {
                 onTouchEnd={multiActive?undefined:(e=>{ if(!selActive) bubbleLpEnd(n,e); })}
                 style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative",
                   background:(isMulti||selActive)?"rgba(239,108,0,.12)":"transparent",
-                  padding:"2px 0",margin:"0 -10px 0 -4px",paddingLeft:4,paddingRight:10,boxSizing:"border-box"}}>
+                  padding:"0.8px 0",margin:"0 -10px 0 -4px",paddingLeft:4,paddingRight:10,boxSizing:"border-box"}}>
                 <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 8px)"}}>
                 {/* Пузырь */}
                 <div
@@ -2836,21 +2819,21 @@ export default function App() {
                   onMouseMove={(selectMode||multiActive)?undefined:bubbleLpMove}
                   onMouseUp={(selectMode||multiActive)?undefined:(e=>bubbleLpEnd(n,e))}
                   onContextMenu={e=>{ e.preventDefault(); }}
-                  style={{background:highlightId===n.id?"#4A3A1E":editId===n.id?"#2E2418":isMulti?"#332512":selActive?"#2E2418":"#241C16",
-                    borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))?"3px":"10px 14px",
+                  style={{background:highlightId===n.id?"#52401F":editId===n.id?"#33281C":isMulti?"#3A2A14":selActive?"#33281C":"#2A2017",
+                    borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))?"3px":"6px 14px 4px",
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
                   {n.text&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
-                      style={{fontSize:15,lineHeight:1.6,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
+                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
                   )}
                   {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time} selecting={multiActive||selActive}/>)}
                   {!(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))&&(
-                  <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:5}}>
+                  <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:1}}>
                     <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
                   </div>
                   )}
@@ -2865,10 +2848,10 @@ export default function App() {
 
         {/* Pending attachments strip */}
         {patts.length>0&&(
-          <div style={{background:"#241C16",borderTop:"1px solid #3A2E24",
+          <div style={{background:"#2A2017",borderTop:"1px solid #3A2E24",
             padding:"8px 12px",display:"flex",gap:8,flexWrap:"wrap",flexShrink:0}}>
             {patts.map(a=>(
-              <div key={a.id} style={{background:"#241C16",borderRadius:10,
+              <div key={a.id} style={{background:"#2A2017",borderRadius:10,
                 padding:"5px 8px",display:"flex",alignItems:"center",gap:5,maxWidth:150}}>
                 <span style={{color:"#EF6C00",display:"flex"}}>{ficon(a.type)}</span>
                 <div style={{minWidth:0}}>
@@ -2894,12 +2877,12 @@ export default function App() {
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
             {/* Верхняя строка: заголовок темы */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid #241C16",flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
               <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{editId?"Редактирование":(subf?.name||"Сообщение")}</div>
             </div>
             {/* Прикреплённые файлы в наборе */}
             {patts.length>0&&(
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"10px 12px",borderBottom:"1px solid #241C16",flexShrink:0}}>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"10px 12px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
                 {patts.map(a=>(
                   <div key={a.id} style={{position:"relative",borderRadius:10,overflow:"hidden",background:"#2E251C",border:"1px solid #3A2E24"}}>
                     {a.type&&a.type.startsWith("image/")
@@ -2932,7 +2915,7 @@ export default function App() {
             </div>
             {/* Всплывающая панель ББ-кодов */}
             {fullFmt&&(
-              <div style={{position:"absolute",left:10,bottom:54,background:"#241C16",borderRadius:12,padding:"5px 6px",
+              <div style={{position:"absolute",left:10,bottom:54,background:"#2A2017",borderRadius:12,padding:"5px 6px",
                 display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid #3A2E24",zIndex:6}}>
                 {[
                   {ic:<Icon size={18} d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" stroke={2} />, b:"[b]",a:"[/b]",x:"текст",t:"Жирный"},
@@ -2952,7 +2935,7 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #3A2E24",background:"#241C16",flexShrink:0,minHeight:46,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #3A2E24",background:"#2A2017",flexShrink:0,minHeight:46,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>Aa</button>
@@ -2984,7 +2967,7 @@ export default function App() {
             </div>
             {/* Оверлей записи: таймер + подсказка смахивания влево для отмены */}
             {recording && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,height:58,background:"#241C16",borderTop:"1px solid #3A2E24",
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:58,background:"#2A2017",borderTop:"1px solid #3A2E24",
                 display:"flex",alignItems:"center",padding:"0 16px",zIndex:30,gap:12,
                 opacity:Math.max(0.4,1-recSlide/120)}}>
                 <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
@@ -2998,7 +2981,7 @@ export default function App() {
             )}
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#241C16",borderTop:"1px solid #3A2E24",
+              <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#2A2017",borderTop:"1px solid #3A2E24",
                 padding:"12px 14px",zIndex:24,display:"flex",flexDirection:"column",gap:10}}>
                 <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
                 <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
@@ -3012,7 +2995,7 @@ export default function App() {
             )}
             {/* Оверлей записи голосового */}
             {recording && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,height:60,background:"#241C16",borderTop:"1px solid #3A2E24",
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:60,background:"#2A2017",borderTop:"1px solid #3A2E24",
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
@@ -3045,7 +3028,7 @@ export default function App() {
         const selNote = single ? subf?.notes.find(x=>x.id===selectMode) : null;
         const closePanel = ()=>{ if(single){ setSelectMode(null); setTextArmed(false); } else clearMulti(); };
         return (
-        <div style={{background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 10px",height:46,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+        <div style={{background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 10px",height:46,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",
@@ -3082,7 +3065,7 @@ export default function App() {
       })()}
         {/* ── НИЖНЯЯ ШАПКА ЧАТА (единый блок: шапка ИЛИ поиск) ── */}
         {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
-          <div style={{padding:"0 10px",flexShrink:0,background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
@@ -3094,7 +3077,7 @@ export default function App() {
         )}
         {!selectMode && multiSelect.length===0 && chatSearch==="" && (!composerFull||composerPeek) && (
           <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-            background:"#241C16",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+            background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -3179,10 +3162,10 @@ export default function App() {
       <Sheet open={!!capDlg} onClose={()=>setCapDlg(null)} title="💬 Подпись к файлу">
         <div style={{fontSize:13,color:"#B0A498",marginBottom:10}}>{capDlg?.name}</div>
         <textarea value={capTx} onChange={e=>setCapTx(e.target.value)} placeholder="Добавить подпись..." rows={3}
-          style={{width:"100%",background:"#241C16",border:"none",borderRadius:12,padding:12,
+          style={{width:"100%",background:"#2A2017",border:"none",borderRadius:12,padding:12,
             color:"#F2EAE0",fontSize:14,resize:"none",marginBottom:14,outline:"none"}}/>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={()=>setCapDlg(null)} style={{flex:1,background:"#241C16",border:"none",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14}}>Пропустить</button>
+          <button onClick={()=>setCapDlg(null)} style={{flex:1,background:"#2A2017",border:"none",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14}}>Пропустить</button>
           <button onClick={saveCaption} style={{flex:1,background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Сохранить</button>
         </div>
       </Sheet>
@@ -3221,7 +3204,7 @@ export default function App() {
       {attSh&&(
         <div onClick={()=>setAttSh(false)} style={{position:"fixed",inset:0,zIndex:450}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"absolute",left:14,bottom:74,
-            background:"#241C16",border:"1px solid #3A2E24",borderRadius:16,padding:10,
+            background:"#2A2017",border:"1px solid #3A2E24",borderRadius:16,padding:10,
             boxShadow:"0 10px 36px rgba(0,0,0,.6)",animation:"fS .15s ease"}}>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3, 78px)",gridAutoRows:"72px",gap:6}}>
             {[
@@ -3250,13 +3233,13 @@ export default function App() {
           <>
             <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
             <div onClick={()=>setDriveSh(true)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
               <svg width="18" height="18" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
               <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
               <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="ok"?"подключён":"настроить"}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
-            <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
+            <div style={{height:1,background:"#2A2017",margin:"16px 0"}}/>
           </>
         )}/>
       <Sheet open={driveSh} onClose={()=>{setDriveSh(false);setSyncMenuOpen(false);setSyncDetails(false);setStorageOpen(false);setSignOutAsk(false);setClearAsk(false);}} title="Google Диск">
@@ -3274,31 +3257,31 @@ export default function App() {
         ) : (
           <>
             {/* Статус + уроборос */}
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",marginBottom:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",marginBottom:10}}>
               <div style={{width:9,height:9,borderRadius:"50%",background:"#5BBF5B",flexShrink:0}}/>
               <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>Синхронизировано{syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):""}</span>
-              <button onClick={()=>runSync("auto",true)} title="Синхронизировать сейчас"
+              <button onClick={()=>runSync("auto",false)} title="Синхронизировать сейчас"
                 style={{width:36,height:36,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <span style={{display:"flex",transform:"scale(.8)",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none"}}>{IC.ouro}</span>
               </button>
             </div>
 
             {/* Когда сохранять — отдельное меню */}
-            <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
+            <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Когда сохранять</span>
               <span style={{fontSize:13,color:"#B0A498"}}>{(CLOUD_MODES.find(m=>m.val===(syncCfg.auto?(syncCfg.cloudMode||"change"):"off"))||CLOUD_MODES[0]).label}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Что сохранять — отдельное меню */}
-            <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
+            <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Место на диске — отдельное меню */}
             <div onClick={()=>{ setCloudStorSh(true); refreshStorageInfo(); }}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
+              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
               <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"")}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
@@ -3306,7 +3289,7 @@ export default function App() {
 
             {/* Выход */}
             {!signOutAsk ? (
-              <button onClick={()=>setSignOutAsk(true)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14,marginTop:4}}>
+              <button onClick={()=>setSignOutAsk(true)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14,marginTop:4}}>
                 <span style={{display:"flex",transform:"scale(.75)"}}>{IC.logout}</span>Выйти из аккаунта
               </button>
             ) : (
@@ -3314,7 +3297,7 @@ export default function App() {
                 <div style={{fontSize:14,color:"#F2EAE0",marginBottom:10}}>Выйти из аккаунта Google?</div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={cloudSignOut} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Да</button>
-                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
+                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
                 </div>
               </div>
             )}
@@ -3325,7 +3308,7 @@ export default function App() {
       <Sheet open={cloudWhenSh} onClose={()=>setCloudWhenSh(false)} title="Когда сохранять">
         {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; return (
           <div key={m.val} onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); setCloudWhenSh(false); }}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
             <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
             <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
           </div>
@@ -3335,7 +3318,7 @@ export default function App() {
       <Sheet open={cloudWhatSh} onClose={()=>setCloudWhatSh(false)} title="Что сохранять">
         {SYNC_MODULES.map(m=>(
           <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
-            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3345,7 +3328,7 @@ export default function App() {
         <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 6px"}}>Медиа {(syncCfg.modules&&syncCfg.modules.notes)?"":"(нужны «Заметки»)"}</div>
         {MEDIA_MODULES.map(m=>{ const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes); return (
           <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
-            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3361,7 +3344,7 @@ export default function App() {
           <div style={{fontSize:13,color:"#B0A498",marginBottom:10}}>Всего: <span style={{color:"#EF6C00",fontWeight:600}}>{humanBytes(storageInfo.total)}</span></div>
         )}
         {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{ const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0; return (
-          <div key={i} style={{padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",marginBottom:6}}>
+          <div key={i} style={{padding:"10px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",marginBottom:6}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
               <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
               <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
@@ -3370,7 +3353,7 @@ export default function App() {
           </div>
         ); })}
         {!storageBusy && storageInfo && storageInfo.parts.length>0 && !clearAsk && (
-          <button onClick={()=>setClearAsk(true)} style={{width:"100%",marginTop:6,background:"#241C16",border:"1px solid #E05252",borderRadius:12,padding:13,color:"#E05252",cursor:"pointer",fontSize:14,fontWeight:600}}>Очистить данные в Google Диске</button>
+          <button onClick={()=>setClearAsk(true)} style={{width:"100%",marginTop:6,background:"#2A2017",border:"1px solid #E05252",borderRadius:12,padding:13,color:"#E05252",cursor:"pointer",fontSize:14,fontWeight:600}}>Очистить данные в Google Диске</button>
         )}
         {clearAsk && (
           <div style={{marginTop:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #E05252"}}>
@@ -3378,14 +3361,14 @@ export default function App() {
             <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
-              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
             </div>
           </div>
         )}
       </Sheet>
 
       <Sheet open={imgSh} onClose={()=>setImgSh(false)} title="Сжатие изображений">
-        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
           <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3397,7 +3380,7 @@ export default function App() {
       </Sheet>
       {imgCompressPopup && (
         <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#241C16",borderRadius:16,border:"1px solid #3A2E24",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid #3A2E24",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
             <div style={{fontSize:16,color:"#F2EAE0",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
             <div style={{fontSize:14,color:"#D8CCBE",lineHeight:1.55,marginBottom:16}}>Качество, заметное человеческому глазу, не пострадает. Изображения станут заметно легче и будут быстрее синхронизироваться.</div>
             <button onClick={()=>setImgCompressPopup(false)} style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Понятно</button>
@@ -3411,7 +3394,7 @@ export default function App() {
             <div style={{position:"absolute",top:2,left:noScrAnim?2:22,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
           </div>
         </div>
-        <div style={{height:1,background:"#241C16",margin:"8px 0"}}/>
+        <div style={{height:1,background:"#2A2017",margin:"8px 0"}}/>
         <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 10px"}}>Скорость анимаций (0.3 — быстро, 1 — медленно)</div>
         {[
           {key:"scr",label:"Переходы экранов",base:0.6},
@@ -3431,7 +3414,7 @@ export default function App() {
             </div>
           );
         })}
-        <div style={{height:1,background:"#241C16",margin:"8px 0"}}/>
+        <div style={{height:1,background:"#2A2017",margin:"8px 0"}}/>
         <div onClick={toggleInputAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию для поля ввода</span>
           <div style={{width:46,height:26,borderRadius:13,background:noInputAnim?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
@@ -3461,7 +3444,7 @@ export default function App() {
 
         {syncCfg.enabled && (<>
           {/* Статус */}
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#241C16",borderRadius:10,margin:"8px 0"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#2A2017",borderRadius:10,margin:"8px 0"}}>
             <div style={{width:10,height:10,borderRadius:"50%",flexShrink:0,
               background:syncStatus==="ok"?"#5BBF5B":syncStatus==="syncing"?"#E0A152":(syncStatus==="error"||syncStatus==="signedout")?"#E05252":"#6A5A48"}}/>
             <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>
@@ -3495,7 +3478,7 @@ export default function App() {
             {syncStatus==="syncing"?"Синхронизация…":"Синхронизировать сейчас"}
           </button>
 
-          <div style={{height:1,background:"#241C16",margin:"10px 0"}}/>
+          <div style={{height:1,background:"#2A2017",margin:"10px 0"}}/>
           <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 8px"}}>Что синхронизировать</div>
           {SYNC_MODULES.map(m=>(
             <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
@@ -3525,7 +3508,7 @@ export default function App() {
           const curFont=allFonts.find(f=>f.id===curId)||allFonts[0];
           return (
             <div key={t.key} onClick={(e)=>{ const r=e.currentTarget.getBoundingClientRect(); setFontOpen({key:t.key,x:r.left,y:r.top,w:r.width}); }}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",marginBottom:8}}>
+              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{t.label}</span>
               <span style={{fontSize:13,color:"#B0A498",fontFamily:curFont.css}}>{curFont.name}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
@@ -3538,7 +3521,7 @@ export default function App() {
         <div onClick={()=>setFontOpen(null)} style={{position:"fixed",inset:0,zIndex:700}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
             left:Math.max(8,Math.min(fontOpen.x+fontOpen.w/2-125,window.innerWidth-258)),top:Math.max(8,Math.min(fontOpen.y-20,window.innerHeight-340)),
-            background:"#241C16",borderRadius:14,width:"max-content",minWidth:180,maxWidth:280,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
+            background:"#2A2017",borderRadius:14,width:"max-content",minWidth:180,maxWidth:280,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
             <div style={{padding:"12px 16px 8px",fontSize:13,fontWeight:700,color:"#8A7A65"}}>{FONT_TARGETS.find(t=>t.key===fontOpen.key)?.label}</div>
             <div style={{overflowY:"auto",flex:1}}>
             {allFonts.map(f=>{
