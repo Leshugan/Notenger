@@ -41,6 +41,7 @@ const IC = {
   cut:   <Icon d={["M6 6m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0","M6 18m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0","M20 4 8.5 15.5","M20 20 8.5 8.5"]} stroke={2} />,
   check: <Icon d="M5 12l5 5 9-11" stroke={2.4} />,
   ouro: <Icon d={["M20 12a8 8 0 1 1-3.2-6.4","M16 2.5l1 3.2-3.2 1"]} stroke={2.2} />,
+  clock: <Icon d={["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z","M12 7.5v5l3.2 2"]} stroke={2} />,
   logout: <Icon d={["M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4","M10 8l-4 4 4 4","M6 12h10"]} stroke={2} />,
   close: <Icon d={["M6 6l12 12","M18 6L6 18"]} stroke={2.2} />,
   copyT: (<svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"block"}}>
@@ -271,7 +272,9 @@ async function aesEncrypt(plain, pwd) {
   const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,enc.encode(plain));
   const out=new Uint8Array(16+12+ct.byteLength);
   out.set(salt,0);out.set(iv,16);out.set(new Uint8Array(ct),28);
-  return btoa(String.fromCharCode(...out));
+  let bin=""; const CH=8192;
+  for(let i=0;i<out.length;i+=CH){ bin+=String.fromCharCode.apply(null, out.subarray(i,i+CH)); }
+  return btoa(bin);
 }
 async function aesDecrypt(b64, pwd) {
   const enc=new TextEncoder();
@@ -2028,8 +2031,9 @@ export default function App() {
   function copyMulti(mode, ids) {
     const sel = ids || multiSelect;
     const chosen=(subf?.notes||[]).filter(n=>sel.includes(n.id));
-    setMoveBuffer({mode, notes:chosen.map(n=>({...n}))});
-    if(mode==="cut") deleteMultiIds(sel); else clearMulti();
+    // запоминаем что и откуда; при "cut" НИЧЕГО не удаляем до вставки
+    setMoveBuffer({mode, notes:chosen.map(n=>({...n})), srcFid:fid, srcSid:sid, srcIds:sel.slice()});
+    clearMulti();
   }
   function deleteMultiIds(ids){
     const set=new Set(ids);
@@ -2038,30 +2042,35 @@ export default function App() {
   }
   function pasteMulti() {
     if(!moveBuffer) return;
-    const copies=moveBuffer.notes.map((n)=>({...n,id:uid("n"),pinned:false,time:tnow(),ts:tstamp()}));
+    const buf=moveBuffer;
+    const copies=buf.notes.map((n)=>({...n,id:uid("n"),pinned:false,time:tnow(),ts:tstamp()}));
+    // 1) вставляем в текущий раздел
     updNotes(arr=>[...arr, ...copies]);
+    // 2) при перемещении — теперь удаляем оригиналы из исходного раздела
+    if(buf.mode==="cut" && buf.srcIds && buf.srcIds.length){
+      const set=new Set(buf.srcIds);
+      updNotesAt(buf.srcFid, buf.srcSid, _n=>_n.filter(x=>!set.has(x.id)));
+    }
     setMoveBuffer(null);
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),50);
   }
 
   function softDel(n) {
-    if(undo) commitDel(); // зафиксировать предыдущее удаление
+    if(undo) commitDel();
     const arr = (sid==="__top__"&&folder?.isTheme)?(folder.notes||[]):(subf?.notes||[]);
     const idx = arr.findIndex(x=>x.id===n.id);
     setDestroying(n.id);
     setUndo({note:n,fid,sid,idx});
-    // сразу убираем из данных, чтобы пересылка/синк не воскресили; визуально анимируем уход
-    setTimeout(()=>{ updNotesAt(fid,sid,_n=>_n.filter(x=>x.id!==n.id)); }, 30);
+    // убираем из данных сразу (без setTimeout — он и «съедал» заметку после отмены)
+    updNotesAt(fid,sid,_n=>_n.filter(x=>x.id!==n.id));
   }
   function undoDel() {
     if(!undo) return;
     const u=undo;
     setDestroying(null);
-    // вернуть заметку на прежнее место
     updNotesAt(u.fid,u.sid,_n=>{ const arr=[..._n]; const at=Math.max(0,Math.min(u.idx, arr.length)); arr.splice(at,0,u.note); return arr; });
     setUndo(null);
   }
-  // удаление уже выполнено в softDel; здесь только закрываем окно отмены
   function commitDel(){
     setDestroying(null);
     setUndo(null);
@@ -2266,9 +2275,9 @@ export default function App() {
   const filtF=data.folders.filter(f=>f.name.toLowerCase().includes(search.toLowerCase()))
     .slice().sort((a,b)=>{
       const ap=a.pinned?1:0, bp=b.pinned?1:0;
-      if(ap!==bp) return ap-bp;            // закреплённые — внизу
-      if(a.pinned&&b.pinned) return (a.pinOrder||0)-(b.pinOrder||0); // порядок среди закреплённых
-      return 0;                             // остальные — в порядке создания (новые снизу)
+      if(ap!==bp) return bp-ap;            // закреплённые — наверх
+      if(a.pinned&&b.pinned) return (a.pinOrder||0)-(b.pinOrder||0);
+      return 0;
     });
 
   // ── Keyboard detection for focus-mode ──
@@ -2386,7 +2395,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v84</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v85</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2589,7 +2598,7 @@ export default function App() {
                     <span style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{f.name}</span>
                   </div>
                   <div style={{fontSize:13,color:"#B0A498",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:2}}>
-                    {f.isTheme ? (last?strip(last.text):"Нет сообщений") : (last?strip(last.text):`${f.subfolders.length} тем`)}
+                    {f.isTheme ? (last?(strip(last.text)||(last.attachments?.length?"Вложение":"Нет сообщений")):"Нет сообщений") : (last?(strip(last.text)||(last.attachments?.length?"Вложение":"Нет сообщений")):`${f.subfolders.length} тем`)}
                   </div>
                 </div>
                 <div style={{position:"relative",flexShrink:0}} onClick={e=>e.stopPropagation()}
@@ -2657,7 +2666,7 @@ export default function App() {
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
           {folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())).slice().sort((a,b)=>{
             const ap=a.pinned?1:0,bp=b.pinned?1:0;
-            if(ap!==bp) return ap-bp;            // закреплённые — внизу
+            if(ap!==bp) return bp-ap;            // закреплённые — наверх
             if(a.pinned&&b.pinned) return (a.pinOrder||0)-(b.pinOrder||0);
             return 0;
           }).map(s=>{
@@ -2680,7 +2689,7 @@ export default function App() {
                     <span style={{fontWeight:600,fontSize:16}}>{s.name}</span>
                   </div>
                   <div style={{fontSize:13,color:"#B0A498",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:2}}>
-                    {last?strip(last.text):"Нет сообщений"}
+                    {last?(strip(last.text)||(last.attachments?.length?"Вложение":"Нет сообщений")):"Нет сообщений"}
                   </div>
                 </div>
                 <div style={{position:"relative",flexShrink:0}} onClick={e=>e.stopPropagation()}
@@ -3042,10 +3051,12 @@ export default function App() {
                 color:selNote?.pinned?"#F5A623":"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
               {selNote?.pinned?IC.pinOff:IC.pin}</button>
           )}
-          {/* Копировать текст (Т) */}
-          <button onClick={()=>{ if(single){ if(selNote)copyText(selNote); } else { copyTextMulti(); } closePanel(); }} title="Копировать текст"
+          {/* Копировать текст — только для одиночного сообщения с текстом */}
+          {single && selNote && selNote.text && (
+          <button onClick={()=>{ if(selNote)copyText(selNote); closePanel(); }} title="Копировать текст"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
+          )}
           {/* Копировать сообщение */}
           <button onClick={()=>{ if(single){ if(selNote){ setSelectMode(null); copyMulti("cut",[selNote.id]); } } else { copyMulti("cut"); } setScr("main"); }} title="Переместить в раздел"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
@@ -3306,13 +3317,23 @@ export default function App() {
       </Sheet>
 
       <Sheet open={cloudWhenSh} onClose={()=>setCloudWhenSh(false)} title="Когда сохранять">
-        {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; return (
-          <div key={m.val} onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); setCloudWhenSh(false); }}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
-            <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
-            <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+        {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; const timed=(m.val==="1d"||m.val==="1w"); return (
+          <div key={m.val} style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",marginBottom:6}}>
+            <div onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); }} style={{display:"flex",alignItems:"center",gap:10,flex:1,cursor:"pointer"}}>
+              <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
+              <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+            </div>
+            {timed && sel && (
+              <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
+                <span style={{display:"flex",color:"#EF6C00",transform:"scale(.85)"}}>{IC.clock||IC.ouro}</span>
+                <input type="time" value={syncCfg.cloudTime||"03:00"}
+                  onChange={e=>saveSyncCfg({...syncCfg,cloudTime:e.target.value})}
+                  style={{background:"#1A1410",border:"1px solid #3A2E24",borderRadius:8,color:"#F2EAE0",fontSize:13,padding:"4px 6px",outline:"none"}}/>
+              </label>
+            )}
           </div>
         ); })}
+        <div style={{fontSize:12,color:"#8A7A65",padding:"4px 4px"}}>Для «раз в день/неделю» можно указать время автосохранения.</div>
       </Sheet>
 
       <Sheet open={cloudWhatSh} onClose={()=>setCloudWhatSh(false)} title="Что сохранять">
@@ -3408,7 +3429,7 @@ export default function App() {
                 <span style={{fontSize:14,color:"#F2EAE0"}}>{it.label}</span>
                 <span style={{fontSize:13,color:"#EF6C00",fontVariantNumeric:"tabular-nums"}}>{v.toFixed(2)}×</span>
               </div>
-              <input type="range" min="0.3" max="2" step="0.05" value={v}
+              <input type="range" min="0.3" max="1" step="0.05" value={v>1?1:v}
                 onChange={e=>setSpeed(it.key,parseFloat(e.target.value))}
                 style={{width:"100%",accentColor:"#EF6C00"}}/>
             </div>
