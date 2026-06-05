@@ -910,29 +910,27 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
   return (
     <Sheet open={open} onClose={()=>{setAsOpen(false);onClose();}} title="Резервная копия данных">
       {syncSection}
-      {/* Автосохранение — выпадающий выбор */}
+      {/* Автосохранение — открывает отдельное меню */}
       <div style={{marginBottom:8}}>
         <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Локальное автосохранение</div>
-        <div onClick={()=>setAsOpen(v=>!v)}
+        <div onClick={()=>setAsOpen(true)}
           style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",border:"1px solid #3A2E24"}}>
           <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
-          <span style={{display:"flex",color:"#8A7A65",transform:asOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+          <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
         </div>
-        {asOpen && (
-          <div style={{marginTop:6,background:"#241C16",borderRadius:10,overflow:"hidden",border:"1px solid #3A2E24"}}>
-            {AS_MODES.map(m=>(
-              <div key={m.val} onClick={()=>{setAsSettings({mode:m.val});saveAS({mode:m.val});setAsOpen(false);}}
-                style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer"}}>
-                <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(asSettings.mode===m.val?"#EF6C00":"#5A4C40"),
-                  display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  {asSettings.mode===m.val&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}
-                </div>
-                <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+      <Sheet open={asOpen} onClose={()=>setAsOpen(false)} title="Автосохранение">
+        {AS_MODES.map(m=>(
+          <div key={m.val} onClick={()=>{setAsSettings({mode:m.val});saveAS({mode:m.val});setAsOpen(false);}}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(asSettings.mode===m.val?"#EF6C00":"#5A4C40"),
+              display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              {asSettings.mode===m.val&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
+            </div>
+            <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+          </div>
+        ))}
+      </Sheet>
       <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
       <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Ручная копия</div>
       <div onClick={()=>setUsePwd(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,
@@ -977,8 +975,10 @@ export default function App() {
   const [selCopy, setSelCopy] = useState(null); // {x,y,text} плавающая кнопка копирования выделенного текста
   const [data,      setData]      = useState(loadData);
   const [scr,       setScr]       = useState("main");
+  const [navTick,   setNavTick]   = useState(0);
   const [fid,       setFid]       = useState(null);
   const [sid,       setSid]       = useState(null);
+  useEffect(()=>{ setNavTick(t=>t+1); },[scr,fid,sid]);
   const [search,    setSearch]    = useState("");
   const [subSearch, setSubSearch] = useState("");
   const [globalSearch, setGlobalSearch] = useState(null); // null=закрыт, "" или строка=открыт
@@ -1245,6 +1245,9 @@ export default function App() {
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
   const [imgSh, setImgSh] = useState(false); // шторка сжатия изображений
   const [driveSh, setDriveSh] = useState(false); // отдельное меню Google Диска
+  const [cloudWhenSh, setCloudWhenSh] = useState(false);
+  const [cloudWhatSh, setCloudWhatSh] = useState(false);
+  const [cloudStorSh, setCloudStorSh] = useState(false);
   const [fontSh, setFontSh] = useState(false); // шторка шрифтов
   const [fontOpen, setFontOpen] = useState(null); // {key,x,y} какой пункт шрифта раскрыт
   const FONT_KEY="napp_fonts_v1";
@@ -1380,13 +1383,15 @@ export default function App() {
   }
   async function refreshStorageInfo(){
     setStorageBusy(true);
-    let total=null;
+    let total=null, hasFile=false;
     try{
       const token=await getAccessToken(false);
-      if(token){ const f=await driveFindFile(token); total=f&&f.size?parseInt(f.size,10):0; }
+      if(token){ const f=await driveFindFile(token); if(f){ hasFile=true; total=f.size?parseInt(f.size,10):0; } else { hasFile=false; total=0; } }
     }catch{}
+    if(!hasFile){ setStorageInfo({total:total||0,parts:[]}); setStorageBusy(false); return; }
+    // файл в облаке есть — показываем оценку распределения по локальным данным (что в нём лежит)
     const parts=computeStorageBreakdown();
-    if(total==null) total=parts.reduce((s,p)=>s+p.bytes,0); // оценка, если размер с Диска не получили
+    if(total==null) total=parts.reduce((s,p)=>s+p.bytes,0);
     setStorageInfo({total,parts});
     setStorageBusy(false);
   }
@@ -1395,9 +1400,9 @@ export default function App() {
     try{
       const token=await getAccessToken(true);
       if(token){ const f=await driveFindFile(token); if(f) await driveDelete(token,f.id); }
-      setStorageInfo({total:0,parts:[]});
-      setSyncLastTime(null); try{ localStorage.removeItem("napp_sync_last"); }catch{}
     }catch{}
+    setStorageInfo({total:0,parts:[]});
+    setSyncLastTime(null); try{ localStorage.removeItem("napp_sync_last"); }catch{}
     setStorageBusy(false);
   }
   const syncTimer=useRef(null);
@@ -1738,6 +1743,9 @@ export default function App() {
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
     if(composerFull && !composerPeek){ setComposerFull(false); return true; }
     // при peek: кнопка назад листает каталоги слева (в черновик — только свайп/гребешок)
+    if(cloudWhenSh){ setCloudWhenSh(false); return true; }
+    if(cloudWhatSh){ setCloudWhatSh(false); return true; }
+    if(cloudStorSh){ setCloudStorSh(false); return true; }
     if(driveSh){ setDriveSh(false); return true; }
     if(imgSh){ setImgSh(false); return true; }
     if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); return true; }
@@ -2329,7 +2337,7 @@ export default function App() {
     <div
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
-        "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.42)+"s",
+        "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s",
         color:"#F2EAE0",overflow:"hidden",position:"relative"}}
       data-ver-badge
       onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);}}
@@ -2368,7 +2376,7 @@ export default function App() {
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
         @keyframes scrIn{from{opacity:0;transform:translateX(30px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
-        .scrAnim{animation:scrIn var(--scr-dur,.42s) cubic-bezier(.05,.7,.1,1);}
+        .scrAnim{animation-name:scrIn;animation-duration:var(--scr-dur,.6s);animation-timing-function:cubic-bezier(.05,.7,.1,1);animation-fill-mode:both;}
         @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -2386,14 +2394,14 @@ export default function App() {
           0%{transform:translateX(0) rotate(0);opacity:1}
           18%{transform:translateX(14px) rotate(1.5deg);opacity:1}
           100%{transform:translateX(-140vw) rotate(-8deg);opacity:0}}
-        .destroying{animation:flyAwayLeft 2s cubic-bezier(.5,0,.75,0) forwards;will-change:transform;}
+        .destroying{animation:flyAwayLeft var(--del-dur,2s) cubic-bezier(.5,0,.75,0) forwards;will-change:transform;}
         .planeGhost{position:fixed;width:44px;height:44px;border-radius:50%;background:#EF6C00;
           display:flex;align-items:center;justify-content:center;color:#fff;z-index:95;pointer-events:none;
           box-shadow:0 1px 5px rgba(239,108,0,.3);
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v78</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v80</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2569,7 +2577,7 @@ export default function App() {
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div className={noScrAnim?undefined:"scrAnim"} key="scr-main" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div className={noScrAnim?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
@@ -2658,7 +2666,7 @@ export default function App() {
 
       {/* ═══ SUBFOLDERS ═══ */}
       {scr==="sub"&&folder&&(
-        <div className={noScrAnim?undefined:"scrAnim"} key="scr-sub" style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        <div className={noScrAnim?undefined:"scrAnim"} key={"scr-sub-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
@@ -2780,8 +2788,8 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={updateActiveNote} className={noScrAnim?undefined:"scrAnim"} key={"scr-chat-"+sid}
-          style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3}}
+        <div ref={scrollRef} onScroll={updateActiveNote} className={noScrAnim?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
+          style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:3,animationDuration:spd("scr",0.6)+"s"}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
 
@@ -2880,7 +2888,7 @@ export default function App() {
             onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); } swipeRef.current=null; }}
             style={{position:"fixed",inset:0,background:"#1A1410",zIndex:400,display:"flex",flexDirection:"column",
               transform: noInputAnim ? "translateX(0)" : (composerPeek?"translateX(100%)":"translateX(0)"),
-              transition: noInputAnim ? "none" : ("transform "+spd("input",0.3)+"s cubic-bezier(.32,.72,0,1)"),
+              transition: noInputAnim ? "none" : ("transform "+spd("input",0.5)+"s cubic-bezier(.32,.72,0,1)"),
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
             {/* Верхняя строка: заголовок темы */}
@@ -3273,84 +3281,26 @@ export default function App() {
               </button>
             </div>
 
-            {/* Когда сохранять — в стиле списка шрифтов */}
-            <div onClick={()=>setSyncMenuOpen(v=>!v)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:syncMenuOpen?6:8}}>
+            {/* Когда сохранять — отдельное меню */}
+            <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Когда сохранять</span>
               <span style={{fontSize:13,color:"#B0A498"}}>{(CLOUD_MODES.find(m=>m.val===(syncCfg.auto?(syncCfg.cloudMode||"change"):"off"))||CLOUD_MODES[0]).label}</span>
-              <span style={{display:"flex",color:"#8A7A65",transform:syncMenuOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+              <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
-            {syncMenuOpen && (
-              <div style={{marginBottom:8,background:"#241C16",borderRadius:10,overflow:"hidden",border:"1px solid #3A2E24"}}>
-                {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; return (
-                  <div key={m.val} onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); setSyncMenuOpen(false); }}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer"}}>
-                    <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
-                    <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-                  </div>
-                ); })}
-              </div>
-            )}
 
-            {/* Что сохранять — в стиле списка шрифтов */}
-            <div onClick={()=>setSyncDetails(v=>!v)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:syncDetails?6:8}}>
+            {/* Что сохранять — отдельное меню */}
+            <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
-              <span style={{display:"flex",color:"#8A7A65",transform:syncDetails?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+              <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
-            {syncDetails && (<div style={{marginBottom:8}}>
-              {SYNC_MODULES.map(m=>(
-                <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
-                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
-                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-                  <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
-                    <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-                  </div>
-                </div>
-              ))}
-              <div style={{fontSize:12,color:"#8A7A65",padding:"6px 4px 6px"}}>Медиа {(syncCfg.modules&&syncCfg.modules.notes)?"":"(нужны «Заметки»)"}</div>
-              {MEDIA_MODULES.map(m=>{ const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes); return (
-                <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
-                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
-                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-                  <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
-                    <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-                  </div>
-                </div>
-              ); })}
-            </div>)}
 
-            {/* Место на диске */}
-            <div onClick={()=>{ const nx=!storageOpen; setStorageOpen(nx); if(nx) refreshStorageInfo(); }}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:storageOpen?6:8}}>
+            {/* Место на диске — отдельное меню */}
+            <div onClick={()=>{ setCloudStorSh(true); refreshStorageInfo(); }}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
-              <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"показать")}</span>
-              <span style={{display:"flex",color:"#8A7A65",transform:storageOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+              <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"")}</span>
+              <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
-            {storageOpen && (
-              <div style={{marginBottom:8,background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",overflow:"hidden"}}>
-                {storageBusy && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Загрузка…</div>}
-                {!storageBusy && storageInfo && storageInfo.parts.length===0 && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Данных нет</div>}
-                {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{ const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0; return (
-                  <div key={i} style={{padding:"9px 14px",borderBottom:i<storageInfo.parts.length-1?"1px solid #1A1410":"none"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                      <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
-                      <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
-                    </div>
-                    <div style={{height:5,borderRadius:3,background:"#1A1410",overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"#EF6C00",borderRadius:3}}/></div>
-                  </div>
-                ); })}
-                <button onClick={()=>setClearAsk(true)} style={{width:"100%",background:"none",border:"none",borderTop:"1px solid #1A1410",padding:13,color:"#E05252",cursor:"pointer",fontSize:14,fontWeight:600}}>Очистить данные в Google Диске</button>
-              </div>
-            )}
-            {clearAsk && (
-              <div style={{marginBottom:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #E05252"}}>
-                <div style={{fontSize:14,color:"#F2EAE0",marginBottom:4,fontWeight:600}}>Удалить все данные с Диска?</div>
-                <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
-                <div style={{display:"flex",gap:10}}>
-                  <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
-                  <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
-                </div>
-              </div>
-            )}
 
             {/* Выход */}
             {!signOutAsk ? (
@@ -3367,6 +3317,68 @@ export default function App() {
               </div>
             )}
           </>
+        )}
+      </Sheet>
+
+      <Sheet open={cloudWhenSh} onClose={()=>setCloudWhenSh(false)} title="Когда сохранять">
+        {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; return (
+          <div key={m.val} onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); setCloudWhenSh(false); }}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
+            <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+          </div>
+        ); })}
+      </Sheet>
+
+      <Sheet open={cloudWhatSh} onClose={()=>setCloudWhatSh(false)} title="Что сохранять">
+        {SYNC_MODULES.map(m=>(
+          <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+            <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+              <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+          </div>
+        ))}
+        <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 6px"}}>Медиа {(syncCfg.modules&&syncCfg.modules.notes)?"":"(нужны «Заметки»)"}</div>
+        {MEDIA_MODULES.map(m=>{ const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes); return (
+          <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
+            <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+            <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+              <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+          </div>
+        ); })}
+      </Sheet>
+
+      <Sheet open={cloudStorSh} onClose={()=>{setCloudStorSh(false);setClearAsk(false);}} title="На Диске занято">
+        {storageBusy && <div style={{padding:"12px 4px",fontSize:13,color:"#8A7A65"}}>Загрузка…</div>}
+        {!storageBusy && storageInfo && storageInfo.parts.length===0 && <div style={{padding:"12px 4px",fontSize:14,color:"#8A7A65"}}>В облаке нет данных</div>}
+        {!storageBusy && storageInfo && storageInfo.parts.length>0 && (
+          <div style={{fontSize:13,color:"#B0A498",marginBottom:10}}>Всего: <span style={{color:"#EF6C00",fontWeight:600}}>{humanBytes(storageInfo.total)}</span></div>
+        )}
+        {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{ const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0; return (
+          <div key={i} style={{padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",marginBottom:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+              <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
+              <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
+            </div>
+            <div style={{height:5,borderRadius:3,background:"#1A1410",overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"#EF6C00",borderRadius:3}}/></div>
+          </div>
+        ); })}
+        {!storageBusy && storageInfo && storageInfo.parts.length>0 && !clearAsk && (
+          <button onClick={()=>setClearAsk(true)} style={{width:"100%",marginTop:6,background:"#241C16",border:"1px solid #E05252",borderRadius:12,padding:13,color:"#E05252",cursor:"pointer",fontSize:14,fontWeight:600}}>Очистить данные в Google Диске</button>
+        )}
+        {clearAsk && (
+          <div style={{marginTop:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #E05252"}}>
+            <div style={{fontSize:14,color:"#F2EAE0",marginBottom:4,fontWeight:600}}>Удалить все данные с Диска?</div>
+            <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
+              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+            </div>
+          </div>
         )}
       </Sheet>
 
@@ -3400,8 +3412,9 @@ export default function App() {
         <div style={{height:1,background:"#241C16",margin:"8px 0"}}/>
         <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 10px"}}>Скорость анимаций (0.3 — быстро, 1 — медленно)</div>
         {[
-          {key:"scr",label:"Переходы экранов",base:0.42},
-          {key:"input",label:"Поле ввода",base:0.3},
+          {key:"scr",label:"Переходы экранов",base:0.6},
+          {key:"input",label:"Поле ввода",base:0.5},
+          {key:"del",label:"Удаление сообщения",base:2},
         ].map(it=>{
           const v=typeof animSpeed[it.key]==="number"?animSpeed[it.key]:1;
           return (
@@ -3410,7 +3423,7 @@ export default function App() {
                 <span style={{fontSize:14,color:"#F2EAE0"}}>{it.label}</span>
                 <span style={{fontSize:13,color:"#EF6C00",fontVariantNumeric:"tabular-nums"}}>{v.toFixed(2)}×</span>
               </div>
-              <input type="range" min="0.3" max="1" step="0.05" value={v}
+              <input type="range" min="0.3" max="2" step="0.05" value={v}
                 onChange={e=>setSpeed(it.key,parseFloat(e.target.value))}
                 style={{width:"100%",accentColor:"#EF6C00"}}/>
             </div>
