@@ -304,6 +304,8 @@ function Sheet({ open, onClose, title="", children }) {
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
         {children}
+        <button onClick={onClose} style={{width:"100%",marginTop:18,background:"#2E251C",border:"1px solid #3A2E24",
+          borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
       </div>
     </div>
   );
@@ -2036,8 +2038,8 @@ export default function App() {
   }
   function pasteMulti() {
     if(!moveBuffer) return;
-    upd(d=>({...d,folders:d.folders.map(f=>f.id!==fid?f:{...f,subfolders:f.subfolders.map(s=>s.id!==sid?s:{...s,
-      notes:[...s.notes, ...moveBuffer.notes.map((n,i)=>({...n,id:uid("n"),pinned:false,time:tnow(),ts:tstamp()}))]})})}));
+    const copies=moveBuffer.notes.map((n)=>({...n,id:uid("n"),pinned:false,time:tnow(),ts:tstamp()}));
+    updNotes(arr=>[...arr, ...copies]);
     setMoveBuffer(null);
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),50);
   }
@@ -2401,7 +2403,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v80</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v81</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3242,7 +3244,7 @@ export default function App() {
         </div>
       )}
 
-      <ExportSheet open={expSh} onClose={()=>setExpSh(false)} data={data} asSettings={asSettings} setAsSettings={setAsSettings} noInputAnim={noInputAnim} toggleInputAnim={toggleInputAnim}
+      <ExportSheet open={expSh} onClose={()=>{setExpSh(false);setDriveSh(false);setCloudWhenSh(false);setCloudWhatSh(false);setCloudStorSh(false);setSyncMenuOpen(false);setSyncDetails(false);setStorageOpen(false);setSignOutAsk(false);setClearAsk(false);}} data={data} asSettings={asSettings} setAsSettings={setAsSettings} noInputAnim={noInputAnim} toggleInputAnim={toggleInputAnim}
         buildBackup={()=>collectBackup(syncCfg.enabled?syncCfg:{modules:{settings:true,notes:true,drafts:true},media:{images:true,videos:true,files:true}})} onImportClick={()=>importRef.current&&importRef.current.click()}
         syncSection={(
           <>
@@ -3530,7 +3532,6 @@ export default function App() {
             </div>
           );
         })}
-        <button onClick={()=>{setFontSh(false);setFontOpen(null);}} style={{width:"100%",marginTop:8,background:"#241C16",border:"none",borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
       </Sheet>
       {/* Popup выбора шрифта поверх */}
       {fontOpen&&(
