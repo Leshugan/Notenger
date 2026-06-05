@@ -307,7 +307,7 @@ function Sheet({ open, onClose, title="", children }) {
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
         {children}
-        <button onClick={onClose} style={{width:"100%",marginTop:18,background:"#2E251C",border:"1px solid #3A2E24",
+        <button onClick={onClose} style={{width:"100%",marginTop:18,background:"#2E251C",border:"1px solid #4A3A2A",
           borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
       </div>
     </div>
@@ -324,7 +324,7 @@ function Dlg({ open, msg, onYes, onNo, anchor }) {
     let top=anchor.bottom + 6;
     if(top + 150 > window.innerHeight) top = Math.max(margin, anchor.top - 150);
     boxStyle={position:"fixed",top,left,width:W,background:"#2A2017",borderRadius:14,padding:16,
-      animation:"fS .15s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)",zIndex:600};
+      animation:"fS .15s ease",border:"1px solid #4A3A2A",boxShadow:"0 10px 36px rgba(0,0,0,.6)",zIndex:600};
   } else {
     boxStyle={background:"#2A2017",borderRadius:16,padding:24,width:"100%",maxWidth:340,animation:"fS .18s ease"};
   }
@@ -353,9 +353,9 @@ function DropMenu({ items, onClose, style:extraStyle={} }) {
   },[onClose]);
   return (
     <div ref={ref} style={{background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
-      overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid #3A2E24",...extraStyle}}>
+      overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid #4A3A2A",...extraStyle}}>
       {items.map((item,i)=>item.sep
-        ?<div key={i} style={{height:1,background:"#3A2E24",margin:"2px 0"}}/>
+        ?<div key={i} style={{height:1,background:"#4A3A2A",margin:"2px 0"}}/>
         :<button key={i} onClick={()=>{item.fn();onClose();}}
           style={{background:"none",border:"none",padding:"10px 14px",
             color:item.danger?"#E05252":"#F2EAE0",fontSize:14,cursor:"pointer",
@@ -387,11 +387,11 @@ function UndoToast({ onUndo, onDone }) {
   return (
     <div style={{position:"fixed",bottom:72,left:10,right:10,zIndex:700,animation:"tIn .22s ease"}}>
       <div style={{background:"#2A2017",borderRadius:14,overflow:"hidden",
-        boxShadow:"0 6px 28px rgba(0,0,0,.55)",border:"1px solid #3A2E24"}}>
+        boxShadow:"0 6px 28px rgba(0,0,0,.55)",border:"1px solid #4A3A2A"}}>
         <div style={{height:3,background:"linear-gradient(90deg,#E05252,#FF6B6B)",width:pct+"%",transition:"width .08s linear"}}/>
         <div style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:12}}>
           <svg width={32} height={32} style={{flexShrink:0,transform:"rotate(-90deg)"}}>
-            <circle cx={16} cy={16} r={R} fill="none" stroke="#3A2E24" strokeWidth={2.5}/>
+            <circle cx={16} cy={16} r={R} fill="none" stroke="#4A3A2A" strokeWidth={2.5}/>
             <circle cx={16} cy={16} r={R} fill="none" stroke="#E05252" strokeWidth={2.5}
               strokeDasharray={`${dash} ${C}`} strokeLinecap="round" style={{transition:"stroke-dasharray .08s linear"}}/>
             <text x={16} y={16} textAnchor="middle" dominantBaseline="central"
@@ -458,14 +458,14 @@ function LinkPopup({ href, x, y, onClose }) {
   return (
     <div ref={ref} style={{position:"fixed",top:pos.top,left:pos.left,
       background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.7)",
-      overflow:"hidden",zIndex:700,animation:"fS .15s ease",border:"1px solid #3A2E24",minWidth:200}}>
+      overflow:"hidden",zIndex:700,animation:"fS .15s ease",border:"1px solid #4A3A2A",minWidth:200}}>
       <div style={{fontSize:11,color:"#B0A498",padding:"8px 14px 4px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shortHref}</div>
       {[
         {icon:"📋",label:"Копировать ссылку",fn:()=>{navigator.clipboard?.writeText(href);onClose();}},
         {icon:"↗",label:"Открыть ссылку",fn:()=>{window.open(href,"_blank");onClose();}},
       ].map((it,i)=>(
         <button key={i} onClick={it.fn} style={{width:"100%",background:"none",border:"none",
-          borderTop:"1px solid #3A2E24",padding:"11px 14px",color:"#F2EAE0",fontSize:14,
+          borderTop:"1px solid #4A3A2A",padding:"11px 14px",color:"#F2EAE0",fontSize:14,
           cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}
           onMouseEnter={e=>(e.currentTarget.style.background="#332512")}
           onMouseLeave={e=>(e.currentTarget.style.background="none")}>
@@ -517,9 +517,9 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
         </div>
       </div>
       {/* Нижняя панель: компактная «Изменить» рядом с «Отправить» */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"3px 12px",borderTop:"1px solid #3A2E24",background:"#2A2017",flexShrink:0,minHeight:46,borderRadius:"16px 16px 0 0"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"3px 12px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,minHeight:46,borderRadius:"16px 16px 0 0"}}>
         <button onClick={onClose} title="Изменить"
-          style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #4A3A2A",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span>
         </button>
         <button onClick={()=>{onSend();onClose();}} title={isEdit?"Сохранить":"Отправить"}
@@ -558,9 +558,10 @@ function VoiceMessage({ att, color, center, stamp, compact, selecting }){
   const pct=dur>0?Math.min(100,(cur/dur)*100):0;
   const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
   const seekToClientX=(clientX)=>{ const el=trackRef.current; const a=audioRef.current; if(!el||!a||!dur)return; const r=el.getBoundingClientRect(); const x=Math.max(0,Math.min(1,(clientX-r.left)/r.width)); const t=x*dur; a.currentTime=t; setCur(t); };
-  const onDown=(e)=>{ if(selecting){ return; } e.stopPropagation(); draggingRef.current=true; try{e.currentTarget.setPointerCapture&&e.currentTarget.setPointerCapture(e.pointerId);}catch{} seekToClientX(e.clientX); };
-  const onMove=(e)=>{ if(!draggingRef.current||selecting)return; e.stopPropagation(); seekToClientX(e.clientX); };
-  const onUp=(e)=>{ if(!draggingRef.current)return; e.stopPropagation(); draggingRef.current=false; try{e.currentTarget.releasePointerCapture&&e.currentTarget.releasePointerCapture(e.pointerId);}catch{} };
+  const downXY=useRef(null);
+  const onDown=(e)=>{ if(selecting){ return; } downXY.current={x:e.clientX,y:e.clientY,seeked:false}; };
+  const onMove=(e)=>{ if(selecting||!downXY.current)return; const dx=Math.abs(e.clientX-downXY.current.x), dy=Math.abs(e.clientY-downXY.current.y); if(!downXY.current.seeked && (dx>6||dy>6)){ downXY.current.seeked=true; draggingRef.current=true; } if(draggingRef.current){ e.stopPropagation(); seekToClientX(e.clientX); } };
+  const onUp=(e)=>{ if(draggingRef.current){ e.stopPropagation(); } draggingRef.current=false; downXY.current=null; };
   const bars=[6,10,8,14,9,16,7,13,11,18,8,12,15,9,17,10,8,14,11,7,13,9,16,8,12,10,15,9];
   const c=color||"#EF6C00";
   const BARW=compact?2:3, GAP=2, TRACKW=bars.length*(BARW+GAP); const PB=compact?42:48;
@@ -568,10 +569,10 @@ function VoiceMessage({ att, color, center, stamp, compact, selecting }){
     <div style={{display:"flex",alignItems:"center",gap:9,background:"#1C1510",borderRadius:16,padding:"8px 9px",width:"fit-content",maxWidth:270,...(center?{margin:"0 auto"}:{})}}>
       <div style={{flexShrink:0,display:"flex",flexDirection:"column"}}>
         <div ref={trackRef}
-          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-          style={{position:"relative",height:compact?22:26,cursor:"pointer",touchAction:"none",width:TRACKW,display:"flex",alignItems:"center"}}>
+          onPointerDown={selecting?undefined:onDown} onPointerMove={selecting?undefined:onMove} onPointerUp={selecting?undefined:onUp} onPointerCancel={selecting?undefined:onUp}
+          style={{position:"relative",height:compact?22:26,cursor:selecting?"default":"pointer",touchAction:selecting?"auto":"pan-y",pointerEvents:selecting?"none":"auto",width:TRACKW,display:"flex",alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",gap:GAP,position:"absolute",inset:0}}>
-            {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:"#3A2E24",flexShrink:0}}/>)}
+            {bars.map((h,i)=><div key={i} style={{width:BARW,height:h,borderRadius:2,background:"#4A3A2A",flexShrink:0}}/>)}
           </div>
           <div style={{position:"absolute",top:0,left:0,bottom:0,overflow:"hidden",width:pct+"%"}}>
             <div style={{display:"flex",alignItems:"center",gap:GAP,height:"100%",width:TRACKW}}>
@@ -681,7 +682,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
         </div>
         <div style={{display:"flex",padding:"0 14px 12px",flexShrink:0}}>
           <button onClick={()=>{onChangeIcon&&onChangeIcon();}} title="Изменить иконку темы"
-            style={{background:"#2E251C",border:"1px solid #3A2E24",borderRadius:8,padding:"5px 10px",
+            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"5px 10px",
               color:"#EF6C00",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
             <span style={{display:"flex",transform:"scale(.85)"}}>{IC.edit}</span> Иконка
           </button>
@@ -769,7 +770,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
         <div onClick={(e)=>{e.stopPropagation();setCtxMenu(null);}} style={{position:"fixed",inset:0,zIndex:500}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
             left:Math.max(8,Math.min(ctxMenu.x-100,window.innerWidth-210)),top:Math.max(8,ctxMenu.y-72),
-            background:"#2A2017",border:"1px solid #3A2E24",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
+            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
             <button onClick={()=>{ const id=ctxMenu.item.noteId; setCtxMenu(null); onClose&&onClose(); onJumpTo&&onJumpTo(id); }}
               style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:"#F2EAE0",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
               <span style={{display:"flex",color:"#EF6C00"}}>{IC.arrRight}</span> Перейти к сообщению
@@ -806,7 +807,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, 42px)",gap:8,justifyContent:"center"}}>
           {icons.map(k=>(
             <button key={k} onClick={()=>setIcon(k)}
-              style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+color:"1px solid #3A2E24",
+              style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+color:"1px solid #4A3A2A",
                 background:icon===k?color:"#2E251C",color:icon===k?"#fff":"#B0A498",
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"all .12s"}}>
               {IC[k]||IC.fFolder}
@@ -918,7 +919,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <div style={{marginBottom:8}}>
         <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Локальное автосохранение</div>
         <div onClick={()=>setAsOpen(true)}
-          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",border:"1px solid #3A2E24"}}>
+          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",border:"1px solid #4A3A2A"}}>
           <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
           <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
         </div>
@@ -926,7 +927,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <Sheet open={asOpen} onClose={()=>setAsOpen(false)} title="Автосохранение">
         {AS_MODES.map(m=>(
           <div key={m.val} onClick={()=>{setAsSettings({mode:m.val});saveAS({mode:m.val});setAsOpen(false);}}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:6}}>
             <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(asSettings.mode===m.val?"#EF6C00":"#5A4C40"),
               display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               {asSettings.mode===m.val&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
@@ -938,7 +939,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <div style={{height:1,background:"#2A2017",margin:"16px 0"}}/>
       <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Ручная копия</div>
       <div onClick={()=>setUsePwd(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,
-        background:"#2A2017",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid #3A2E24"}}>
+        background:"#2A2017",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid #4A3A2A"}}>
         <div style={{width:20,height:20,borderRadius:6,
           background:usePwd?"#9B59B6":"transparent",border:"2px solid "+(usePwd?"#9B59B6":"#5A4C40"),
           display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -947,12 +948,12 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
         <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Шифровать (AES-256)</span>
       </div>
       {usePwd&&<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="Пароль..."
-        style={{width:"100%",background:"#2A2017",border:"1px solid #3A2E24",borderRadius:10,padding:"11px 14px",
+        style={{width:"100%",background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:10,padding:"11px 14px",
           color:"#F2EAE0",fontSize:14,marginBottom:10,outline:"none"}}/>}
       {msg&&<div style={{fontSize:13,color:"#7EC87E",marginBottom:10}}>{msg}</div>}
       <div style={{display:"flex",gap:10}}>
         <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
-          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:12,padding:13,
+          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:13,
             color:"#F2EAE0",cursor:"pointer",fontSize:14}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.imp}</span>Импорт
         </button>
@@ -990,6 +991,8 @@ export default function App() {
   })();
   const [scr,       setScr]       = useState(_initLaunch?_initLaunch.scr:"main");
   const [navTick,   setNavTick]   = useState(0);
+  const firstRender = useRef(true);
+  useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
   useEffect(()=>{ setNavTick(t=>t+1); },[scr,fid,sid]);
@@ -2356,7 +2359,7 @@ export default function App() {
       {/* Глобальная панель пересылки — снизу, над полем ввода */}
       {moveBuffer&&(
         <div onClick={e=>e.stopPropagation()} style={{position:"fixed",left:0,right:0,bottom:0,
-          maxWidth:420,margin:"0 auto",background:"#2E251C",borderTop:"1px solid #3A2E24",
+          maxWidth:420,margin:"0 auto",background:"#2E251C",borderTop:"1px solid #4A3A2A",
           padding:"12px 14px",display:"flex",alignItems:"center",gap:10,zIndex:120,
           boxShadow:"0 -4px 16px rgba(0,0,0,.4)"}}>
           <span style={{fontSize:14,color:"#B0A498",flex:1}}>
@@ -2391,9 +2394,9 @@ export default function App() {
         @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        .row:active{background:#3A2E24;}
+        .row:active{background:#4A3A2A;}
         .row:has(button:active){background:transparent;}
-        .menu-dots:active{background:#3A2E24;border-radius:50%;}
+        .menu-dots:active{background:#4A3A2A;border-radius:50%;}
         textarea:focus,input:focus{outline:none;}
         *{-webkit-tap-highlight-color:transparent;}
         button{outline:none;-webkit-tap-highlight-color:transparent;}
@@ -2412,7 +2415,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v86</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v87</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2434,7 +2437,7 @@ export default function App() {
             ))}
           </div>
           {/* Панель поиска внизу — в едином стиле, высота 46 */}
-          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
@@ -2449,7 +2452,7 @@ export default function App() {
       {composerFull && composerPeek && (
         <button onClick={()=>setComposerPeek(false)} title="Вернуться к сообщению (свайп влево)"
           style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",zIndex:430,
-            background:"rgba(46,37,28,.9)",border:"1px solid #3A2E24",borderRight:"none",color:"#EF6C00",cursor:"pointer",
+            background:"rgba(46,37,28,.9)",border:"1px solid #4A3A2A",borderRight:"none",color:"#EF6C00",cursor:"pointer",
             width:30,height:80,borderRadius:"12px 0 0 12px",display:"flex",alignItems:"center",justifyContent:"center",
             boxShadow:"-2px 0 12px rgba(0,0,0,.4)"}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.arrLeft}</span>
@@ -2600,7 +2603,7 @@ export default function App() {
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",position:"relative",
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===f.id?"#33271B":(f.pinned?"#312618":"#2A2017"),
-                  border:"1px solid #3A2E24",
+                  border:"1px solid #4A3A2A",
                   transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease, scale .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
                   boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":"none",
@@ -2644,7 +2647,7 @@ export default function App() {
       {/* НИЖНЯЯ ШАПКА ГЛАВНОГО: Notenger ▾ · поиск · [центр FAB +] */}
       {scr==="main"&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <div style={{position:"relative",flex:1,minWidth:0}}>
             <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(v=>!v); }}
               style={{fontSize:17,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
@@ -2694,7 +2697,7 @@ export default function App() {
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===s.id?"#33271B":(s.pinned?"#312618":"#2A2017"),
-                  border:"1px solid #3A2E24",
+                  border:"1px solid #4A3A2A",
                   transform:dragActive===s.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
                   boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":"none",
@@ -2734,7 +2737,7 @@ export default function App() {
 
       {/* Строка поиска по темам — внизу */}
       {scr==="sub"&&folder&&subSearch!=="" && !selectMode && multiSelect.length===0 && (
-        <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+        <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
           <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
             <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
@@ -2746,7 +2749,7 @@ export default function App() {
       {/* ═══ НИЖНЯЯ ШАПКА КАТЕГОРИИ — назад · категория · поиск · ⋯ · + ═══ */}
       {scr==="sub"&&folder&&subSearch===""&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <button onClick={back} title="Назад"
             style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -2788,7 +2791,7 @@ export default function App() {
       {scr==="chat"&&subf&&(<>
         {/* Фиксированная панель вставки/перемещения — всегда сверху до завершения выбора */}
         {clipboard&&(
-          <div style={{background:"#2E251C",borderBottom:"1px solid #3A2E24",padding:"10px 14px",
+          <div style={{background:"#2E251C",borderBottom:"1px solid #4A3A2A",padding:"10px 14px",
             display:"flex",alignItems:"center",gap:10,flexShrink:0,zIndex:30}}>
             <span style={{fontSize:14,color:"#B0A498",flex:1}}>
               {clipboard.mode==="cut"?"Сообщение вырезано":"Сообщение скопировано"}
@@ -2799,7 +2802,7 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={updateActiveNote} className={noScrAnim?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
+        <div ref={scrollRef} onScroll={updateActiveNote} className={(noScrAnim||(firstRender.current&&_initLaunch))?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s"}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -2822,7 +2825,7 @@ export default function App() {
                 onTouchStart={multiActive?undefined:(e=>{ if(!selActive && !(selectMode&&selectMode!==n.id)) bubbleLpStart(n,e); })}
                 onTouchMove={multiActive?undefined:(e=>{ bubbleLpMove(e); })}
                 onTouchEnd={multiActive?undefined:(e=>{ if(!selActive) bubbleLpEnd(n,e); })}
-                style={{display:"flex",justifyContent:"flex-end",width:"auto",position:"relative",
+                style={{display:"flex",justifyContent:"flex-end",width:"calc(100% + 14px)",position:"relative",
                   background:(isMulti||selActive)?"rgba(239,108,0,.13)":"transparent",
                   padding:"0.8px 10px 0.8px 4px",margin:"0 -10px 0 -4px",boxSizing:"border-box"}}>
                 <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 8px)"}}>
@@ -2874,7 +2877,7 @@ export default function App() {
 
         {/* Pending attachments strip */}
         {patts.length>0&&(
-          <div style={{background:"#2A2017",borderTop:"1px solid #3A2E24",
+          <div style={{background:"#2A2017",borderTop:"1px solid #4A3A2A",
             padding:"8px 12px",display:"flex",gap:8,flexWrap:"wrap",flexShrink:0}}>
             {patts.map(a=>(
               <div key={a.id} style={{background:"#2A2017",borderRadius:10,
@@ -2910,7 +2913,7 @@ export default function App() {
             {patts.length>0&&(
               <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"10px 12px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
                 {patts.map(a=>(
-                  <div key={a.id} style={{position:"relative",borderRadius:10,overflow:"hidden",background:"#2E251C",border:"1px solid #3A2E24"}}>
+                  <div key={a.id} style={{position:"relative",borderRadius:10,overflow:"hidden",background:"#2E251C",border:"1px solid #4A3A2A"}}>
                     {a.type&&a.type.startsWith("image/")
                       ? <img src={a.dataUrl} alt="" style={{width:72,height:72,objectFit:"cover",display:"block"}}/>
                       : <div style={{width:120,height:72,display:"flex",alignItems:"center",gap:6,padding:"0 10px"}}>
@@ -2942,7 +2945,7 @@ export default function App() {
             {/* Всплывающая панель ББ-кодов */}
             {fullFmt&&(
               <div style={{position:"absolute",left:10,bottom:54,background:"#2A2017",borderRadius:12,padding:"5px 6px",
-                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid #3A2E24",zIndex:6}}>
+                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid #4A3A2A",zIndex:6}}>
                 {[
                   {ic:<Icon size={18} d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" stroke={2} />, b:"[b]",a:"[/b]",x:"текст",t:"Жирный"},
                   {ic:<Icon size={18} d={["M15 5h-5","M14 19H9","M14 5l-4 14"]} stroke={2} />, b:"[i]",a:"[/i]",x:"текст",t:"Курсив"},
@@ -2961,7 +2964,7 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #3A2E24",background:"#2A2017",flexShrink:0,minHeight:46,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,minHeight:46,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>Aa</button>
@@ -2993,7 +2996,7 @@ export default function App() {
             </div>
             {/* Оверлей записи: таймер + подсказка смахивания влево для отмены */}
             {recording && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,height:58,background:"#2A2017",borderTop:"1px solid #3A2E24",
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:58,background:"#2A2017",borderTop:"1px solid #4A3A2A",
                 display:"flex",alignItems:"center",padding:"0 16px",zIndex:30,gap:12,
                 opacity:Math.max(0.4,1-recSlide/120)}}>
                 <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
@@ -3007,13 +3010,13 @@ export default function App() {
             )}
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#2A2017",borderTop:"1px solid #3A2E24",
+              <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#2A2017",borderTop:"1px solid #4A3A2A",
                 padding:"12px 14px",zIndex:24,display:"flex",flexDirection:"column",gap:10}}>
                 <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
                 <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={discardPendingVoice}
-                    style={{flex:1,background:"#2E251C",border:"1px solid #3A2E24",borderRadius:10,padding:"11px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
+                    style={{flex:1,background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:10,padding:"11px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
                   <button onClick={sendPendingVoice}
                     style={{flex:1,background:"#EF6C00",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:600,cursor:"pointer",fontSize:14}}>Отправить</button>
                 </div>
@@ -3021,7 +3024,7 @@ export default function App() {
             )}
             {/* Оверлей записи голосового */}
             {recording && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,height:60,background:"#2A2017",borderTop:"1px solid #3A2E24",
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:60,background:"#2A2017",borderTop:"1px solid #4A3A2A",
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
@@ -3035,14 +3038,14 @@ export default function App() {
                 onTouchStart={e=>{ e.stopPropagation(); swipeRef.current=null; const t=e.touches[0]; selBar._d={dx:t.clientX-selBar.x,dy:t.clientY-selBar.y}; }}
                 onTouchMove={e=>{ e.stopPropagation(); e.preventDefault(); const t=e.touches[0]; const d=selBar._d||{dx:0,dy:0}; const w=selBar.hasSel?250:200,pad=10; const nx=Math.max(pad+w/2,Math.min(window.innerWidth-pad-w/2,t.clientX-d.dx)); const ny=Math.max(72,Math.min(window.innerHeight-70,t.clientY-d.dy)); setSelBar(s=>s?{...s,x:nx,y:ny,_d:d}:s); }}
                 style={{position:"fixed",left:selBar.x,top:selBar.y,transform:"translateX(-50%)",zIndex:520,
-                  background:"rgba(36,28,22,.96)",border:"1px solid #3A2E24",borderRadius:10,boxShadow:"0 4px 16px rgba(0,0,0,.45)",
+                  background:"rgba(36,28,22,.96)",border:"1px solid #4A3A2A",borderRadius:10,boxShadow:"0 4px 16px rgba(0,0,0,.45)",
                   display:"flex",overflow:"hidden",animation:"fS .1s ease",backdropFilter:"blur(2px)"}}>
                 {(selBar.hasSel
                   ? [{l:"Копировать",fn:tbCopy},{l:"Вырезать",fn:tbCut},{l:"Вставить",fn:tbPaste}]
                   : [{l:"Выбрать всё",fn:tbAll},{l:"Вставить",fn:tbPaste}]
                 ).map((b,i)=>(
                   <button key={i} onClick={b.fn} onTouchStart={e=>e.stopPropagation()} style={{background:"none",border:"none",color:"#D8CCBE",fontSize:12.5,
-                    padding:"8px 13px",cursor:"pointer",borderLeft:i?"1px solid #3A2E24":"none",whiteSpace:"nowrap"}}>{b.l}</button>
+                    padding:"8px 13px",cursor:"pointer",borderLeft:i?"1px solid #4A3A2A":"none",whiteSpace:"nowrap"}}>{b.l}</button>
                 ))}
               </div>
             )}
@@ -3054,7 +3057,7 @@ export default function App() {
         const selNote = single ? subf?.notes.find(x=>x.id===selectMode) : null;
         const closePanel = ()=>{ if(single){ setSelectMode(null); setTextArmed(false); } else clearMulti(); };
         return (
-        <div style={{background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 10px",height:46,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 10px",height:46,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",
@@ -3093,7 +3096,7 @@ export default function App() {
       })()}
         {/* ── НИЖНЯЯ ШАПКА ЧАТА (единый блок: шапка ИЛИ поиск) ── */}
         {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
-          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
@@ -3105,7 +3108,7 @@ export default function App() {
         )}
         {!selectMode && multiSelect.length===0 && chatSearch==="" && (!composerFull||composerPeek) && (
           <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-            background:"#2A2017",border:"1px solid #3A2E24",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -3149,7 +3152,7 @@ export default function App() {
           onClick={e=>{e.stopPropagation();copySelection();}}
           style={{position:"fixed",left:Math.max(60,Math.min(selCopy.x,window.innerWidth-60)),
             top:Math.max(70,selCopy.y-46),transform:"translateX(-50%)",zIndex:200,
-            background:"rgba(36,28,22,.96)",color:"#D8CCBE",border:"1px solid #3A2E24",borderRadius:10,padding:"8px 14px",
+            background:"rgba(36,28,22,.96)",color:"#D8CCBE",border:"1px solid #4A3A2A",borderRadius:10,padding:"8px 14px",
             fontSize:12.5,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,.45)",backdropFilter:"blur(2px)",
             display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
           <span style={{display:"flex",transform:"scale(.85)"}}>{IC.copyT}</span> Копировать
@@ -3171,7 +3174,7 @@ export default function App() {
             <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
               {pins.map(n=>(
                 <button key={n.id} onClick={()=>jumpTo(n.id)}
-                  style={{textAlign:"left",background:"#2E251C",border:"1px solid #3A2E24",borderRadius:12,
+                  style={{textAlign:"left",background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:12,
                     padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
                   <span style={{color:"#F5A623",display:"flex",flexShrink:0}}>{IC.pin}</span>
                   <span style={{flex:1,minWidth:0}}>
@@ -3219,7 +3222,7 @@ export default function App() {
             </div>
           )}
           <button onClick={(e)=>{ e.stopPropagation(); saveImageToFolder(lightbox); }} title="Сохранить в папку"
-            style={{position:"absolute",right:16,bottom:24,width:44,height:44,borderRadius:"50%",background:"rgba(46,37,28,.85)",border:"1px solid #3A2E24",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            style={{position:"absolute",right:16,bottom:24,width:44,height:44,borderRadius:"50%",background:"rgba(46,37,28,.85)",border:"1px solid #4A3A2A",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <span style={{display:"flex"}}><Icon d={["M12 4v12","M7 11l5 5 5-5","M5 20h14"]} stroke={2}/></span>
           </button>
           <button onClick={closeLightbox} style={{position:"absolute",bottom:32,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,.5)",
@@ -3232,7 +3235,7 @@ export default function App() {
       {attSh&&(
         <div onClick={()=>setAttSh(false)} style={{position:"fixed",inset:0,zIndex:450}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"absolute",left:14,bottom:74,
-            background:"#2A2017",border:"1px solid #3A2E24",borderRadius:16,padding:10,
+            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:16,padding:10,
             boxShadow:"0 10px 36px rgba(0,0,0,.6)",animation:"fS .15s ease"}}>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3, 78px)",gridAutoRows:"72px",gap:6}}>
             {[
@@ -3244,7 +3247,7 @@ export default function App() {
               {ic:IC.camcorder,label:"Видеозап.",  accept:"video/*;capture=camcorder"},
             ].map(o=>(
               <button key={o.label} onClick={()=>pickFiles(o.accept)}
-                style={{background:"#2E251C",border:"1px solid #3A2E24",borderRadius:12,
+                style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:12,
                   cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5}}>
                 <span style={{color:"#EF6C00",display:"flex"}}>{o.ic}</span>
                 <span style={{fontSize:10,color:"#D8CCBE"}}>{o.label}</span>
@@ -3261,7 +3264,7 @@ export default function App() {
           <>
             <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
             <div onClick={()=>setDriveSh(true)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer"}}>
               <svg width="18" height="18" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
               <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
               <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="ok"?"подключён":"настроить"}</span>
@@ -3285,31 +3288,31 @@ export default function App() {
         ) : (
           <>
             {/* Статус + уроборос */}
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",marginBottom:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",marginBottom:10}}>
               <div style={{width:9,height:9,borderRadius:"50%",background:"#5BBF5B",flexShrink:0}}/>
               <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>Синхронизировано{syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):""}</span>
               <button onClick={()=>runSync("auto",false)} title="Синхронизировать сейчас"
-                style={{width:36,height:36,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                style={{width:36,height:36,borderRadius:"50%",background:"#2E251C",border:"1px solid #4A3A2A",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <span style={{display:"flex",transform:"scale(.8)",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none"}}>{IC.ouro}</span>
               </button>
             </div>
 
             {/* Когда сохранять — отдельное меню */}
-            <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
+            <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Когда сохранять</span>
               <span style={{fontSize:13,color:"#B0A498"}}>{(CLOUD_MODES.find(m=>m.val===(syncCfg.auto?(syncCfg.cloudMode||"change"):"off"))||CLOUD_MODES[0]).label}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Что сохранять — отдельное меню */}
-            <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
+            <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Место на диске — отдельное меню */}
             <div onClick={()=>{ setCloudStorSh(true); refreshStorageInfo(); }}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:8}}>
+              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
               <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"")}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
@@ -3317,15 +3320,15 @@ export default function App() {
 
             {/* Выход */}
             {!signOutAsk ? (
-              <button onClick={()=>setSignOutAsk(true)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14,marginTop:4}}>
+              <button onClick={()=>setSignOutAsk(true)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14,marginTop:4}}>
                 <span style={{display:"flex",transform:"scale(.75)"}}>{IC.logout}</span>Выйти из аккаунта
               </button>
             ) : (
-              <div style={{marginTop:4,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #3A2E24"}}>
+              <div style={{marginTop:4,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #4A3A2A"}}>
                 <div style={{fontSize:14,color:"#F2EAE0",marginBottom:10}}>Выйти из аккаунта Google?</div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={cloudSignOut} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Да</button>
-                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
+                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
                 </div>
               </div>
             )}
@@ -3335,7 +3338,7 @@ export default function App() {
 
       <Sheet open={cloudWhenSh} onClose={()=>setCloudWhenSh(false)} title="Когда сохранять">
         {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; const timed=(m.val==="1d"||m.val==="1w"); return (
-          <div key={m.val} style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",marginBottom:6}}>
+          <div key={m.val} style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",marginBottom:6}}>
             <div onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); }} style={{display:"flex",alignItems:"center",gap:10,flex:1,cursor:"pointer"}}>
               <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
               <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
@@ -3345,7 +3348,7 @@ export default function App() {
                 <span style={{display:"flex",color:"#EF6C00",transform:"scale(.85)"}}>{IC.clock||IC.ouro}</span>
                 <input type="time" value={syncCfg.cloudTime||"03:00"}
                   onChange={e=>saveSyncCfg({...syncCfg,cloudTime:e.target.value})}
-                  style={{background:"transparent",border:"1px solid #3A2E24",borderRadius:8,color:"#EF6C00",fontSize:13,padding:"4px 6px",outline:"none",fontWeight:600}}/>
+                  style={{background:"transparent",border:"1px solid #4A3A2A",borderRadius:8,color:"#EF6C00",fontSize:13,padding:"4px 6px",outline:"none",fontWeight:600}}/>
               </label>
             )}
           </div>
@@ -3356,9 +3359,9 @@ export default function App() {
       <Sheet open={cloudWhatSh} onClose={()=>setCloudWhatSh(false)} title="Что сохранять">
         {SYNC_MODULES.map(m=>(
           <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
-            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-            <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+            <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
             </div>
           </div>
@@ -3366,9 +3369,9 @@ export default function App() {
         <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 6px"}}>Медиа {(syncCfg.modules&&syncCfg.modules.notes)?"":"(нужны «Заметки»)"}</div>
         {MEDIA_MODULES.map(m=>{ const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes); return (
           <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
-            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-            <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+            <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
             </div>
           </div>
@@ -3382,7 +3385,7 @@ export default function App() {
           <div style={{fontSize:13,color:"#B0A498",marginBottom:10}}>Всего: <span style={{color:"#EF6C00",fontWeight:600}}>{humanBytes(storageInfo.total)}</span></div>
         )}
         {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{ const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0; return (
-          <div key={i} style={{padding:"10px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",marginBottom:6}}>
+          <div key={i} style={{padding:"10px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",marginBottom:6}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
               <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
               <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
@@ -3399,16 +3402,16 @@ export default function App() {
             <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
-              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
             </div>
           </div>
         )}
       </Sheet>
 
       <Sheet open={imgSh} onClose={()=>setImgSh(false)} title="Сжатие изображений">
-        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
-          <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+          <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
           </div>
         </div>
@@ -3418,7 +3421,7 @@ export default function App() {
       </Sheet>
       {imgCompressPopup && (
         <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid #3A2E24",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid #4A3A2A",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
             <div style={{fontSize:16,color:"#F2EAE0",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
             <div style={{fontSize:14,color:"#D8CCBE",lineHeight:1.55,marginBottom:16}}>Качество, заметное человеческому глазу, не пострадает. Изображения станут заметно легче и будут быстрее синхронизироваться.</div>
             <button onClick={()=>setImgCompressPopup(false)} style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Понятно</button>
@@ -3434,10 +3437,10 @@ export default function App() {
           const v=typeof animSpeed[it.key]==="number"?animSpeed[it.key]:1;
           const enabled=!it.off;
           return (
-            <div key={it.key} style={{background:"#2A2017",borderRadius:12,border:"1px solid #3A2E24",padding:"12px 14px",marginBottom:10}}>
+            <div key={it.key} style={{background:"#2A2017",borderRadius:12,border:"1px solid #4A3A2A",padding:"12px 14px",marginBottom:10}}>
               <div onClick={it.toggle} style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
                 <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>{it.label}</span>
-                <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+                <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
                 </div>
               </div>
@@ -3463,7 +3466,7 @@ export default function App() {
         <div onClick={()=>{ const c={...syncCfg,enabled:!syncCfg.enabled}; saveSyncCfg(c); if(c.enabled) setTimeout(()=>runSync("pull",true),100); }}
           style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Синхронизация с Google Диском</span>
-          <div style={{width:46,height:26,borderRadius:13,background:syncCfg.enabled?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+          <div style={{width:46,height:26,borderRadius:13,background:syncCfg.enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:2,left:syncCfg.enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
           </div>
         </div>
@@ -3494,7 +3497,7 @@ export default function App() {
           <div onClick={()=>saveSyncCfg({...syncCfg,auto:!syncCfg.auto})}
             style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
             <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Автоматически</span>
-            <div style={{width:46,height:26,borderRadius:13,background:syncCfg.auto?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+            <div style={{width:46,height:26,borderRadius:13,background:syncCfg.auto?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:syncCfg.auto?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
             </div>
           </div>
@@ -3548,7 +3551,7 @@ export default function App() {
         <div onClick={()=>setFontOpen(null)} style={{position:"fixed",inset:0,zIndex:700}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
             left:Math.max(8,Math.min(fontOpen.x+fontOpen.w/2-125,window.innerWidth-258)),top:Math.max(8,Math.min(fontOpen.y-20,window.innerHeight-340)),
-            background:"#2A2017",borderRadius:14,width:"max-content",minWidth:180,maxWidth:280,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid #3A2E24",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
+            background:"#2A2017",borderRadius:14,width:"max-content",minWidth:180,maxWidth:280,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid #4A3A2A",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
             <div style={{padding:"12px 16px 8px",fontSize:13,fontWeight:700,color:"#8A7A65"}}>{FONT_TARGETS.find(t=>t.key===fontOpen.key)?.label}</div>
             <div style={{overflowY:"auto",flex:1}}>
             {allFonts.map(f=>{
