@@ -949,15 +949,15 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
           color:"#F2EAE0",fontSize:14,marginBottom:10,outline:"none"}}/>}
       {msg&&<div style={{fontSize:13,color:"#7EC87E",marginBottom:10}}>{msg}</div>}
       <div style={{display:"flex",gap:10}}>
-        <button onClick={()=>doSave(usePwd)} disabled={busy}
-          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:usePwd?"#9B59B6":"#EF6C00",border:"none",borderRadius:12,
-            padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,opacity:busy?0.5:1}}>
-          <span style={{display:"flex",transform:"scale(.8)"}}>{IC.save}</span>{busy?"...":"Создать"}
-        </button>
         <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
           style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:13,
             color:"#F2EAE0",cursor:"pointer",fontSize:14}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.imp}</span>Импорт
+        </button>
+        <button onClick={()=>doSave(usePwd)} disabled={busy}
+          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:usePwd?"#9B59B6":"#EF6C00",border:"none",borderRadius:12,
+            padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,opacity:busy?0.5:1}}>
+          <span style={{display:"flex",transform:"scale(.8)"}}>{IC.save}</span>{busy?"...":"Создать"}
         </button>
       </div>
     </Sheet>
@@ -1569,6 +1569,7 @@ export default function App() {
   const iconRef      = useRef(null);
   const iconTarget   = useRef("sub"); // "folder" | "sub" — к чему применить выбранное изображение
   const lpTimer      = useRef(null);  // long-press timer
+  const lpStartXY    = useRef(null);
   const lpScrolled   = useRef(false); // detect scroll during long-press
   const asTimer      = useRef(null);  // auto-save timer
   const lastTap      = useRef({id:null,t:0}); // double-tap detection
@@ -1719,11 +1720,28 @@ export default function App() {
   // Аппаратная кнопка «Назад» (Android). Возвращает true, если что-то закрыли.
   function closeAllMenus(){ setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); }
   function closeLightbox(){ setLightbox(null); }
+  function saveImageToFolder(dataUrl){
+    try{
+      const m=/^data:([^;]+);base64,(.*)$/.exec(dataUrl||"");
+      let mime="image/jpeg", b64="";
+      if(m){ mime=m[1]; b64=m[2]; }
+      else { return; }
+      const ext=mime.indexOf("png")>=0?"png":mime.indexOf("webp")>=0?"webp":mime.indexOf("gif")>=0?"gif":"jpg";
+      const name="notenger_img_"+Date.now()+"."+ext;
+      if(window.AndroidRec && window.AndroidRec.saveFileDialog){ window.AndroidRec.saveFileDialog(name, mime, b64); tst("Выберите папку…"); }
+      else { const a=document.createElement("a"); a.href=dataUrl; a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+    }catch(e){}
+  }
   function handleHardwareBack(){
+    if(imgCompressPopup){ setImgCompressPopup(false); return true; }
     if(lightbox){ closeLightbox(); return true; }
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
     if(composerFull && !composerPeek){ setComposerFull(false); return true; }
     // при peek: кнопка назад листает каталоги слева (в черновик — только свайп/гребешок)
+    if(driveSh){ setDriveSh(false); return true; }
+    if(imgSh){ setImgSh(false); return true; }
+    if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); return true; }
+    if(animSh){ setAnimSh(false); return true; }
     if(dlg){ setDlg(null); return true; }
     if(modal){ setModal(null); return true; }
     if(pinnedOpen){ setPinnedOpen(false); return true; }
@@ -2126,6 +2144,7 @@ export default function App() {
     if(isTouch) touchUsed.current=true;
     else if(touchUsed.current) return; // игнор синтетической мыши после touch
     lpScrolled.current=false;
+    const t=e.touches?e.touches[0]:e; lpStartXY.current={x:t.clientX,y:t.clientY};
     if(selectMode===n.id || multiSelect.length>0) return; // в выделении — не вмешиваемся
     // Удержание (~400мс как в Telegram) → войти в режим выделения сообщения
     clearTimeout(lpTimer.current);
@@ -2141,7 +2160,10 @@ export default function App() {
       buzz(15);
     },400);
   }
-  function bubbleLpMove()  { lpScrolled.current=true; clearTimeout(lpTimer.current); }
+  function bubbleLpMove(e)  {
+    if(e && lpStartXY.current){ const t=e.touches?e.touches[0]:e; if(Math.abs(t.clientX-lpStartXY.current.x)<10 && Math.abs(t.clientY-lpStartXY.current.y)<10) return; }
+    lpScrolled.current=true; clearTimeout(lpTimer.current);
+  }
   function bubbleLpEnd(n, e) {
     clearTimeout(lpTimer.current);
     const isTouch = e.type==="touchend";
@@ -2370,7 +2392,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v76</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v77</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2794,7 +2816,7 @@ export default function App() {
                     }
                   }}
                   onTouchStart={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ setTextArmed(true); buzz(10); },350); } else bubbleLpStart(n,e); })}
-                  onTouchMove={multiActive?undefined:(e=>{ clearTimeout(lpTimer.current); bubbleLpMove(); })}
+                  onTouchMove={multiActive?undefined:(e=>{ bubbleLpMove(e); })}
                   onTouchEnd={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); } else bubbleLpEnd(n,e); })}
                   onMouseDown={(selectMode||multiActive)?undefined:(e=>bubbleLpStart(n,e))}
                   onMouseMove={(selectMode||multiActive)?undefined:bubbleLpMove}
@@ -3171,6 +3193,10 @@ export default function App() {
               )}
             </div>
           )}
+          <button onClick={(e)=>{ e.stopPropagation(); saveImageToFolder(lightbox); }} title="Сохранить в папку"
+            style={{position:"absolute",right:16,bottom:24,width:44,height:44,borderRadius:"50%",background:"rgba(46,37,28,.85)",border:"1px solid #3A2E24",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <span style={{display:"flex"}}><Icon d={["M12 4v12","M7 11l5 5 5-5","M5 20h14"]} stroke={2}/></span>
+          </button>
           <button onClick={closeLightbox} style={{position:"absolute",bottom:32,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,.5)",
             border:"none",borderRadius:"50%",width:40,height:40,color:"#fff",fontSize:20,cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
