@@ -912,7 +912,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       {syncSection}
       {/* Автосохранение — выпадающий выбор */}
       <div style={{marginBottom:8}}>
-        <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Автосохранение</div>
+        <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Локальное автосохранение</div>
         <div onClick={()=>setAsOpen(v=>!v)}
           style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",border:"1px solid #3A2E24"}}>
           <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
@@ -935,36 +935,31 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       </div>
       <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
       <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Ручная копия</div>
-      <div style={{background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,
-        padding:"10px 14px",marginBottom:14,fontSize:13,color:"#B0A498",lineHeight:1.5}}>
-        Создаёт файл-резервную копию со всеми данными (заметки, медиа, настройки). Выберите в системном диалоге, куда сохранить.
-      </div>
       <div onClick={()=>setUsePwd(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,
-        background:"#241C16",borderRadius:12,padding:"12px 14px",cursor:"pointer",marginBottom:12}}>
-        <div style={{width:22,height:22,borderRadius:6,
-          background:usePwd?"#9B59B6":"#241C16",border:"2px solid "+(usePwd?"#9B59B6":"#5A4C40"),
-          display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",flexShrink:0}}>
-          {usePwd&&<span style={{fontSize:13,color:"#fff"}}>✓</span>}
+        background:"#241C16",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid #3A2E24"}}>
+        <div style={{width:20,height:20,borderRadius:6,
+          background:usePwd?"#9B59B6":"transparent",border:"2px solid "+(usePwd?"#9B59B6":"#5A4C40"),
+          display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {usePwd&&<span style={{fontSize:12,color:"#fff"}}>✓</span>}
         </div>
-        <div>
-          <div style={{fontSize:14,color:"#F2EAE0",fontWeight:500}}>🔒 Зашифровать AES-256-GCM</div>
-          <div style={{fontSize:11,color:"#B0A498",marginTop:1}}>PBKDF2 + 310 000 итераций</div>
-        </div>
+        <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Шифровать (AES-256)</span>
       </div>
       {usePwd&&<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="Пароль..."
-        style={{width:"100%",background:"#241C16",border:"none",borderRadius:10,padding:"11px 14px",
-          color:"#F2EAE0",fontSize:14,marginBottom:12,outline:"none"}}/>}
+        style={{width:"100%",background:"#241C16",border:"1px solid #3A2E24",borderRadius:10,padding:"11px 14px",
+          color:"#F2EAE0",fontSize:14,marginBottom:10,outline:"none"}}/>}
       {msg&&<div style={{fontSize:13,color:"#7EC87E",marginBottom:10}}>{msg}</div>}
       <div style={{display:"flex",gap:10}}>
         <button onClick={()=>doSave(usePwd)} disabled={busy}
-          style={{flex:1,background:usePwd?"#9B59B6":"#EF6C00",border:"none",borderRadius:12,
+          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:usePwd?"#9B59B6":"#EF6C00",border:"none",borderRadius:12,
             padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,opacity:busy?0.5:1}}>
-          {busy?"⏳...":(usePwd?"🔒 Сохранить":"💾 Сохранить")}
+          <span style={{display:"flex",transform:"scale(.8)"}}>{IC.save}</span>{busy?"...":"Создать"}
+        </button>
+        <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
+          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:13,
+            color:"#F2EAE0",cursor:"pointer",fontSize:14}}>
+          <span style={{display:"flex",transform:"scale(.8)"}}>{IC.imp}</span>Импорт
         </button>
       </div>
-      <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
-        style={{width:"100%",marginTop:10,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:13,
-          color:"#F2EAE0",cursor:"pointer",fontSize:14}}>📂 Импорт из файла</button>
     </Sheet>
   );
 }
@@ -1249,6 +1244,7 @@ export default function App() {
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
   const [imgSh, setImgSh] = useState(false); // шторка сжатия изображений
+  const [driveSh, setDriveSh] = useState(false); // отдельное меню Google Диска
   const [fontSh, setFontSh] = useState(false); // шторка шрифтов
   const [fontOpen, setFontOpen] = useState(null); // {key,x,y} какой пункт шрифта раскрыт
   const FONT_KEY="napp_fonts_v1";
@@ -1257,8 +1253,7 @@ export default function App() {
     {id:"sys",name:"По умолчанию",css:"'Noto Sans',sans-serif"},
     {id:"comfortaa",name:"Comfortaa",css:"'Comfortaa',cursive"},
     {id:"roboto",name:"Roboto",css:"'Roboto',sans-serif"},
-    {id:"comic",name:"Comic Sans",css:"'Comic Neue',cursive"},
-    {id:"ubuntu",name:"Ubuntu Light",css:"'Ubuntu',sans-serif",weight:300},
+    {id:"verdana",name:"Verdana",css:"Verdana,Geneva,sans-serif"},
   ];
   // Цели, для которых можно задать шрифт
   const FONT_TARGETS=[
@@ -2176,10 +2171,12 @@ export default function App() {
       r.onload=async ev=>{
         let dataUrl=ev.target.result;
         let type=file.type||"application/octet-stream";
+        const origSize=(dataUrl&&dataUrl.length)||file.size||0;
+        let compressed=false;
         if(imgCompress && type.startsWith("image/")){
-          try{ dataUrl=await compressImage(dataUrl,type); type="image/jpeg"; }catch{}
+          try{ const c=await compressImage(dataUrl,type); if(c!==dataUrl){ dataUrl=c; type="image/jpeg"; compressed=true; } }catch{}
         }
-        const att={id:uid("a")+Math.random(),name:file.name,type,size:file.size,dataUrl,caption:""};
+        const att={id:uid("a")+Math.random(),name:file.name,type,size:(dataUrl&&dataUrl.length)||file.size,origSize,compressed,dataUrl,caption:""};
         setPatts(p=>[...p,att]);
         if(!composerFull){ composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); }
       };
@@ -2373,7 +2370,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v74</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v76</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3155,15 +3152,31 @@ export default function App() {
       </Sheet>
 
       {/* Просмотр изображения на весь экран */}
-      {lightbox&&(
+      {lightbox&&(()=>{
+        let meta=null;
+        try{
+          const walk=arr=>arr&&arr.forEach(f=>{ if(f.notes) f.notes.forEach(n=>{ if(n.attachments) n.attachments.forEach(a=>{ if(a&&a.dataUrl===lightbox) meta=a; }); }); if(f.subs) walk(f.subs); });
+          walk(data.folders);
+        }catch{}
+        const hb=b=>{ if(b==null) return null; if(b<1024) return b+" Б"; if(b<1048576) return (b/1024).toFixed(1)+" КБ"; return (b/1048576).toFixed(1)+" МБ"; };
+        return (
         <div onClick={closeLightbox} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:600,
           display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <img src={lightbox} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8}}/>
+          {meta && (meta.size||meta.origSize) && (
+            <div style={{position:"absolute",left:16,bottom:24,fontSize:11,lineHeight:1.5,color:"#C8BCAE",textShadow:"0 1px 3px rgba(0,0,0,.9)"}}>
+              <div>{hb(meta.origSize||meta.size)}</div>
+              {meta.compressed && meta.size && meta.origSize && meta.size<meta.origSize && (
+                <div style={{color:"#9FCF8F"}}>Сжато · {hb(meta.size)}</div>
+              )}
+            </div>
+          )}
           <button onClick={closeLightbox} style={{position:"absolute",bottom:32,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,.5)",
             border:"none",borderRadius:"50%",width:40,height:40,color:"#fff",fontSize:20,cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
         </div>
-      )}
+        );
+      })()}
       {/* Attach picker — Telegram-style categories */}
       {attSh&&(
         <div onClick={()=>setAttSh(false)} style={{position:"fixed",inset:0,zIndex:450}}>
@@ -3196,74 +3209,64 @@ export default function App() {
         syncSection={(
           <>
             <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
-            {/* Строка Google Диск: кнопка-меню + уроборос + Войти/статус */}
-            <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24"}}>
-              <div onClick={()=>{ if(syncStatus==="ok") setSyncMenuOpen(v=>!v); }}
-                style={{display:"flex",alignItems:"center",gap:8,flex:1,cursor:syncStatus==="ok"?"pointer":"default"}}>
-                <span style={{fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
-                {syncStatus==="ok" && <span style={{display:"flex",color:"#8A7A65",transform:syncMenuOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>}
-              </div>
-              {syncStatus==="ok" ? (
-                <button onClick={()=>runSync("auto",true)} disabled={false} title="Синхронизировать сейчас"
-                  style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <span style={{display:"flex",transform:"scale(.8)",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none"}}>{IC.ouro}</span>
-                </button>
-              ) : (
-                <button onClick={()=>runSync("pull",true)}
-                  style={{display:"flex",alignItems:"center",gap:7,background:"#fff",border:"none",borderRadius:9,padding:"7px 12px",cursor:"pointer",flexShrink:0}}>
-                  <svg width="15" height="15" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
-                  <span style={{fontSize:13,color:"#222",fontWeight:600}}>{syncStatus==="syncing"?"Вход…":"Войти"}</span>
-                </button>
-              )}
+            <div onClick={()=>setDriveSh(true)}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+              <svg width="18" height="18" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
+              <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
+              <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="ok"?"подключён":"настроить"}</span>
+              <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
+            </div>
+            <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
+          </>
+        )}/>
+      <Sheet open={driveSh} onClose={()=>{setDriveSh(false);setSyncMenuOpen(false);setSyncDetails(false);setStorageOpen(false);setSignOutAsk(false);setClearAsk(false);}} title="Google Диск">
+        {syncStatus!=="ok" ? (
+          <>
+            <div style={{fontSize:13,color:"#B0A498",lineHeight:1.5,marginBottom:14}}>Войдите в аккаунт Google — данные будут храниться в скрытой папке приложения на вашем Диске и использовать ваше место.</div>
+            <button onClick={()=>runSync("pull",true)} disabled={syncStatus==="syncing"}
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"#EF6C00",border:"none",borderRadius:12,padding:14,cursor:"pointer",opacity:syncStatus==="syncing"?.6:1}}>
+              <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#fff" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z" opacity=".9"/><path fill="#fff" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#fff" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z" opacity=".7"/><path fill="#fff" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z" opacity=".85"/></svg>
+              <span style={{fontSize:15,color:"#fff",fontWeight:700}}>{syncStatus==="syncing"?"Вход…":"Войти через Google"}</span>
+            </button>
+            {syncStatus==="error" && <div style={{fontSize:12,color:"#E07A5C",padding:"8px 4px"}}>Ошибка входа</div>}
+            {syncStatus==="signedout" && <div style={{fontSize:12,color:"#E07A5C",padding:"8px 4px"}}>Вход не выполнен</div>}
+          </>
+        ) : (
+          <>
+            {/* Статус + уроборос */}
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",marginBottom:10}}>
+              <div style={{width:9,height:9,borderRadius:"50%",background:"#5BBF5B",flexShrink:0}}/>
+              <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>Синхронизировано{syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):""}</span>
+              <button onClick={()=>runSync("auto",true)} title="Синхронизировать сейчас"
+                style={{width:36,height:36,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{display:"flex",transform:"scale(.8)",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none"}}>{IC.ouro}</span>
+              </button>
             </div>
 
-            {/* Выпадающее меню: когда/как сохранять в облако (как у шрифтов) */}
-            {syncStatus==="ok" && syncMenuOpen && (
-              <div style={{marginTop:6,background:"#241C16",borderRadius:10,overflow:"hidden",border:"1px solid #3A2E24"}}>
-                <div style={{fontSize:12,color:"#8A7A65",padding:"10px 14px 4px"}}>Когда сохранять</div>
-                {CLOUD_MODES.map(m=>{
-                  const cur=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off");
-                  const sel=cur===m.val;
-                  return (
-                    <div key={m.val} onClick={()=>{ const c={...syncCfg, auto:m.val!=="off", cloudMode:m.val}; saveSyncCfg(c); }}
-                      style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer"}}>
-                      <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        {sel&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}
-                      </div>
-                      <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-                    </div>
-                  );
-                })}
+            {/* Когда сохранять — в стиле списка шрифтов */}
+            <div onClick={()=>setSyncMenuOpen(v=>!v)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:syncMenuOpen?6:8}}>
+              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Когда сохранять</span>
+              <span style={{fontSize:13,color:"#B0A498"}}>{(CLOUD_MODES.find(m=>m.val===(syncCfg.auto?(syncCfg.cloudMode||"change"):"off"))||CLOUD_MODES[0]).label}</span>
+              <span style={{display:"flex",color:"#8A7A65",transform:syncMenuOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+            </div>
+            {syncMenuOpen && (
+              <div style={{marginBottom:8,background:"#241C16",borderRadius:10,overflow:"hidden",border:"1px solid #3A2E24"}}>
+                {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; return (
+                  <div key={m.val} onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); setSyncMenuOpen(false); }}
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer"}}>
+                    <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
+                    <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+                  </div>
+                ); })}
               </div>
             )}
 
-            {/* После авторизации: «Что сохранять» + выход */}
-            {syncStatus==="ok" && (
-              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
-                <div onClick={()=>setSyncDetails(v=>!v)} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
-                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
-                  <span style={{display:"flex",color:"#8A7A65",transform:syncDetails?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
-                </div>
-                <button onClick={()=>setSignOutAsk(true)} title="Выйти из аккаунта"
-                  style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <span style={{display:"flex",transform:"scale(.8)"}}>{IC.logout}</span>
-                </button>
-              </div>
-            )}
-
-            {/* Подтверждение выхода */}
-            {signOutAsk && (
-              <div style={{marginTop:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #3A2E24"}}>
-                <div style={{fontSize:14,color:"#F2EAE0",marginBottom:10}}>Выйти из аккаунта Google?</div>
-                <div style={{display:"flex",gap:10}}>
-                  <button onClick={cloudSignOut} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Да</button>
-                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
-                </div>
-              </div>
-            )}
-
-            {/* Что сохранять — модули и медиа (как тумблеры) */}
-            {syncStatus==="ok" && syncDetails && (<div style={{marginTop:6}}>
+            {/* Что сохранять — в стиле списка шрифтов */}
+            <div onClick={()=>setSyncDetails(v=>!v)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:syncDetails?6:8}}>
+              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
+              <span style={{display:"flex",color:"#8A7A65",transform:syncDetails?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+            </div>
+            {syncDetails && (<div style={{marginBottom:8}}>
               {SYNC_MODULES.map(m=>(
                 <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
                   style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
@@ -3274,9 +3277,7 @@ export default function App() {
                 </div>
               ))}
               <div style={{fontSize:12,color:"#8A7A65",padding:"6px 4px 6px"}}>Медиа {(syncCfg.modules&&syncCfg.modules.notes)?"":"(нужны «Заметки»)"}</div>
-              {MEDIA_MODULES.map(m=>{
-                const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes);
-                return (
+              {MEDIA_MODULES.map(m=>{ const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes); return (
                 <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
                   style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
                   <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
@@ -3284,55 +3285,61 @@ export default function App() {
                     <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
                   </div>
                 </div>
-                );
-              })}
+              ); })}
             </div>)}
-            {syncStatus==="ok" && (
-              <div style={{marginTop:8}}>
-                <div onClick={()=>{ const nx=!storageOpen; setStorageOpen(nx); if(nx) refreshStorageInfo(); }}
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
-                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
-                  <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"показать")}</span>
-                  <span style={{display:"flex",color:"#8A7A65",transform:storageOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
-                </div>
-                {storageOpen && (
-                  <div style={{marginTop:6,background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",overflow:"hidden"}}>
-                    {storageBusy && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Загрузка…</div>}
-                    {!storageBusy && storageInfo && storageInfo.parts.length===0 && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Данных нет</div>}
-                    {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{
-                      const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0;
-                      return (
-                        <div key={i} style={{padding:"9px 14px",borderBottom:i<storageInfo.parts.length-1?"1px solid #1A1410":"none"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
-                            <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
-                          </div>
-                          <div style={{height:5,borderRadius:3,background:"#1A1410",overflow:"hidden"}}>
-                            <div style={{height:"100%",width:pct+"%",background:"#EF6C00",borderRadius:3}}/>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <button onClick={()=>setClearAsk(true)} style={{width:"100%",background:"none",border:"none",borderTop:"1px solid #1A1410",padding:13,color:"#E05252",cursor:"pointer",fontSize:14,fontWeight:600}}>Очистить данные в Google Диске</button>
-                  </div>
-                )}
-                {clearAsk && (
-                  <div style={{marginTop:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #E05252"}}>
-                    <div style={{fontSize:14,color:"#F2EAE0",marginBottom:4,fontWeight:600}}>Удалить все данные с Диска?</div>
-                    <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
-                    <div style={{display:"flex",gap:10}}>
-                      <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
-                      <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+
+            {/* Место на диске */}
+            <div onClick={()=>{ const nx=!storageOpen; setStorageOpen(nx); if(nx) refreshStorageInfo(); }}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:storageOpen?6:8}}>
+              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
+              <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"показать")}</span>
+              <span style={{display:"flex",color:"#8A7A65",transform:storageOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+            </div>
+            {storageOpen && (
+              <div style={{marginBottom:8,background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",overflow:"hidden"}}>
+                {storageBusy && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Загрузка…</div>}
+                {!storageBusy && storageInfo && storageInfo.parts.length===0 && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Данных нет</div>}
+                {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{ const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0; return (
+                  <div key={i} style={{padding:"9px 14px",borderBottom:i<storageInfo.parts.length-1?"1px solid #1A1410":"none"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
+                      <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
                     </div>
+                    <div style={{height:5,borderRadius:3,background:"#1A1410",overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"#EF6C00",borderRadius:3}}/></div>
                   </div>
-                )}
+                ); })}
+                <button onClick={()=>setClearAsk(true)} style={{width:"100%",background:"none",border:"none",borderTop:"1px solid #1A1410",padding:13,color:"#E05252",cursor:"pointer",fontSize:14,fontWeight:600}}>Очистить данные в Google Диске</button>
               </div>
             )}
-            {syncStatus==="error" && <div style={{fontSize:12,color:"#E07A5C",padding:"6px 4px"}}>Ошибка синхронизации</div>}
-            {syncStatus==="signedout" && <div style={{fontSize:12,color:"#E07A5C",padding:"6px 4px"}}>Не выполнен вход</div>}
-            <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
+            {clearAsk && (
+              <div style={{marginBottom:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #E05252"}}>
+                <div style={{fontSize:14,color:"#F2EAE0",marginBottom:4,fontWeight:600}}>Удалить все данные с Диска?</div>
+                <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
+                  <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+                </div>
+              </div>
+            )}
+
+            {/* Выход */}
+            {!signOutAsk ? (
+              <button onClick={()=>setSignOutAsk(true)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14,marginTop:4}}>
+                <span style={{display:"flex",transform:"scale(.75)"}}>{IC.logout}</span>Выйти из аккаунта
+              </button>
+            ) : (
+              <div style={{marginTop:4,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #3A2E24"}}>
+                <div style={{fontSize:14,color:"#F2EAE0",marginBottom:10}}>Выйти из аккаунта Google?</div>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={cloudSignOut} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Да</button>
+                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
+                </div>
+              </div>
+            )}
           </>
-        )}/>
+        )}
+      </Sheet>
+
       <Sheet open={imgSh} onClose={()=>setImgSh(false)} title="Сжатие изображений">
         <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
