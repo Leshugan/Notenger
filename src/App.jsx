@@ -676,7 +676,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 14px 10px",flexShrink:0}}>
           <Av icon={subf.icon} img={subf.iconImg} color={subf.color||color} size={40}/>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{subf.name}</div>
+            <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"var(--font-title)"}}>{subf.name}</div>
             <div style={{fontSize:12,color:"#B0A498"}}>{subf.notes.length} сообщений</div>
           </div>
         </div>
@@ -993,6 +993,8 @@ export default function App() {
   const [navTick,   setNavTick]   = useState(0);
   const firstRender = useRef(true);
   const delTimers = useRef({});
+  const writeHoldTimer = useRef(null);
+  const writeHoldFired = useRef(false);
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
@@ -1622,15 +1624,19 @@ export default function App() {
     return()=>{if(asTimer.current)clearInterval(asTimer.current);};
   },[asSettings.mode,data]);
 
+  useLayoutEffect(()=>{
+    if(scr==="chat" && scrollRef.current){
+      const sc=scrollRef.current;
+      const saved=scrollPos.current[sid];
+      sc.scrollTop = (saved!==undefined) ? saved : sc.scrollHeight;
+    }
+  },[scr,sid]);
   useEffect(()=>{
     if(scr==="chat" && scrollRef.current){
-      setTimeout(()=>{
-        const sc=scrollRef.current; if(!sc) return;
-        const saved=scrollPos.current[sid];
-        // если для темы есть сохранённая позиция — туда, иначе вниз (первый вход)
-        sc.scrollTop = (saved!==undefined) ? saved : sc.scrollHeight;
-        updateActiveNote();
-      },60);
+      const sc=scrollRef.current; if(!sc) return;
+      const saved=scrollPos.current[sid];
+      sc.scrollTop = (saved!==undefined) ? saved : sc.scrollHeight;
+      updateActiveNote();
     }
   },[scr,sid]);
   // Сохранять позицию прокрутки при входе/выходе из режимов выделения (чтобы не скакало)
@@ -1770,7 +1776,8 @@ export default function App() {
     if(imgCompressPopup){ setImgCompressPopup(false); return true; }
     if(lightbox){ closeLightbox(); return true; }
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
-    if(composerFull && !composerPeek){ setComposerFull(false); return true; }
+    if(attSh){ setAttSh(false); return true; }
+    if(composerFull && !composerPeek){ closeComposer(); return true; }
     // при peek: кнопка назад листает каталоги слева (в черновик — только свайп/гребешок)
     if(cloudWhenSh){ setCloudWhenSh(false); return true; }
     if(cloudWhatSh){ setCloudWhatSh(false); return true; }
@@ -1783,7 +1790,6 @@ export default function App() {
     if(modal){ setModal(null); return true; }
     if(pinnedOpen){ setPinnedOpen(false); return true; }
     if(mediaBrowser){ setMediaBrowser(false); return true; }
-    if(attSh){ setAttSh(false); return true; }
     if(asOpen){ setAsOpen(false); return true; }
     if(expSh){ setExpSh(false); return true; }
     if(settingsMenu||plusMenu||hdrMenu||folderMenu||subMenu){ setSettingsMenu(false);setPlusMenu(false);setHdrMenu(null);setFolderMenu(null);setSubMenu(null); return true; }
@@ -1947,6 +1953,15 @@ export default function App() {
   function cancelEdit() {
     setEditId(null); setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
     if(taRef.current){ taRef.current.style.height="auto"; }
+  }
+  // Закрытие полноэкранного редактора с анимацией возврата микрофона/самолёта
+  function closeComposer(){
+    const o=composerOrigin.current||{fid,sid};
+    const dk=o.sid==="__top__"?("__top__"+o.fid):o.sid;
+    if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
+    if(editId) cancelEdit();
+    setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false);
+    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),360); }
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
@@ -2425,7 +2440,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v88</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v91</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2533,7 +2548,7 @@ export default function App() {
                 <Av icon={subf.icon} img={subf.iconImg} color={subf.color} size={36}/>
               </div>
               <div style={{minWidth:0,flex:1}}>
-                <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{subf.name}</div>
+                <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"var(--font-title)"}}>{subf.name}</div>
                 <div style={{fontSize:12,color:"#B0A498"}}>{subf.notes.length} сообщений</div>
               </div>
             </div>
@@ -2625,7 +2640,7 @@ export default function App() {
                 <Av icon={f.icon} img={f.iconImg} color={f.color}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{f.name}</span>
+                    <span style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0,fontFamily:"var(--font-title)"}}>{f.name}</span>
                   </div>
                   <div style={{fontSize:13,color:"#B0A498",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:2}}>
                     {f.isTheme ? (last?(strip(last.text)||(last.attachments?.length?"Вложение":"Нет сообщений")):"Нет сообщений") : (last?(strip(last.text)||(last.attachments?.length?"Вложение":"Нет сообщений")):`${f.subfolders.length} тем`)}
@@ -2716,7 +2731,7 @@ export default function App() {
                 <Av icon={s.icon} color={s.color}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontWeight:600,fontSize:16}}>{s.name}</span>
+                    <span style={{fontWeight:600,fontSize:16,fontFamily:"var(--font-title)"}}>{s.name}</span>
                   </div>
                   <div style={{fontSize:13,color:"#B0A498",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:2}}>
                     {last?(strip(last.text)||(last.attachments?.length?"Вложение":"Нет сообщений")):"Нет сообщений"}
@@ -2987,7 +3002,7 @@ export default function App() {
               <div style={{flex:1}}/>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.eye}</button>
-              <button onClick={()=>{ const o=composerOrigin.current||{fid,sid}; const dk=o.sid==="__top__"?"__top__"+o.fid:o.sid; if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); } if(editId) cancelEdit(); setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false); if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),360); } }} title="Отменить"
+              <button onClick={closeComposer} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.close}</button>
               {(note.trim()||patts.length>0||editId)
                 ? <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
@@ -3122,19 +3137,27 @@ export default function App() {
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
-            <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{minWidth:0,flex:1,cursor:"pointer",paddingLeft:4}}>
-              <div style={{fontWeight:600,fontSize:15,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{subf?.name||"Сообщение"}</div>
+            <div style={{minWidth:0,flex:1,paddingLeft:4}}>
+              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{display:"inline-block",maxWidth:"100%",fontWeight:600,fontSize:15,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer",fontFamily:"var(--font-title)"}}>{subf?.name||"Сообщение"}</div>
               {subf&&<div style={{fontSize:11,color:"#8A7A65"}}>{subf.notes.length} сообщений</div>}
             </div>
-            {/* Кнопка Написать — по центру панели */}
-            <button onClick={()=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }} title="Написать"
-              style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
+            {/* Кнопка Написать — по центру панели; удержание = запись аудио */}
+            <button
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(e); },350); }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ stopRec(false); writeHoldFired.current=false; } else { closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ clearTimeout(writeHoldTimer.current); } }}
+              onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              title="Написать (удерживайте для записи)"
+              style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
-                background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>
-              <span style={{display:"flex",transform:"scale(.9)"}}>{IC.sendUp}</span>
+                background:recording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
+                display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s",
+                boxShadow:recording?"0 0 0 6px rgba(224,83,60,.25)":"0 1px 5px rgba(239,108,0,.3)"}}>
+              <span style={{display:"flex",transform:"scale(.9)"}}>{recording?IC.mic:IC.sendUp}</span>
             </button>
+            {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
+            <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
+              style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{IC.clip}</button>
             {/* Поиск + ⋯ справа */}
             <button onClick={e=>{e.stopPropagation(); if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setChatSearch(v=>v?"":" ");}} title="Поиск в теме"
               style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{IC.search}</button>
