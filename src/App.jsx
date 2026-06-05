@@ -2193,12 +2193,13 @@ export default function App() {
       r.onload=async ev=>{
         let dataUrl=ev.target.result;
         let type=file.type||"application/octet-stream";
-        const origSize=(dataUrl&&dataUrl.length)||file.size||0;
+        const b64bytes=(du)=>{ try{ const i=(du||"").indexOf(","); const b=i>=0?du.slice(i+1):du; const pad=(b.endsWith("==")?2:b.endsWith("=")?1:0); return Math.max(0, Math.floor(b.length*3/4)-pad); }catch{ return 0; } };
+        const origSize=file.size||b64bytes(dataUrl);
         let compressed=false;
         if(imgCompress && type.startsWith("image/")){
           try{ const c=await compressImage(dataUrl,type); if(c!==dataUrl){ dataUrl=c; type="image/jpeg"; compressed=true; } }catch{}
         }
-        const att={id:uid("a")+Math.random(),name:file.name,type,size:(dataUrl&&dataUrl.length)||file.size,origSize,compressed,dataUrl,caption:""};
+        const att={id:uid("a")+Math.random(),name:file.name,type,size:b64bytes(dataUrl),origSize,compressed,dataUrl,caption:""};
         setPatts(p=>[...p,att]);
         if(!composerFull){ composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); }
       };
@@ -2392,7 +2393,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v77</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v78</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2799,6 +2800,9 @@ export default function App() {
                   const inSel = (multiSelect.length>0)||selectMode;
                   if(inSel){ toggleSel(n); }
                 }}
+                onTouchStart={multiActive?undefined:(e=>{ if(!selActive && !(selectMode&&selectMode!==n.id)) bubbleLpStart(n,e); })}
+                onTouchMove={multiActive?undefined:(e=>{ bubbleLpMove(e); })}
+                onTouchEnd={multiActive?undefined:(e=>{ if(!selActive) bubbleLpEnd(n,e); })}
                 style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative",
                   background:(isMulti||selActive)?"rgba(239,108,0,.12)":"transparent",
                   padding:"2px 0",margin:"0 -10px 0 -4px",paddingLeft:4,paddingRight:10,boxSizing:"border-box"}}>
