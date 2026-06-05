@@ -259,6 +259,12 @@ jobs:
                     it.addCategory(Intent.CATEGORY_OPENABLE);
                     it.setType(mime==null||mime.isEmpty()?"application/octet-stream":mime);
                     it.putExtra(Intent.EXTRA_TITLE, name);
+                    try {
+                      if (android.os.Build.VERSION.SDK_INT >= 26) {
+                        android.net.Uri initial = android.net.Uri.parse("content://com.android.externalstorage.documents/document/primary:Notenger");
+                        it.putExtra("android.provider.extra.INITIAL_URI", initial);
+                      }
+                    } catch(Exception e){}
                     runOnUiThread(() -> { try { saveFileLauncher.launch(it); } catch(Exception e){} });
                   }catch(Exception e){ pendingSaveBytes=null; }
                 }
