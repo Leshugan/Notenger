@@ -40,6 +40,8 @@ const IC = {
   copy:  <Icon d={["M9 9h10v12H9z","M5 15V3h10"]} stroke={2} />,
   cut:   <Icon d={["M6 6m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0","M6 18m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0","M20 4 8.5 15.5","M20 20 8.5 8.5"]} stroke={2} />,
   check: <Icon d="M5 12l5 5 9-11" stroke={2.4} />,
+  ouro: <Icon d={["M20 12a8 8 0 1 1-3.2-6.4","M16 2.5l1 3.2-3.2 1"]} stroke={2.2} />,
+  logout: <Icon d={["M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4","M10 8l-4 4 4 4","M6 12h10"]} stroke={2} />,
   close: <Icon d={["M6 6l12 12","M18 6L6 18"]} stroke={2.2} />,
   copyT: (<svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"block"}}>
     <rect x="4" y="3" width="11" height="14" rx="2"/><path d="M17 7h3v12a2 2 0 0 1-2 2H9"/>
@@ -831,6 +833,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
   const [pwd,setPwd]=useState("");
   const [busy,setBusy]=useState(false);
   const [msg,setMsg]=useState("");
+  const [asOpen,setAsOpen]=useState(false);
 
   const AS_MODES=[
     {val:"off",     label:"Выключено"},
@@ -905,27 +908,36 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="💾 Экспорт / сохранение">
-      {/* Auto-save options */}
-      <div style={{marginBottom:16}}>
+    <Sheet open={open} onClose={()=>{setAsOpen(false);onClose();}} title="Резервная копия данных">
+      {syncSection}
+      {/* Автосохранение — выпадающий выбор */}
+      <div style={{marginBottom:8}}>
         <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Автосохранение</div>
-        {AS_MODES.map(m=>(
-          <div key={m.val} onClick={()=>{setAsSettings({mode:m.val});saveAS({mode:m.val});}}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
-              background:"#241C16",borderRadius:10,marginBottom:6,cursor:"pointer",
-              border:asSettings.mode===m.val?"1px solid #EF6C00":"1px solid transparent"}}>
-            <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(asSettings.mode===m.val?"#EF6C00":"#5A4C40"),
-              display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              {asSettings.mode===m.val&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
-            </div>
-            <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+        <div onClick={()=>setAsOpen(v=>!v)}
+          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#241C16",borderRadius:10,cursor:"pointer",border:"1px solid #3A2E24"}}>
+          <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
+          <span style={{display:"flex",color:"#8A7A65",transform:asOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+        </div>
+        {asOpen && (
+          <div style={{marginTop:6,background:"#241C16",borderRadius:10,overflow:"hidden",border:"1px solid #3A2E24"}}>
+            {AS_MODES.map(m=>(
+              <div key={m.val} onClick={()=>{setAsSettings({mode:m.val});saveAS({mode:m.val});setAsOpen(false);}}
+                style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer"}}>
+                <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(asSettings.mode===m.val?"#EF6C00":"#5A4C40"),
+                  display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  {asSettings.mode===m.val&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}
+                </div>
+                <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
       <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
+      <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Ручная копия</div>
       <div style={{background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,
         padding:"10px 14px",marginBottom:14,fontSize:13,color:"#B0A498",lineHeight:1.5}}>
-        «Сохранить» создаёт файл-резервную копию со всеми данными. Выберите в системном диалоге, куда его сохранить.
+        Создаёт файл-резервную копию со всеми данными (заметки, медиа, настройки). Выберите в системном диалоге, куда сохранить.
       </div>
       <div onClick={()=>setUsePwd(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,
         background:"#241C16",borderRadius:12,padding:"12px 14px",cursor:"pointer",marginBottom:12}}>
@@ -953,7 +965,6 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
         style={{width:"100%",marginTop:10,background:"#241C16",border:"1px solid #3A2E24",borderRadius:12,padding:13,
           color:"#F2EAE0",cursor:"pointer",fontSize:14}}>📂 Импорт из файла</button>
-      {syncSection}
     </Sheet>
   );
 }
@@ -1193,6 +1204,34 @@ export default function App() {
   const [noInputAnim, setNoInputAnim] = useState(()=>{ try{return localStorage.getItem("napp_noInputAnim")==="1";}catch{return false;} });
   const [noDelAnim, setNoDelAnim] = useState(()=>{ try{return localStorage.getItem("napp_noDelAnim")==="1";}catch{return false;} });
   const [noScrAnim, setNoScrAnim] = useState(()=>{ try{return localStorage.getItem("napp_noScrAnim")==="1";}catch{return false;} });
+  const [imgCompress, setImgCompress] = useState(()=>{ try{return localStorage.getItem("napp_imgCompress")==="1";}catch{return false;} });
+  const [imgCompressPopup, setImgCompressPopup] = useState(false);
+  function toggleImgCompress(){
+    setImgCompress(v=>{ const nv=!v; try{localStorage.setItem("napp_imgCompress",nv?"1":"0");}catch{} if(nv) setImgCompressPopup(true); return nv; });
+  }
+  // Умное сжатие изображения без заметной потери качества (ресайз до 2048px + JPEG q0.82)
+  function compressImage(dataUrl, type){
+    return new Promise(resolve=>{
+      try{
+        if(!type || !type.startsWith("image/") || type==="image/gif"){ resolve(dataUrl); return; }
+        const img=new Image();
+        img.onload=()=>{
+          try{
+            const MAX=2048;
+            let {width:w,height:h}=img;
+            if(w>MAX||h>MAX){ const k=Math.min(MAX/w,MAX/h); w=Math.round(w*k); h=Math.round(h*k); }
+            const c=document.createElement("canvas"); c.width=w; c.height=h;
+            const ctx=c.getContext("2d"); ctx.drawImage(img,0,0,w,h);
+            const out=c.toDataURL("image/jpeg",0.82);
+            // используем сжатую версию только если реально меньше
+            resolve(out.length<dataUrl.length?out:dataUrl);
+          }catch{ resolve(dataUrl); }
+        };
+        img.onerror=()=>resolve(dataUrl);
+        img.src=dataUrl;
+      }catch{ resolve(dataUrl); }
+    });
+  }
   // Множители скорости анимаций (0.3 = быстрее/короче … 1 = базовая длительность). Храним как множитель длительности.
   const [animSpeed, setAnimSpeed] = useState(()=>{ try{ return JSON.parse(localStorage.getItem("napp_animSpeed")||"{}"); }catch{ return {}; } });
   function setSpeed(key,val){ setAnimSpeed(s=>{ const ns={...s,[key]:val}; try{localStorage.setItem("napp_animSpeed",JSON.stringify(ns));}catch{} return ns; }); }
@@ -1209,15 +1248,17 @@ export default function App() {
   const composerOrigin = useRef(null); // {fid,sid} откуда начато сообщение/правка
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
+  const [imgSh, setImgSh] = useState(false); // шторка сжатия изображений
   const [fontSh, setFontSh] = useState(false); // шторка шрифтов
   const [fontOpen, setFontOpen] = useState(null); // {key,x,y} какой пункт шрифта раскрыт
   const FONT_KEY="napp_fonts_v1";
   // Встроенные тестовые шрифты (Google Fonts) + загруженные пользователем (data-URL ttf)
   const BUILTIN_FONTS=[
     {id:"sys",name:"По умолчанию",css:"'Noto Sans',sans-serif"},
-    {id:"comfortaa",name:"Comfortaa",css:"'Comfortaa',cursive",url:"https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap"},
-    {id:"roboto",name:"Roboto",css:"'Roboto',sans-serif",url:"https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"},
-    {id:"comic",name:"Comic Sans",css:"'Comic Neue',cursive",url:"https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap"},
+    {id:"comfortaa",name:"Comfortaa",css:"'Comfortaa',cursive"},
+    {id:"roboto",name:"Roboto",css:"'Roboto',sans-serif"},
+    {id:"comic",name:"Comic Sans",css:"'Comic Neue',cursive"},
+    {id:"ubuntu",name:"Ubuntu Light",css:"'Ubuntu',sans-serif",weight:300},
   ];
   // Цели, для которых можно задать шрифт
   const FONT_TARGETS=[
@@ -1233,8 +1274,6 @@ export default function App() {
   function fontCssFor(key){ const id=fonts.assign?.[key]; const f=allFonts.find(x=>x.id===id); return f?f.css:"'Noto Sans',sans-serif"; }
   // Подгружаем веб-шрифты и регистрируем кастомные @font-face
   useEffect(()=>{
-    // встроенные через <link>
-    BUILTIN_FONTS.forEach(f=>{ if(f.url && !document.getElementById("font-"+f.id)){ const l=document.createElement("link"); l.id="font-"+f.id; l.rel="stylesheet"; l.href=f.url; document.head.appendChild(l); } });
     // кастомные через @font-face (data-URL)
     let css="";
     (fonts.custom||[]).forEach(f=>{ if(f.dataUrl){ css+=`@font-face{font-family:'${f.id}';src:url('${f.dataUrl}');}`; } });
@@ -1285,6 +1324,87 @@ export default function App() {
   const [syncStatus,setSyncStatus]=useState("idle"); // idle|syncing|ok|error|signedout
   const [syncLastTime,setSyncLastTime]=useState(()=>{ try{return localStorage.getItem("napp_sync_last")||null;}catch{return null;} });
   const [syncSh,setSyncSh]=useState(false); // шторка настроек синка
+  const [syncDetails,setSyncDetails]=useState(false);
+  const [syncMenuOpen,setSyncMenuOpen]=useState(false); // выпадающее "когда/как сохранять"
+  const [signOutAsk,setSignOutAsk]=useState(false);     // подтверждение выхода
+  // Расписание облачного автосохранения (как у локального)
+  const CLOUD_MODES=[
+    {val:"off",    label:"Вручную"},
+    {val:"change", label:"При изменении"},
+    {val:"1h",     label:"Раз в час"},
+    {val:"1d",     label:"Раз в день"},
+    {val:"1w",     label:"Раз в неделю"},
+  ];
+  function cloudSignOut(){
+    try{ if(window.NotengerAuthNative&&window.NotengerAuthNative.signOut) window.NotengerAuthNative.signOut(); }catch{}
+    setSyncStatus("signedout"); setSignOutAsk(false);
+  }
+  // ===== Учёт места на Google Диске =====
+  const [storageOpen,setStorageOpen]=useState(false);
+  const [storageInfo,setStorageInfo]=useState(null); // {total, parts:[{label,bytes}]}
+  const [storageBusy,setStorageBusy]=useState(false);
+  const [clearAsk,setClearAsk]=useState(false);
+  function humanBytes(b){ if(b==null) return "—"; if(b<1024) return b+" Б"; if(b<1048576) return (b/1024).toFixed(1)+" КБ"; if(b<1073741824) return (b/1048576).toFixed(1)+" МБ"; return (b/1073741824).toFixed(2)+" ГБ"; }
+  // Разбивка по типам — по тому, что реально уходит в бэкап (с учётом выбора)
+  function computeStorageBreakdown(){
+    const enc=new TextEncoder();
+    const sizeOf=str=>{ try{ return enc.encode(str).length; }catch{ return (str||"").length; } };
+    const parts=[];
+    // настройки
+    let setBytes=0; SYNC_MODULES.find(m=>m.key==="settings").keys.forEach(k=>{ const v=localStorage.getItem(k); if(v) setBytes+=sizeOf(v); });
+    // черновики
+    let draftBytes=0; const dv=localStorage.getItem(DRAFT_KEY); if(dv) draftBytes=sizeOf(dv);
+    // заметки: текст vs медиа по типам
+    let textBytes=0, img=0, vid=0, aud=0, files=0;
+    try{
+      const d=JSON.parse(localStorage.getItem(SK)||"{}");
+      const walk=arr=>arr&&arr.forEach(f=>{
+        if(f.notes) f.notes.forEach(n=>{
+          if(n.text) textBytes+=sizeOf(n.text);
+          if(n.attachments) n.attachments.forEach(a=>{
+            const sz=sizeOf((a&&(a.data||a.url||a.src))||"");
+            if(a&&(a.voice||(a.type&&a.type.startsWith("audio/")))) aud+=sz;
+            else if(a&&a.type&&a.type.startsWith("image/")) img+=sz;
+            else if(a&&a.type&&a.type.startsWith("video/")) vid+=sz;
+            else files+=sz;
+          });
+        });
+        if(f.subs) walk(f.subs);
+      });
+      if(d.folders) walk(d.folders);
+    }catch{}
+    parts.push({label:"Изображения",bytes:img});
+    parts.push({label:"Видео",bytes:vid});
+    parts.push({label:"Аудио / голос",bytes:aud});
+    parts.push({label:"Файлы (прочее)",bytes:files});
+    parts.push({label:"Текст заметок",bytes:textBytes});
+    parts.push({label:"Черновики",bytes:draftBytes});
+    parts.push({label:"Настройки",bytes:setBytes});
+    parts.sort((a,b)=>b.bytes-a.bytes);
+    return parts.filter(p=>p.bytes>0);
+  }
+  async function refreshStorageInfo(){
+    setStorageBusy(true);
+    let total=null;
+    try{
+      const token=await getAccessToken(false);
+      if(token){ const f=await driveFindFile(token); total=f&&f.size?parseInt(f.size,10):0; }
+    }catch{}
+    const parts=computeStorageBreakdown();
+    if(total==null) total=parts.reduce((s,p)=>s+p.bytes,0); // оценка, если размер с Диска не получили
+    setStorageInfo({total,parts});
+    setStorageBusy(false);
+  }
+  async function clearCloudData(){
+    setClearAsk(false); setStorageBusy(true);
+    try{
+      const token=await getAccessToken(true);
+      if(token){ const f=await driveFindFile(token); if(f) await driveDelete(token,f.id); }
+      setStorageInfo({total:0,parts:[]});
+      setSyncLastTime(null); try{ localStorage.removeItem("napp_sync_last"); }catch{}
+    }catch{}
+    setStorageBusy(false);
+  }
   const syncTimer=useRef(null);
 
   // Получить валидный access-token. Реальная реализация — через нативный плагин Google (подключается в сборке).
@@ -1356,11 +1476,16 @@ export default function App() {
   // Найти id файла бэкапа в appDataFolder
   async function driveFindFile(token){
     const q=encodeURIComponent("name='"+DRIVE_FILE_NAME+"'");
-    const r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q="+q+"&fields=files(id,modifiedTime)",
+    const r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q="+q+"&fields=files(id,modifiedTime,size)",
       {headers:{Authorization:"Bearer "+token}});
     if(!r.ok) throw new Error("list "+r.status);
     const j=await r.json();
     return (j.files&&j.files[0])||null;
+  }
+  async function driveDelete(token,id){
+    const r=await fetch("https://www.googleapis.com/drive/v3/files/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token}});
+    if(!r.ok && r.status!==404) throw new Error("del "+r.status);
+    return true;
   }
   async function driveDownload(token,id){
     const r=await fetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",{headers:{Authorization:"Bearer "+token}});
@@ -1384,7 +1509,6 @@ export default function App() {
   // Главная функция синка. mode: 'push'|'pull'|'auto'
   const syncRunning=useRef(false);
   async function runSync(mode, interactive){
-    if(!syncCfg.enabled) return;
     if(syncRunning.current) return;
     syncRunning.current=true; setSyncStatus("syncing");
     try{
@@ -1392,31 +1516,26 @@ export default function App() {
       if(!token){ setSyncStatus("signedout"); syncRunning.current=false; return; }
       const remote=await driveFindFile(token);
       if(mode==="pull" || (mode==="auto" && remote)){
-        // тянем удалённое и сливаем по времени
         if(remote){
           const obj=await driveDownload(token,remote.id);
-          const localTs=collectSyncData().__meta.ts;
-          if(!obj.__meta || obj.__meta.ts>=0){
-            // last-write-wins на уровне файла: если удалённое новее — применяем
-            applySyncData(obj);
-          }
+          if(!obj.__meta || obj.__meta.ts>=0){ applySyncData(obj); }
         }
       }
-      // затем пушим текущее состояние
       const payload=collectSyncData();
       await driveUpload(token, remote?remote.id:null, payload);
       const now=new Date().toISOString();
       try{ localStorage.setItem("napp_sync_last",now); }catch{}
       setSyncLastTime(now); setSyncStatus("ok");
+      if(!syncCfg.enabled) saveSyncCfg({...syncCfg,enabled:true});
     }catch(e){
       setSyncStatus("error");
     }
     syncRunning.current=false;
   }
 
-  // Авто-синк: дебаунс после изменений данных
   function scheduleAutoSync(){
-    if(!syncCfg.enabled || !syncCfg.auto) return;
+    const mode=syncCfg.cloudMode||(syncCfg.auto?"change":"off");
+    if(!syncCfg.enabled || mode==="off" || mode!=="change") return; // дебаунс только для «при изменении»
     clearTimeout(syncTimer.current);
     syncTimer.current=setTimeout(()=>{ runSync("push",false); }, 4000);
   }
@@ -2054,10 +2173,14 @@ export default function App() {
   function onFiles(e) {
     Array.from(e.target.files||[]).forEach(file=>{
       const r=new FileReader();
-      r.onload=ev=>{
-        const att={id:uid("a")+Math.random(),name:file.name,type:file.type||"application/octet-stream",size:file.size,dataUrl:ev.target.result,caption:""};
+      r.onload=async ev=>{
+        let dataUrl=ev.target.result;
+        let type=file.type||"application/octet-stream";
+        if(imgCompress && type.startsWith("image/")){
+          try{ dataUrl=await compressImage(dataUrl,type); type="image/jpeg"; }catch{}
+        }
+        const att={id:uid("a")+Math.random(),name:file.name,type,size:file.size,dataUrl,caption:""};
         setPatts(p=>[...p,att]);
-        // открываем редактор, чтобы вложение сразу было в наборе сообщения
         if(!composerFull){ composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); }
       };
       r.readAsDataURL(file);
@@ -2212,6 +2335,10 @@ export default function App() {
       )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
         input,textarea{-webkit-user-select:text;user-select:text;}
         .editor-ta{-webkit-user-select:text;-webkit-touch-callout:none!important;}
@@ -2222,6 +2349,7 @@ export default function App() {
         @keyframes fS {from{opacity:0}to{opacity:1}}
         @keyframes scrIn{from{opacity:0;transform:translateX(30px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
         .scrAnim{animation:scrIn var(--scr-dur,.42s) cubic-bezier(.05,.7,.1,1);}
+        @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#3A2E24;}
@@ -2245,7 +2373,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v68</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v74</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2325,8 +2453,9 @@ export default function App() {
               {settingsMenu&&<DropMenu onClose={()=>setSettingsMenu(false)}
                 style={{position:"absolute",top:"calc(100% + 8px)",left:0}}
                 items={[
-                  {ic:IC.save,label:"Сохранить / экспорт",fn:()=>setExpSh(true)},
+                  {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
                   {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
+                {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
                 ]}/>}
             </div>
@@ -2485,8 +2614,9 @@ export default function App() {
             {settingsMenu&&<DropMenu onClose={()=>setSettingsMenu(false)}
               style={{position:"absolute",bottom:"calc(100% + 8px)",left:0}}
               items={[
-                {ic:IC.save,label:"Сохранить / экспорт",fn:()=>setExpSh(true)},
+                {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
                 {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
+                {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
                 {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
               ]}/>}
           </div>
@@ -3065,80 +3195,164 @@ export default function App() {
         buildBackup={()=>collectBackup(syncCfg.enabled?syncCfg:{modules:{settings:true,notes:true,drafts:true},media:{images:true,videos:true,files:true}})} onImportClick={()=>importRef.current&&importRef.current.click()}
         syncSection={(
           <>
-            <div style={{height:1,background:"#241C16",margin:"18px 0 14px"}}/>
-            <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Облачная синхронизация</div>
-            <div onClick={()=>{ const c={...syncCfg,enabled:!syncCfg.enabled}; saveSyncCfg(c); if(c.enabled) setTimeout(()=>runSync("pull",true),100); }}
-              style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
-              <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Синхронизация с Google Диском</span>
-              <div style={{width:46,height:26,borderRadius:13,background:syncCfg.enabled?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
-                <div style={{position:"absolute",top:2,left:syncCfg.enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
+            {/* Строка Google Диск: кнопка-меню + уроборос + Войти/статус */}
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24"}}>
+              <div onClick={()=>{ if(syncStatus==="ok") setSyncMenuOpen(v=>!v); }}
+                style={{display:"flex",alignItems:"center",gap:8,flex:1,cursor:syncStatus==="ok"?"pointer":"default"}}>
+                <span style={{fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
+                {syncStatus==="ok" && <span style={{display:"flex",color:"#8A7A65",transform:syncMenuOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>}
               </div>
-            </div>
-            <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px 8px",lineHeight:1.5}}>Данные хранятся в скрытой папке приложения на вашем Google Диске и используют ваше место. По умолчанию выключено.</div>
-            {syncCfg.enabled && (<>
-              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#241C16",borderRadius:10,margin:"8px 0"}}>
-                <div style={{width:10,height:10,borderRadius:"50%",flexShrink:0,
-                  background:syncStatus==="ok"?"#5BBF5B":syncStatus==="syncing"?"#E0A152":(syncStatus==="error"||syncStatus==="signedout")?"#E05252":"#6A5A48"}}/>
-                <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>
-                  {syncStatus==="syncing"?"Синхронизация…":
-                   syncStatus==="ok"?("Синхронизировано"+(syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):"")):
-                   syncStatus==="error"?"Ошибка синхронизации":
-                   syncStatus==="signedout"?"Не выполнен вход в аккаунт":
-                   "Готово к синхронизации"}
-                </span>
-              </div>
-              {/* Кнопка входа в Google */}
-              <button onClick={()=>runSync("pull",true)}
-                style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"#fff",border:"none",borderRadius:12,padding:"12px",cursor:"pointer",margin:"4px 0 10px"}}>
-                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
-                <span style={{fontSize:14,color:"#222",fontWeight:600}}>{syncStatus==="ok"?"Аккаунт подключён":"Войти через Google"}</span>
-              </button>
-              {syncStatus==="signedout" && (
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#3A2218",border:"1px solid #E05252",borderRadius:10,margin:"8px 0"}}>
-                  <span style={{flex:1,fontSize:13,color:"#F2EAE0"}}>Заметки не синхронизируются. Войдите в аккаунт выше.</span>
-                </div>
+              {syncStatus==="ok" ? (
+                <button onClick={()=>runSync("auto",true)} disabled={false} title="Синхронизировать сейчас"
+                  style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{display:"flex",transform:"scale(.8)",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none"}}>{IC.ouro}</span>
+                </button>
+              ) : (
+                <button onClick={()=>runSync("pull",true)}
+                  style={{display:"flex",alignItems:"center",gap:7,background:"#fff",border:"none",borderRadius:9,padding:"7px 12px",cursor:"pointer",flexShrink:0}}>
+                  <svg width="15" height="15" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
+                  <span style={{fontSize:13,color:"#222",fontWeight:600}}>{syncStatus==="syncing"?"Вход…":"Войти"}</span>
+                </button>
               )}
-              <div onClick={()=>saveSyncCfg({...syncCfg,auto:!syncCfg.auto})}
-                style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
-                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Автоматически</span>
-                <div style={{width:46,height:26,borderRadius:13,background:syncCfg.auto?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
-                  <div style={{position:"absolute",top:2,left:syncCfg.auto?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+
+            {/* Выпадающее меню: когда/как сохранять в облако (как у шрифтов) */}
+            {syncStatus==="ok" && syncMenuOpen && (
+              <div style={{marginTop:6,background:"#241C16",borderRadius:10,overflow:"hidden",border:"1px solid #3A2E24"}}>
+                <div style={{fontSize:12,color:"#8A7A65",padding:"10px 14px 4px"}}>Когда сохранять</div>
+                {CLOUD_MODES.map(m=>{
+                  const cur=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off");
+                  const sel=cur===m.val;
+                  return (
+                    <div key={m.val} onClick={()=>{ const c={...syncCfg, auto:m.val!=="off", cloudMode:m.val}; saveSyncCfg(c); }}
+                      style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",cursor:"pointer"}}>
+                      <div style={{width:17,height:17,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        {sel&&<div style={{width:7,height:7,borderRadius:"50%",background:"#EF6C00"}}/>}
+                      </div>
+                      <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* После авторизации: «Что сохранять» + выход */}
+            {syncStatus==="ok" && (
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+                <div onClick={()=>setSyncDetails(v=>!v)} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
+                  <span style={{display:"flex",color:"#8A7A65",transform:syncDetails?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+                </div>
+                <button onClick={()=>setSignOutAsk(true)} title="Выйти из аккаунта"
+                  style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #3A2E24",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{display:"flex",transform:"scale(.8)"}}>{IC.logout}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Подтверждение выхода */}
+            {signOutAsk && (
+              <div style={{marginTop:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #3A2E24"}}>
+                <div style={{fontSize:14,color:"#F2EAE0",marginBottom:10}}>Выйти из аккаунта Google?</div>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={cloudSignOut} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Да</button>
+                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
                 </div>
               </div>
-              <button onClick={()=>runSync("auto",true)} disabled={syncStatus==="syncing"}
-                style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,margin:"8px 0",opacity:syncStatus==="syncing"?.6:1}}>
-                {syncStatus==="syncing"?"Синхронизация…":"Синхронизировать сейчас"}
-              </button>
-              <div style={{height:1,background:"#241C16",margin:"10px 0"}}/>
-              <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 8px"}}>Что синхронизировать</div>
+            )}
+
+            {/* Что сохранять — модули и медиа (как тумблеры) */}
+            {syncStatus==="ok" && syncDetails && (<div style={{marginTop:6}}>
               {SYNC_MODULES.map(m=>(
                 <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
-                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:"pointer"}}>
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer",marginBottom:6}}>
                   <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-                  <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                    border:"2px solid "+((syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#5A4C40"),
-                    background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"transparent",
-                    display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
-                    {(syncCfg.modules&&syncCfg.modules[m.key])&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+                  <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+                    <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
                   </div>
                 </div>
               ))}
-              <div style={{fontSize:13,color:"#8A7A65",padding:"12px 4px 8px"}}>Медиафайлы {(syncCfg.modules&&syncCfg.modules.notes)?"":"(включите «Заметки»)"}</div>
-              {MEDIA_MODULES.map(m=>(
-                <div key={m.key} onClick={()=>{ if(!(syncCfg.modules&&syncCfg.modules.notes)) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!(syncCfg.media&&syncCfg.media[m.key])}}); }}
-                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:(syncCfg.modules&&syncCfg.modules.notes)?"pointer":"default",opacity:(syncCfg.modules&&syncCfg.modules.notes)?1:.4}}>
+              <div style={{fontSize:12,color:"#8A7A65",padding:"6px 4px 6px"}}>Медиа {(syncCfg.modules&&syncCfg.modules.notes)?"":"(нужны «Заметки»)"}</div>
+              {MEDIA_MODULES.map(m=>{
+                const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes);
+                return (
+                <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
                   <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
-                  <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                    border:"2px solid "+((syncCfg.media&&syncCfg.media[m.key])?"#EF6C00":"#5A4C40"),
-                    background:(syncCfg.media&&syncCfg.media[m.key])?"#EF6C00":"transparent",
-                    display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>
-                    {(syncCfg.media&&syncCfg.media[m.key])&&<span style={{display:"flex",transform:"scale(.7)"}}>{IC.check}</span>}
+                  <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+                    <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
                   </div>
                 </div>
-              ))}
-            </>)}
+                );
+              })}
+            </div>)}
+            {syncStatus==="ok" && (
+              <div style={{marginTop:8}}>
+                <div onClick={()=>{ const nx=!storageOpen; setStorageOpen(nx); if(nx) refreshStorageInfo(); }}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+                  <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
+                  <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"показать")}</span>
+                  <span style={{display:"flex",color:"#8A7A65",transform:storageOpen?"rotate(90deg)":"none",transition:"transform .15s"}}>{IC.arrRight}</span>
+                </div>
+                {storageOpen && (
+                  <div style={{marginTop:6,background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",overflow:"hidden"}}>
+                    {storageBusy && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Загрузка…</div>}
+                    {!storageBusy && storageInfo && storageInfo.parts.length===0 && <div style={{padding:"12px 14px",fontSize:13,color:"#8A7A65"}}>Данных нет</div>}
+                    {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{
+                      const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0;
+                      return (
+                        <div key={i} style={{padding:"9px 14px",borderBottom:i<storageInfo.parts.length-1?"1px solid #1A1410":"none"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                            <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
+                            <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
+                          </div>
+                          <div style={{height:5,borderRadius:3,background:"#1A1410",overflow:"hidden"}}>
+                            <div style={{height:"100%",width:pct+"%",background:"#EF6C00",borderRadius:3}}/>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <button onClick={()=>setClearAsk(true)} style={{width:"100%",background:"none",border:"none",borderTop:"1px solid #1A1410",padding:13,color:"#E05252",cursor:"pointer",fontSize:14,fontWeight:600}}>Очистить данные в Google Диске</button>
+                  </div>
+                )}
+                {clearAsk && (
+                  <div style={{marginTop:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #E05252"}}>
+                    <div style={{fontSize:14,color:"#F2EAE0",marginBottom:4,fontWeight:600}}>Удалить все данные с Диска?</div>
+                    <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
+                    <div style={{display:"flex",gap:10}}>
+                      <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
+                      <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#241C16",border:"1px solid #3A2E24",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {syncStatus==="error" && <div style={{fontSize:12,color:"#E07A5C",padding:"6px 4px"}}>Ошибка синхронизации</div>}
+            {syncStatus==="signedout" && <div style={{fontSize:12,color:"#E07A5C",padding:"6px 4px"}}>Не выполнен вход</div>}
+            <div style={{height:1,background:"#241C16",margin:"16px 0"}}/>
           </>
         )}/>
+      <Sheet open={imgSh} onClose={()=>setImgSh(false)} title="Сжатие изображений">
+        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#241C16",borderRadius:10,border:"1px solid #3A2E24",cursor:"pointer"}}>
+          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
+          <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+            <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:"#8A7A65",padding:"10px 4px",lineHeight:1.5}}>
+          Новые добавляемые изображения будут автоматически уменьшаться в размере. Уже добавленные не затрагиваются.
+        </div>
+      </Sheet>
+      {imgCompressPopup && (
+        <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#241C16",borderRadius:16,border:"1px solid #3A2E24",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
+            <div style={{fontSize:16,color:"#F2EAE0",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
+            <div style={{fontSize:14,color:"#D8CCBE",lineHeight:1.55,marginBottom:16}}>Качество, заметное человеческому глазу, не пострадает. Изображения станут заметно легче и будут быстрее синхронизироваться.</div>
+            <button onClick={()=>setImgCompressPopup(false)} style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Понятно</button>
+          </div>
+        </div>
+      )}
       <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Настройка анимаций">
         <div onClick={toggleScrAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию переходов между экранами</span>
