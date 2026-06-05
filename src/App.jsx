@@ -531,7 +531,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
 }
 
 // ─── Attachment bubble ────────────────────────────────────────
-function VoiceMessage({ att, color, center, stamp, compact }){
+function VoiceMessage({ att, color, center, stamp, compact, selecting }){
   const [playing,setPlaying]=useState(false);
   const [cur,setCur]=useState(0);
   const [dur,setDur]=useState(att.dur||0);
@@ -558,8 +558,8 @@ function VoiceMessage({ att, color, center, stamp, compact }){
   const pct=dur>0?Math.min(100,(cur/dur)*100):0;
   const fmt=s=>{ s=Math.round(s||0); const m=Math.floor(s/60),ss=s%60; return m+":"+String(ss).padStart(2,"0"); };
   const seekToClientX=(clientX)=>{ const el=trackRef.current; const a=audioRef.current; if(!el||!a||!dur)return; const r=el.getBoundingClientRect(); const x=Math.max(0,Math.min(1,(clientX-r.left)/r.width)); const t=x*dur; a.currentTime=t; setCur(t); };
-  const onDown=(e)=>{ e.stopPropagation(); draggingRef.current=true; try{e.currentTarget.setPointerCapture&&e.currentTarget.setPointerCapture(e.pointerId);}catch{} seekToClientX(e.clientX); };
-  const onMove=(e)=>{ if(!draggingRef.current)return; e.stopPropagation(); seekToClientX(e.clientX); };
+  const onDown=(e)=>{ if(selecting){ return; } e.stopPropagation(); draggingRef.current=true; try{e.currentTarget.setPointerCapture&&e.currentTarget.setPointerCapture(e.pointerId);}catch{} seekToClientX(e.clientX); };
+  const onMove=(e)=>{ if(!draggingRef.current||selecting)return; e.stopPropagation(); seekToClientX(e.clientX); };
   const onUp=(e)=>{ if(!draggingRef.current)return; e.stopPropagation(); draggingRef.current=false; try{e.currentTarget.releasePointerCapture&&e.currentTarget.releasePointerCapture(e.pointerId);}catch{} };
   const bars=[6,10,8,14,9,16,7,13,11,18,8,12,15,9,17,10,8,14,11,7,13,9,16,8,12,10,15,9];
   const c=color||"#EF6C00";
@@ -605,7 +605,7 @@ function AttBubble({ att, onOpen, stamp, selecting }) {
   );
   if(att.dataUrl&&att.type?.startsWith("audio/")) return (
     <div style={{marginTop:0}}>
-      <VoiceMessage att={att} stamp={stamp} />
+      <VoiceMessage att={att} stamp={stamp} selecting={selecting} />
       {att.caption&&<div style={{fontSize:12,color:"#D8CCBE",marginTop:3}}>{att.caption}</div>}
     </div>
   );
@@ -833,12 +833,11 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
 
 
 // ─── Export sheet ─────────────────────────────────────────────
-function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAnim, toggleInputAnim, syncSection, buildBackup, onImportClick }) {
+function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAnim, toggleInputAnim, syncSection, buildBackup, onImportClick, asOpen, setAsOpen }) {
   const [usePwd,setUsePwd]=useState(false);
   const [pwd,setPwd]=useState("");
   const [busy,setBusy]=useState(false);
   const [msg,setMsg]=useState("");
-  const [asOpen,setAsOpen]=useState(false);
 
   const AS_MODES=[
     {val:"off",     label:"Выключено"},
@@ -979,10 +978,20 @@ export default function App() {
   const [highlightId, setHighlightId] = useState(null);
   const [selCopy, setSelCopy] = useState(null); // {x,y,text} плавающая кнопка копирования выделенного текста
   const [data,      setData]      = useState(loadData);
-  const [scr,       setScr]       = useState("main");
+  const _initLaunch = (()=>{
+    try{
+      const t=JSON.parse(localStorage.getItem(DLAUNCH_KEY)||"null"); if(!t) return null;
+      const d=JSON.parse(localStorage.getItem(SK)||"null"); if(!d||!d.folders) return null;
+      const f=d.folders.find(x=>x.id===t.fid); if(!f) return null;
+      if(t.sid==="__top__"||f.isTheme) return {scr:"chat",fid:f.id,sid:"__top__"};
+      if(t.sid){ const sub=f.subfolders.find(x=>x.id===t.sid); return sub?{scr:"chat",fid:f.id,sid:sub.id}:{scr:"sub",fid:f.id,sid:null}; }
+      return {scr:"sub",fid:f.id,sid:null};
+    }catch{ return null; }
+  })();
+  const [scr,       setScr]       = useState(_initLaunch?_initLaunch.scr:"main");
   const [navTick,   setNavTick]   = useState(0);
-  const [fid,       setFid]       = useState(null);
-  const [sid,       setSid]       = useState(null);
+  const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
+  const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
   useEffect(()=>{ setNavTick(t=>t+1); },[scr,fid,sid]);
   const [search,    setSearch]    = useState("");
   const [subSearch, setSubSearch] = useState("");
@@ -1253,6 +1262,7 @@ export default function App() {
   const [cloudWhenSh, setCloudWhenSh] = useState(false);
   const [cloudWhatSh, setCloudWhatSh] = useState(false);
   const [cloudStorSh, setCloudStorSh] = useState(false);
+  const [asOpen, setAsOpen] = useState(false); // локальное автосохранение (лифт из ExportSheet)
   const [fontSh, setFontSh] = useState(false); // шторка шрифтов
   const [fontOpen, setFontOpen] = useState(null); // {key,x,y} какой пункт шрифта раскрыт
   const FONT_KEY="napp_fonts_v1";
@@ -1699,7 +1709,7 @@ export default function App() {
   }, [composerFull]);
   // Открыть тему/категорию по умолчанию при запуске
   useEffect(()=>{
-    if(dlaunchApplied.current) return; dlaunchApplied.current=true;
+    if(dlaunchApplied.current) return; dlaunchApplied.current=true; if(_initLaunch) return;
     const t=getDefaultLaunch(); if(!t) return;
     const f=data.folders.find(x=>x.id===t.fid); if(!f) return;
     if(t.sid==="__top__"||f.isTheme){ setFid(f.id); setSid("__top__"); setScr("chat"); }
@@ -1708,18 +1718,24 @@ export default function App() {
   }, []);
   // Результаты глобального поиска по всем сообщениям
   function globalResults(q){
-    if(!q || q.trim().length<3) return [];
-    const ql=q.toLowerCase(); const out=[];
+    if(!q || q.trim().length<2) return [];
+    const terms=q.toLowerCase().split(/\s+/).filter(Boolean);
+    const norm=s=>(s||"").toLowerCase().replace(/\[\/?(b|i|s|spoiler|code|q)\]/g,"").replace(/\[(.*?)\]\((.*?)\)/g,"$1 $2");
+    const out=[];
+    const matchNote=(n,ctx)=>{
+      const hay=norm(n.text)+" "+ctx+" "+((n.attachments||[]).map(a=>(a.name||"")+" "+(a.caption||"")).join(" ")).toLowerCase();
+      return terms.every(t=>hay.includes(t));
+    };
     data.folders.forEach(f=>{
       if(f.isTheme){
-        (f.notes||[]).forEach(n=>{ if((n.text||"").toLowerCase().includes(ql)) out.push({folderId:f.id,subId:"__top__",themeName:f.name,note:n}); });
+        (f.notes||[]).forEach(n=>{ if(matchNote(n, f.name)) out.push({folderId:f.id,subId:"__top__",themeName:f.name,note:n}); });
       } else {
         f.subfolders.forEach(s=>{
-          (s.notes||[]).forEach(n=>{ if((n.text||"").toLowerCase().includes(ql)) out.push({folderId:f.id,subId:s.id,themeName:`${f.name} · ${s.name}`,note:n}); });
+          (s.notes||[]).forEach(n=>{ if(matchNote(n, f.name+" "+s.name)) out.push({folderId:f.id,subId:s.id,themeName:`${f.name} · ${s.name}`,note:n}); });
         });
       }
     });
-    return out.slice(0,200);
+    return out.slice(0,300);
   }
   function back()   {
     if(multiSelect.length){setMultiSelect([]);return;}
@@ -1760,6 +1776,7 @@ export default function App() {
     if(pinnedOpen){ setPinnedOpen(false); return true; }
     if(mediaBrowser){ setMediaBrowser(false); return true; }
     if(attSh){ setAttSh(false); return true; }
+    if(asOpen){ setAsOpen(false); return true; }
     if(expSh){ setExpSh(false); return true; }
     if(settingsMenu||plusMenu||hdrMenu||folderMenu||subMenu){ setSettingsMenu(false);setPlusMenu(false);setHdrMenu(null);setFolderMenu(null);setSubMenu(null); return true; }
     if(moveBuffer){ setMoveBuffer(null); return true; }
@@ -2395,7 +2412,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v85</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v86</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2405,8 +2422,8 @@ export default function App() {
         <div style={{position:"fixed",inset:0,background:"#1A1410",zIndex:420,display:"flex",flexDirection:"column"}}>
           {/* Результаты сверху */}
           <div style={{flex:1,overflowY:"auto",padding:"6px 0"}}>
-            {globalSearch.trim().length<3 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Введите минимум 3 символа</div>}
-            {globalSearch.trim().length>=3 && globalResults(globalSearch).length===0 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Ничего не найдено</div>}
+            {globalSearch.trim().length<2 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Введите минимум 2 символа</div>}
+            {globalSearch.trim().length>=2 && globalResults(globalSearch).length===0 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Ничего не найдено</div>}
             {globalResults(globalSearch).map((r,i)=>(
               <div key={i} onClick={()=>openThemeAt(r.folderId,r.subId,r.note.id)}
                 style={{padding:"10px 16px",borderBottom:"1px solid #2A2017",cursor:"pointer"}}>
@@ -2805,9 +2822,9 @@ export default function App() {
                 onTouchStart={multiActive?undefined:(e=>{ if(!selActive && !(selectMode&&selectMode!==n.id)) bubbleLpStart(n,e); })}
                 onTouchMove={multiActive?undefined:(e=>{ bubbleLpMove(e); })}
                 onTouchEnd={multiActive?undefined:(e=>{ if(!selActive) bubbleLpEnd(n,e); })}
-                style={{display:"flex",justifyContent:"flex-end",width:"100%",position:"relative",
-                  background:(isMulti||selActive)?"rgba(239,108,0,.12)":"transparent",
-                  padding:"0.8px 0",margin:"0 -10px 0 -4px",paddingLeft:4,paddingRight:10,boxSizing:"border-box"}}>
+                style={{display:"flex",justifyContent:"flex-end",width:"auto",position:"relative",
+                  background:(isMulti||selActive)?"rgba(239,108,0,.13)":"transparent",
+                  padding:"0.8px 10px 0.8px 4px",margin:"0 -10px 0 -4px",boxSizing:"border-box"}}>
                 <div style={{position:"relative",display:"inline-flex",maxWidth:"calc(100% - 8px)"}}>
                 {/* Пузырь */}
                 <div
@@ -3239,7 +3256,7 @@ export default function App() {
       )}
 
       <ExportSheet open={expSh} onClose={()=>{setExpSh(false);setDriveSh(false);setCloudWhenSh(false);setCloudWhatSh(false);setCloudStorSh(false);setSyncMenuOpen(false);setSyncDetails(false);setStorageOpen(false);setSignOutAsk(false);setClearAsk(false);}} data={data} asSettings={asSettings} setAsSettings={setAsSettings} noInputAnim={noInputAnim} toggleInputAnim={toggleInputAnim}
-        buildBackup={()=>collectBackup(syncCfg.enabled?syncCfg:{modules:{settings:true,notes:true,drafts:true},media:{images:true,videos:true,files:true}})} onImportClick={()=>importRef.current&&importRef.current.click()}
+        asOpen={asOpen} setAsOpen={setAsOpen} buildBackup={()=>collectBackup(syncCfg.enabled?syncCfg:{modules:{settings:true,notes:true,drafts:true},media:{images:true,videos:true,files:true}})} onImportClick={()=>importRef.current&&importRef.current.click()}
         syncSection={(
           <>
             <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
@@ -3328,7 +3345,7 @@ export default function App() {
                 <span style={{display:"flex",color:"#EF6C00",transform:"scale(.85)"}}>{IC.clock||IC.ouro}</span>
                 <input type="time" value={syncCfg.cloudTime||"03:00"}
                   onChange={e=>saveSyncCfg({...syncCfg,cloudTime:e.target.value})}
-                  style={{background:"#1A1410",border:"1px solid #3A2E24",borderRadius:8,color:"#F2EAE0",fontSize:13,padding:"4px 6px",outline:"none"}}/>
+                  style={{background:"transparent",border:"1px solid #3A2E24",borderRadius:8,color:"#EF6C00",fontSize:13,padding:"4px 6px",outline:"none",fontWeight:600}}/>
               </label>
             )}
           </div>
@@ -3409,45 +3426,34 @@ export default function App() {
         </div>
       )}
       <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Настройка анимаций">
-        <div onClick={toggleScrAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию переходов между экранами</span>
-          <div style={{width:46,height:26,borderRadius:13,background:noScrAnim?"#3A2E24":"#EF6C00",position:"relative",transition:"background .2s",flexShrink:0}}>
-            <div style={{position:"absolute",top:2,left:noScrAnim?2:22,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-          </div>
-        </div>
-        <div style={{height:1,background:"#2A2017",margin:"8px 0"}}/>
-        <div style={{fontSize:13,color:"#8A7A65",padding:"4px 4px 10px"}}>Скорость анимаций (0.3 — быстро, 1 — медленно)</div>
         {[
-          {key:"scr",label:"Переходы экранов",base:0.6},
-          {key:"input",label:"Поле ввода",base:0.5},
-          {key:"del",label:"Удаление сообщения",base:2},
+          {key:"scr",label:"Переходы между экранами",base:0.6,off:noScrAnim,toggle:toggleScrAnim},
+          {key:"input",label:"Поле ввода",base:0.5,off:noInputAnim,toggle:toggleInputAnim},
+          {key:"del",label:"Удаление сообщения",base:2,off:noDelAnim,toggle:toggleDelAnim},
         ].map(it=>{
           const v=typeof animSpeed[it.key]==="number"?animSpeed[it.key]:1;
+          const enabled=!it.off;
           return (
-            <div key={it.key} style={{padding:"8px 4px 14px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <span style={{fontSize:14,color:"#F2EAE0"}}>{it.label}</span>
-                <span style={{fontSize:13,color:"#EF6C00",fontVariantNumeric:"tabular-nums"}}>{v.toFixed(2)}×</span>
+            <div key={it.key} style={{background:"#2A2017",borderRadius:12,border:"1px solid #3A2E24",padding:"12px 14px",marginBottom:10}}>
+              <div onClick={it.toggle} style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>{it.label}</span>
+                <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
+                  <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                </div>
               </div>
-              <input type="range" min="0.3" max="1" step="0.05" value={v>1?1:v}
-                onChange={e=>setSpeed(it.key,parseFloat(e.target.value))}
-                style={{width:"100%",accentColor:"#EF6C00"}}/>
+              <div style={{marginTop:12,opacity:enabled?1:0.4,pointerEvents:enabled?"auto":"none"}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                  <span style={{fontSize:13,color:"#8A7A65"}}>Скорость</span>
+                  <span style={{fontSize:13,color:"#EF6C00",fontVariantNumeric:"tabular-nums"}}>{v.toFixed(2)}×</span>
+                </div>
+                <input type="range" min="0.3" max="1" step="0.05" value={v>1?1:v} disabled={!enabled}
+                  onChange={e=>setSpeed(it.key,parseFloat(e.target.value))}
+                  style={{width:"100%",accentColor:"#EF6C00"}}/>
+              </div>
             </div>
           );
         })}
-        <div style={{height:1,background:"#2A2017",margin:"8px 0"}}/>
-        <div onClick={toggleInputAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию для поля ввода</span>
-          <div style={{width:46,height:26,borderRadius:13,background:noInputAnim?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
-            <div style={{position:"absolute",top:2,left:noInputAnim?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-          </div>
-        </div>
-        <div onClick={toggleDelAnim} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Отключить анимацию удаления сообщения</span>
-          <div style={{width:46,height:26,borderRadius:13,background:noDelAnim?"#EF6C00":"#3A2E24",position:"relative",transition:"background .2s",flexShrink:0}}>
-            <div style={{position:"absolute",top:2,left:noDelAnim?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-          </div>
-        </div>
+        <div style={{fontSize:12,color:"#8A7A65",padding:"2px 4px"}}>0.3× — быстро, 1× — медленно. Ползунок активен, если анимация включена.</div>
       </Sheet>
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
