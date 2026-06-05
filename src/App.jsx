@@ -228,7 +228,7 @@ function dedupeIds(data){
 }
 
 function loadData() { try { const r=localStorage.getItem(SK); return dedupeIds(r?JSON.parse(r):defaultData); } catch { return defaultData; } }
-function saveData(d) { try { localStorage.setItem(SK,JSON.stringify(d)); } catch {} }
+function saveData(d) { try { localStorage.setItem(SK,JSON.stringify(d)); localStorage.setItem("napp_data_mtime", String(Date.now())); } catch {} }
 function loadAS()   { try { const r=localStorage.getItem(AS_KEY); return r?JSON.parse(r):defaultAutoSave; } catch { return defaultAutoSave; } }
 function saveAS(s)  { try { localStorage.setItem(AS_KEY,JSON.stringify(s)); } catch {} }
 
@@ -992,6 +992,7 @@ export default function App() {
   const [scr,       setScr]       = useState(_initLaunch?_initLaunch.scr:"main");
   const [navTick,   setNavTick]   = useState(0);
   const firstRender = useRef(true);
+  const delTimers = useRef({});
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
@@ -1487,6 +1488,8 @@ export default function App() {
       m.keys.forEach(k=>{ if(k in obj.data){ try{ localStorage.setItem(k,obj.data[k]); changed=true; if(k===SK) notesChanged=true; }catch{} } });
     });
     if(notesChanged){ try{ setData(loadData()); }catch{} }
+    // фиксируем mtime по времени облачного снимка, чтобы не считать применённое «новее»
+    try{ const ts=(obj&&obj.__meta&&obj.__meta.ts)||Date.now(); localStorage.setItem("napp_data_mtime", String(ts)); }catch{}
     return changed;
   }
   function applySyncData(obj){ return applyBackup(obj,syncCfg); }
@@ -1533,12 +1536,14 @@ export default function App() {
       const token=await getAccessToken(interactive);
       if(!token){ setSyncStatus("signedout"); syncRunning.current=false; return; }
       const remote=await driveFindFile(token);
-      if(mode==="pull" || (mode==="auto" && remote)){
-        if(remote){
-          const obj=await driveDownload(token,remote.id);
-          if(!obj.__meta || obj.__meta.ts>=0){ applySyncData(obj); }
-        }
+      if(remote && (mode==="pull" || mode==="auto")){
+        const obj=await driveDownload(token,remote.id);
+        const remoteTs=(obj&&obj.__meta&&obj.__meta.ts)||0;
+        const localTs=parseInt(localStorage.getItem("napp_data_mtime")||"0",10);
+        // применяем облако ТОЛЬКО если оно новее локальных данных
+        if(remoteTs>localTs){ applySyncData(obj); }
       }
+      // выгружаем актуальное локальное состояние
       const payload=collectSyncData();
       await driveUpload(token, remote?remote.id:null, payload);
       const now=new Date().toISOString();
@@ -2081,17 +2086,22 @@ export default function App() {
     const idx = arr.findIndex(x=>x.id===n.id);
     setDestroying(n.id);
     setUndo({note:n,fid,sid,idx});
-    // убираем из данных сразу (без setTimeout — он и «съедал» заметку после отмены)
-    updNotesAt(fid,sid,_n=>_n.filter(x=>x.id!==n.id));
+    // визуально проигрываем анимацию (если включена), затем удаляем из данных
+    const durMs = noDelAnim?0:Math.round(spd("del",2)*1000);
+    delTimers.current[n.id]=setTimeout(()=>{ updNotesAt(fid,sid,_n=>_n.filter(x=>x.id!==n.id)); delete delTimers.current[n.id]; }, durMs+20);
   }
   function undoDel() {
     if(!undo) return;
     const u=undo;
+    // если ещё не удалили из данных — отменяем удаление; если удалили — возвращаем
+    if(delTimers.current[u.note.id]){ clearTimeout(delTimers.current[u.note.id]); delete delTimers.current[u.note.id]; setDestroying(null); setUndo(null); return; }
     setDestroying(null);
     updNotesAt(u.fid,u.sid,_n=>{ const arr=[..._n]; const at=Math.max(0,Math.min(u.idx, arr.length)); arr.splice(at,0,u.note); return arr; });
     setUndo(null);
   }
   function commitDel(){
+    // зафиксировать немедленно (например при удалении следующего)
+    if(undo && delTimers.current[undo.note.id]){ clearTimeout(delTimers.current[undo.note.id]); delete delTimers.current[undo.note.id]; updNotesAt(undo.fid,undo.sid,_n=>_n.filter(x=>x.id!==undo.note.id)); }
     setDestroying(null);
     setUndo(null);
   }
@@ -2415,7 +2425,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v87</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v88</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
