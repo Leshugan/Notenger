@@ -2547,7 +2547,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v115</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v116</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3119,20 +3119,6 @@ export default function App() {
                       color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)",
                       transform:recording?"scale(1.15)":"scale(1)",transition:"transform .15s ease, background .15s ease"}}>{IC.mic}</button>}
             </div>
-            {/* Оверлей записи: таймер + подсказка смахивания влево для отмены */}
-            {recording && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,height:58,background:"#2A2017",borderTop:"1px solid #4A3A2A",
-                display:"flex",alignItems:"center",padding:"0 16px",zIndex:30,gap:12,
-                opacity:Math.max(0.4,1-recSlide/120)}}>
-                <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
-                <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(recSec)}</span>
-                <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:recSlide>60?"#E05252":"#B0A498",
-                  transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`,transition:recSlide?"none":"transform .2s, color .2s"}}>
-                  <Icon size={16} d="M15 6l-6 6 6 6" stroke={2} />
-                  <span style={{fontSize:13}}>{recSlide>60?"Отпустите для отмены":"Смахните влево для отмены"}</span>
-                </div>
-              </div>
-            )}
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
               <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#2A2017",borderTop:"1px solid #4A3A2A",
@@ -3153,7 +3139,7 @@ export default function App() {
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
-                <span style={{flex:1,fontSize:13,color:"#8A7A65",textAlign:"center"}}>Отпустите для отправки · смахните вверх для отмены</span>
+                <span style={{flex:1,fontSize:13,textAlign:"center",color:recSlide>60?"#E05252":"#8A7A65",transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`}}>{recSlide>60?"Отпустите для отмены":"← смахните влево для отмены"}</span>
               </div>
             )}
             {/* Кастомная панель выделения: копировать/вставить/вырезать или выбрать всё/вставить */}
