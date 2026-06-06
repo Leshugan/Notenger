@@ -517,7 +517,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
         </div>
       </div>
       {/* Нижняя панель: компактная «Изменить» рядом с «Отправить» */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"3px 12px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,minHeight:46,borderRadius:"16px 16px 0 0"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"0 12px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0"}}>
         <button onClick={onClose} title="Изменить"
           style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #4A3A2A",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span>
@@ -996,6 +996,8 @@ export default function App() {
   const writeHoldTimer = useRef(null);
   const writeHoldFired = useRef(false);
   const writeStartX = useRef(null);
+  const [booting, setBooting] = useState(true);
+  useEffect(()=>{ const t=setTimeout(()=>setBooting(false), 500); return ()=>clearTimeout(t); },[]);
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
@@ -1896,7 +1898,7 @@ export default function App() {
         if(n.getAttribute("data-dragging")==="1") return; // перетаскиваемую не трогаем
         n.style.transition="none";
         n.style.transform=`translateY(${dy}px)`;
-        requestAnimationFrame(()=>{ n.style.transition="transform .28s cubic-bezier(.2,.8,.2,1)"; n.style.transform=""; });
+        requestAnimationFrame(()=>{ n.style.transition="transform .32s cubic-bezier(.22,.61,.36,1)"; n.style.transform=""; });
       });
     });
   }
@@ -2408,6 +2410,7 @@ export default function App() {
 
   return (
     <div
+      className={booting?"booting":undefined}
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
         "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s",
@@ -2462,6 +2465,8 @@ export default function App() {
         button:focus,button:focus-visible{outline:none;}
         /* анимация нажатия отключена, чтобы не было артефактов при переключении */
         .nb{animation:fS .18s ease;}
+        .booting .nb{animation:none!important;}
+        .booting .scrAnim{animation:none!important;}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
         @keyframes flyAwayLeft{
           0%{transform:translateX(0) rotate(0);opacity:1}
@@ -2474,7 +2479,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v95</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v97</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2496,7 +2501,7 @@ export default function App() {
             ))}
           </div>
           {/* Панель поиска внизу — в едином стиле, высота 46 */}
-          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
@@ -2703,8 +2708,8 @@ export default function App() {
 
       {/* НИЖНЯЯ ШАПКА ГЛАВНОГО: Notenger ▾ · поиск · [центр FAB +] */}
       {scr==="main"&&!selectMode&&multiSelect.length===0&&(
-        <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
+          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <div style={{position:"relative",flex:1,minWidth:0}}>
             <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(v=>!v); }}
               style={{fontSize:17,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
@@ -2788,7 +2793,7 @@ export default function App() {
 
       {/* Строка поиска по темам — внизу */}
       {scr==="sub"&&folder&&subSearch!=="" && !selectMode && multiSelect.length===0 && (
-        <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+        <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
           <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
             <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
@@ -2799,8 +2804,8 @@ export default function App() {
       )}
       {/* ═══ НИЖНЯЯ ШАПКА КАТЕГОРИИ — назад · категория · поиск · ⋯ · + ═══ */}
       {scr==="sub"&&folder&&subSearch===""&&!selectMode&&multiSelect.length===0&&(
-        <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
+          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <button onClick={back} title="Назад"
             style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -3016,7 +3021,7 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,minHeight:46,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 8px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,height:52,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>Aa</button>
@@ -3148,7 +3153,7 @@ export default function App() {
       })()}
         {/* ── НИЖНЯЯ ШАПКА ЧАТА (единый блок: шапка ИЛИ поиск) ── */}
         {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
-          <div style={{padding:"0 10px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",minHeight:46,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
@@ -3159,8 +3164,8 @@ export default function App() {
           </div>
         )}
         {!selectMode && multiSelect.length===0 && chatSearch==="" && (!composerFull||composerPeek) && (
-          <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"3px 12px",
-            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,minHeight:46,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
+            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -3170,7 +3175,7 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись аудио */}
             <button
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(e); },300); }}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX, sy=e.touches[0].clientY; writeStartX.current=sx; recStartX.current=sx; recStartY.current=sy; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); },300); }}
               onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && (Math.abs(t.clientX-writeStartX.current)>10||Math.abs(t.clientY-(0))>10)){ clearTimeout(writeHoldTimer.current); } return; } if(!recording) return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; } }}
               onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ if(recording) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; } else { composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
