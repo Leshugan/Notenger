@@ -313,6 +313,7 @@ jobs:
                   try { gsiClient.signOut(); } catch (Exception e) {}
                 }
               }, "NotengerAuthNative");
+              final android.app.Activity selfAct = this;
               this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
                 @Override
                 public void onPermissionRequest(final PermissionRequest request) {
@@ -332,16 +333,16 @@ jobs:
                   if (wantCapture) {
                     try {
                       boolean isVideo = acc.contains("video");
-                      java.io.File dir = new java.io.File(getCacheDir(), "capture");
+                      java.io.File dir = new java.io.File(selfAct.getCacheDir(), "capture");
                       dir.mkdirs();
                       String ext = isVideo ? ".mp4" : ".jpg";
                       java.io.File f = new java.io.File(dir, "cap_" + System.currentTimeMillis() + ext);
-                      Uri out = androidx.core.content.FileProvider.getUriForFile(this, getPackageName()+".fileprovider", f);
+                      Uri out = androidx.core.content.FileProvider.getUriForFile(selfAct, selfAct.getPackageName()+".fileprovider", f);
                       pendingCameraUri = out;
                       Intent cam = new Intent(isVideo ? android.provider.MediaStore.ACTION_VIDEO_CAPTURE : android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
                       cam.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, out);
                       cam.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                      if (cam.resolveActivity(getPackageManager()) != null) {
+                      if (cam.resolveActivity(selfAct.getPackageManager()) != null) {
                         fileChooserLauncher.launch(cam);
                         return true;
                       }
