@@ -1100,6 +1100,7 @@ export default function App() {
   const nativeAudio = useRef(false);
   const recActiveRef = useRef(false);
   const writeRecActive = useRef(false);
+  const [dbg, setDbg] = useState("");
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   function sendPendingVoice(){
     const pv=pendingVoice; if(!pv) return;
@@ -2521,7 +2522,8 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v105</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v106</div>
+      {dbg&&<div style={{position:"fixed",top:14,left:2,right:2,zIndex:9999,fontSize:11,color:"#9FCF8F",background:"rgba(0,0,0,.7)",padding:"2px 6px",pointerEvents:"none",fontFamily:"monospace",borderRadius:4}}>DBG: {dbg}</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3217,10 +3219,10 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button tabIndex={-1}
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; recCancelArm.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); },250); }}
-              onTouchMove={e=>{ const t=e.touches[0]; if(!t) return; const dx=t.clientX-writeStartX.current; if(!writeHoldFired.current){ if(Math.abs(dx)>14){ clearTimeout(writeHoldTimer.current); } return; } if(!recActiveRef.current) return; const left=Math.max(0,-dx); setRecSlide(left); if(left>80){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; } }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
-              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); } }}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; recCancelArm.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; setDbg("start x="+Math.round(sx)); clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); setDbg("REC active="+recActiveRef.current); },250); }}
+              onTouchMove={e=>{ const t=e.touches[0]; if(!t) return; const dx=t.clientX-writeStartX.current; if(!writeHoldFired.current){ if(Math.abs(dx)>14){ clearTimeout(writeHoldTimer.current); setDbg("move pre-hold dx="+Math.round(dx)); } return; } if(!recActiveRef.current){ setDbg("move but recActive=FALSE"); return; } const left=Math.max(0,-dx); setRecSlide(left); setDbg("move dx="+Math.round(dx)+" left="+Math.round(left)); if(left>80){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; setDbg("CANCELLED swipe"); } }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ writeHoldFired.current=false; setDbg("END recActive="+recActiveRef.current+" cancel="+recCancelArm.current); if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); return; } setDbg("END tap->editor"); composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); setDbg("CANCEL event recActive="+recActiveRef.current); if(writeHoldFired.current){ writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); } }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
