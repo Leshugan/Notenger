@@ -999,7 +999,8 @@ export default function App() {
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
-  useEffect(()=>{ setNavTick(t=>t+1); },[scr,fid,sid]);
+  const navTickInit = useRef(true);
+  useEffect(()=>{ if(navTickInit.current){ navTickInit.current=false; return; } setNavTick(t=>t+1); },[scr,fid,sid]);
   const [search,    setSearch]    = useState("");
   const [subSearch, setSubSearch] = useState("");
   const [globalSearch, setGlobalSearch] = useState(null); // null=закрыт, "" или строка=открыт
@@ -1890,7 +1891,7 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>120){
+    if(now-dt.lastSwap>70){
       const self=document.querySelector(`[data-fid="${dt.id}"]`);
       const prevPE=self?self.style.pointerEvents:null; if(self) self.style.pointerEvents="none";
       const el=document.elementFromPoint(t.clientX,t.clientY);
@@ -1908,7 +1909,7 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>120){
+    if(now-dt.lastSwap>70){
       const self=document.querySelector(`[data-sid="${dt.id}"]`);
       const prevPE=self?self.style.pointerEvents:null; if(self) self.style.pointerEvents="none";
       const el=document.elementFromPoint(t.clientX,t.clientY);
@@ -2441,7 +2442,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v92</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v93</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2631,7 +2632,7 @@ export default function App() {
                   background:dragActive===f.id?"#33271B":"#2A2017",
                   border:"1px solid #4A3A2A",
                   transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
-                  transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease, scale .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
+                  transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":"transform .25s cubic-bezier(.2,.8,.2,1), background .15s ease",
                   boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":"none",
                   borderRadius:f.isTheme?22:12,
                   zIndex:dragActive===f.id?30:"auto"}}>
@@ -2991,11 +2992,11 @@ export default function App() {
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
               <button onClick={redoNote} title="Вернуть"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
-              <button onClick={()=>setAttSh(true)} title="Прикрепить"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.clip}</button>
-              <div style={{flex:1}}/>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.eye}</button>
+                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
+              <div style={{flex:1}}/>
+              <button onClick={()=>setAttSh(true)} title="Прикрепить"
+                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.clip}</button>
               <button onClick={closeComposer} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.close}</button>
               {(note.trim()||patts.length>0||editId)
@@ -3137,11 +3138,11 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись аудио */}
             <button
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; writeStartX.current=e.touches[0].clientX; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(e); },350); }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ stopRec(false); writeHoldFired.current=false; } else { composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ clearTimeout(writeHoldTimer.current); return; } const t=e.touches[0]; if(writeStartX.current!=null && (t.clientX-writeStartX.current)>90){ stopRec(true); writeHoldFired.current=false; writeStartX.current=null; } }}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; recCancelArm.current=false; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); },350); }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } const t=e.touches[0]; const dx=t.clientX-(writeStartX.current||0); if(dx>0){ setRecSlide(dx); } if(dx>110){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; writeStartX.current=null; } }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); setRecSlide(0); if(writeHoldFired.current){ if(recording) stopRec(recCancelArm.current); writeHoldFired.current=false; } else { composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
-              title="Написать (удерживайте для записи)"
+              title="Написать (удерживайте для записи, свайп вправо — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
                 background:recording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
