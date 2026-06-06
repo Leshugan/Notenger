@@ -1120,6 +1120,7 @@ export default function App() {
   const writeRecActive = useRef(false);
   const writeTouchLive = useRef(false);
   const writeWasRecGesture = useRef(false);
+  const [headerRec, setHeaderRec] = useState(false);
   const [dbg, setDbg] = useState("");
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   function sendPendingVoice(){
@@ -2546,7 +2547,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v112</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v113</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3245,9 +3246,9 @@ export default function App() {
               onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
               title="Написать"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
-                width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
-                background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
-                display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s",
+                width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
+                background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:3,
+                display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s,opacity .15s",
                 boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>
               <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{IC.sendUp}</span>
             </button>
@@ -3257,7 +3258,7 @@ export default function App() {
             {/* Оверлей записи микрофоном в шапке: таймер + смахните влево для отмены */}
             {recording && (!composerFull) && (
               <div style={{position:"absolute",inset:0,background:"#2A2017",borderRadius:"16px 16px 0 0",
-                display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:4,pointerEvents:"none"}}>
+                display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:6,pointerEvents:"none"}}>
                 <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(recSec)}</span>
                 <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-recSlide}px)`,opacity:Math.max(0,1-recSlide/90)}}>← смахните влево для отмены</span>
@@ -3268,9 +3269,9 @@ export default function App() {
               style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{IC.search}</button>
             <div style={{position:"relative",flexShrink:0}} onClick={e=>e.stopPropagation()}>
               <button
-                onTouchStart={e=>{ e.stopPropagation(); recCancelArm.current=false; writeWasRecGesture.current=true; composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; recStartX.current=sx; startRec(null,false); }}
+                onTouchStart={e=>{ e.stopPropagation(); recCancelArm.current=false; writeWasRecGesture.current=true; setHeaderRec(true); composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; recStartX.current=sx; startRec(null,false); }}
                 title="Записать голосовое"
-                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none"}}>
+                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none",touchAction:"none"}}>
                 <span style={{display:"flex"}}>{IC.mic}</span>
               </button>
             </div>
@@ -3342,11 +3343,11 @@ export default function App() {
 
       {/* Просмотр изображения на весь экран */}
       {/* Перехватчик жеста записи кнопкой «Написать» — ловит движение/отпускание поверх всего */}
-      {recording && writeWasRecGesture.current && !composerFull && (
+      {headerRec && recording && !composerFull && (
         <div
-          onTouchMove={e=>{ const t=e.touches[0]; if(!t||!recActiveRef.current) return; const dx=t.clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>90){ recCancelArm.current=true; setRecSlide(0); writeWasRecGesture.current=false; stopRec(true); } }}
-          onTouchEnd={e=>{ e.preventDefault(); if(!recActiveRef.current){ writeWasRecGesture.current=false; return; } const tooShort=(recSecRef.current<1 && !recCancelArm.current); writeWasRecGesture.current=false; writeHoldFired.current=false; stopRec(recCancelArm.current||tooShort); setRecSlide(0); }}
-          onTouchCancel={e=>{ if(recActiveRef.current) stopRec(true); writeWasRecGesture.current=false; setRecSlide(0); }}
+          onTouchMove={e=>{ const t=e.touches[0]; if(!t||!recActiveRef.current) return; const dx=t.clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>90){ recCancelArm.current=true; setRecSlide(0); writeWasRecGesture.current=false; setHeaderRec(false); stopRec(true); } }}
+          onTouchEnd={e=>{ e.preventDefault(); writeWasRecGesture.current=false; setHeaderRec(false); if(!recActiveRef.current){ return; } const tooShort=(recSecRef.current<1 && !recCancelArm.current); stopRec(recCancelArm.current||tooShort); setRecSlide(0); }}
+          onTouchCancel={e=>{ if(recActiveRef.current) stopRec(true); writeWasRecGesture.current=false; setHeaderRec(false); setRecSlide(0); }}
           style={{position:"fixed",inset:0,zIndex:600,background:"transparent",touchAction:"none"}}/>
       )}
       {/* Глобальное подтверждение голосового (для записи кнопкой «Написать») */}
