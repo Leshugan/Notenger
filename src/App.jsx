@@ -2547,7 +2547,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v114</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v115</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3147,9 +3147,9 @@ export default function App() {
                 </div>
               </div>
             )}
-            {/* Оверлей записи голосового */}
-            {recording && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,height:60,background:"#2A2017",borderTop:"1px solid #4A3A2A",
+            {/* Оверлей записи голосового (только в редакторе) */}
+            {recording && composerFull && (
+              <div style={{position:"absolute",left:0,right:0,bottom:0,height:52,background:"#2A2017",borderTop:"1px solid #4A3A2A",
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
@@ -3250,7 +3250,7 @@ export default function App() {
                 background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:3,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s,opacity .15s",
                 boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>
-              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{IC.sendUp}</span>
+              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
             <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
