@@ -1814,6 +1814,8 @@ export default function App() {
     }catch(e){}
   }
   function handleHardwareBack(){
+    if(recording){ stopRec(true); setRecSlide(false?0:0); return true; }
+    if(pendingVoice){ discardPendingVoice(); return true; }
     if(imgCompressPopup){ setImgCompressPopup(false); return true; }
     if(lightbox){ closeLightbox(); return true; }
     if(globalSearch!==null){ setGlobalSearch(null); return true; }
@@ -2515,7 +2517,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v101</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v102</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3209,31 +3211,31 @@ export default function App() {
               <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{display:"inline-block",maxWidth:"100%",fontWeight:600,fontSize:15,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer",fontFamily:"var(--font-title)"}}>{subf?.name||"Сообщение"}</div>
               {subf&&<div style={{fontSize:11,color:"#8A7A65"}}>{subf.notes.length} сообщений</div>}
             </div>
-            {/* Кнопка Написать — по центру панели; удержание = независимая запись аудио */}
-            <button
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; hdrGestureDone.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; hdrRecStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; hdrStartRec(); },300); }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!hdrRecActive.current) return; const dx=e.touches[0].clientX-hdrRecStartX.current; const left=Math.max(0,-dx); setHdrRecSlide(left); if(left>80 && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(true); } }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(hdrGestureDone.current){ writeHoldFired.current=false; return; } if(writeHoldFired.current){ hdrStopRec(false); writeHoldFired.current=false; return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
-              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(hdrRecording && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(hdrRecSlide>60); } writeHoldFired.current=false; }}
+            {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
+            <button tabIndex={-1}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX, sy=e.touches[0].clientY; writeStartX.current=sx; recStartX.current=sx; recStartY.current=sy; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); },280); }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!recording)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ if(recording) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(recording) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
-              style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(hdrRecording?" scale(1.12)":""),
+              style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
-                background:hdrRecording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
+                background:recording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s",
-                boxShadow:hdrRecording?"0 0 0 6px rgba(224,83,60,.25)":"0 1px 5px rgba(239,108,0,.3)"}}>
-              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform .3s cubic-bezier(.4,0,.2,1)"}}>{hdrRecording?IC.mic:IC.sendUp}</span>
+                boxShadow:recording?"0 0 0 6px rgba(224,83,60,.25)":"0 1px 5px rgba(239,108,0,.3)"}}>
+              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform .3s cubic-bezier(.4,0,.2,1)"}}>{recording?IC.mic:IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
             <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
-              style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:hdrRecording?0:1,pointerEvents:hdrRecording?"none":"auto"}}>{IC.clip}</button>
+              style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:recording?0:1,pointerEvents:recording?"none":"auto"}}>{IC.clip}</button>
             {/* Оверлей записи кнопки «Написать»: таймер + смахните влево для отмены */}
-            {hdrRecording && (
+            {recording && (!composerFull) && (
               <div style={{position:"absolute",inset:0,background:"#2A2017",borderRadius:"16px 16px 0 0",
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:4,pointerEvents:"none"}}>
                 <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
-                <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(hdrRecSec)}</span>
-                <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-hdrRecSlide}px)`,opacity:Math.max(0,1-hdrRecSlide/80)}}>← смахните влево для отмены</span>
+                <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(recSec)}</span>
+                <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-recSlide}px)`,opacity:Math.max(0,1-recSlide/120)}}>← смахните влево для отмены</span>
               </div>
             )}
             {/* Поиск + ⋯ справа */}
