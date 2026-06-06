@@ -995,6 +995,7 @@ export default function App() {
   const delTimers = useRef({});
   const writeHoldTimer = useRef(null);
   const writeHoldFired = useRef(false);
+  const writeStartX = useRef(null);
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
@@ -1045,6 +1046,7 @@ export default function App() {
   const [lightbox, setLightbox] = useState(null); // dataUrl открытого изображения
   const lightboxFromBrowser = useRef(false);
   const fullTaRef = useRef(null);
+  const composerWantFocus = useRef(false);
   const taSwipe = useRef(null);
   const clipText = useRef("");
   const [recSec, setRecSec] = useState(0);
@@ -1860,23 +1862,23 @@ export default function App() {
   const [dragOffset, setDragOffset] = useState(0);
   function reorderPinFolder(srcId,dstId){
     upd(d=>{
-      const pins=d.folders.filter(f=>f.pinned).slice().sort((a,b)=>(a.pinOrder||0)-(b.pinOrder||0));
-      const si=pins.findIndex(f=>f.id===srcId), di=pins.findIndex(f=>f.id===dstId);
+      const arr=d.folders.map(f=>f.id);
+      const si=arr.indexOf(srcId), di=arr.indexOf(dstId);
       if(si<0||di<0) return d;
-      const arr=pins.map(f=>f.id); arr.splice(si,1); arr.splice(di,0,srcId);
-      const orderMap={}; arr.forEach((id,i)=>orderMap[id]=i+1);
-      return {...d,folders:d.folders.map(f=>f.pinned?{...f,pinOrder:orderMap[f.id]??f.pinOrder}:f)};
+      arr.splice(si,1); arr.splice(di,0,srcId);
+      const order={}; arr.forEach((id,i)=>order[id]=i);
+      return {...d,folders:d.folders.slice().sort((a,b)=>order[a.id]-order[b.id])};
     });
   }
   function reorderPinSub(srcId,dstId){
     upd(d=>({...d,folders:d.folders.map(f=>{
       if(f.id!==fid) return f;
-      const pins=f.subfolders.filter(s=>s.pinned).slice().sort((a,b)=>(a.pinOrder||0)-(b.pinOrder||0));
-      const si=pins.findIndex(s=>s.id===srcId), di=pins.findIndex(s=>s.id===dstId);
+      const arr=f.subfolders.map(s=>s.id);
+      const si=arr.indexOf(srcId), di=arr.indexOf(dstId);
       if(si<0||di<0) return f;
-      const arr=pins.map(s=>s.id); arr.splice(si,1); arr.splice(di,0,srcId);
-      const orderMap={}; arr.forEach((id,i)=>orderMap[id]=i+1);
-      return {...f,subfolders:f.subfolders.map(s=>s.pinned?{...s,pinOrder:orderMap[s.id]??s.pinOrder}:s)};
+      arr.splice(si,1); arr.splice(di,0,srcId);
+      const order={}; arr.forEach((id,i)=>order[id]=i);
+      return {...f,subfolders:f.subfolders.slice().sort((a,b)=>order[a.id]-order[b.id])};
     })}));
   }
   // Перетаскивание касанием (long-press + drag): определяем строку под пальцем
@@ -2233,7 +2235,12 @@ export default function App() {
   }
 
   // ── Files ──
-  function pickFiles(accept) { fileRef.current.accept=accept; fileRef.current.click(); setAttSh(false); }
+  function pickFiles(accept, capture) {
+    const el=fileRef.current; if(!el) return;
+    el.accept=accept||"*/*";
+    if(capture){ el.setAttribute("capture", capture); } else { el.removeAttribute("capture"); }
+    el.click(); setAttSh(false);
+  }
   function onFiles(e) {
     Array.from(e.target.files||[]).forEach(file=>{
       const r=new FileReader();
@@ -2317,13 +2324,7 @@ export default function App() {
   }
   function openHdrMenu(type,e) { e.stopPropagation(); setHdrMenu(v=>v===type?null:type); }
 
-  const filtF=data.folders.filter(f=>f.name.toLowerCase().includes(search.toLowerCase()))
-    .slice().sort((a,b)=>{
-      const ap=a.pinned?1:0, bp=b.pinned?1:0;
-      if(ap!==bp) return bp-ap;            // закреплённые — наверх
-      if(a.pinned&&b.pinned) return (a.pinOrder||0)-(b.pinOrder||0);
-      return 0;
-    });
+  const filtF=data.folders.filter(f=>f.name.toLowerCase().includes(search.toLowerCase()));
 
   // ── Keyboard detection for focus-mode ──
 
@@ -2440,7 +2441,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v91</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v92</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2616,7 +2617,7 @@ export default function App() {
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div className={noScrAnim?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={(noScrAnim||firstRender.current)?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
@@ -2624,10 +2625,10 @@ export default function App() {
             const last = f.isTheme ? (f.notes||[]).slice(-1)[0] : f.subfolders.flatMap(s=>s.notes).pop();
             return (
               <div key={f.id} data-fid={f.id} className="row" onClick={()=>openF(f)}
-                onTouchStart={f.pinned?(e=>folderDragTouchStart(f.id,e)):undefined}
+                onTouchStart={e=>folderDragTouchStart(f.id,e)}
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",position:"relative",
                   cursor:"pointer",margin:"3px 8px",
-                  background:dragActive===f.id?"#33271B":(f.pinned?"#312618":"#2A2017"),
+                  background:dragActive===f.id?"#33271B":"#2A2017",
                   border:"1px solid #4A3A2A",
                   transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease, scale .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
@@ -2656,8 +2657,6 @@ export default function App() {
                       ?{position:"fixed",bottom:(window.innerHeight-folderMenu.rect.top+4),right:window.innerWidth-folderMenu.rect.right}
                       :{position:"fixed",top:below,right:window.innerWidth-folderMenu.rect.right}}
                     items={[
-                      {ic:f.pinned?IC.pinOff:IC.pin,label:f.pinned?"Открепить":"Закрепить",fn:()=>pinFolder(f.id)},
-                      {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setFid(f.id);setModal("renF");}},
                       {ic:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?IC.launchOff:IC.launch,label:isDefaultLaunch(f.id,f.isTheme?"__top__":null)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(f.id,f.isTheme?"__top__":null)},
                       {ic:IC.trash,label:f.isTheme?"Удалить тему":"Удалить категорию",danger:true,fn:()=>{setFid(f.id);setDlg({msg:`Удалить «${f.name}»?`,yes:()=>delF(f.id),anchor:folderMenu?.rect});}},
@@ -2709,19 +2708,14 @@ export default function App() {
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
-          {folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())).slice().sort((a,b)=>{
-            const ap=a.pinned?1:0,bp=b.pinned?1:0;
-            if(ap!==bp) return bp-ap;            // закреплённые — наверх
-            if(a.pinned&&b.pinned) return (a.pinOrder||0)-(b.pinOrder||0);
-            return 0;
-          }).map(s=>{
+          {folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())).map(s=>{
             const last=s.notes[s.notes.length-1];
             return (
               <div key={s.id} data-sid={s.id} className="row" onClick={()=>openS(s)}
-                onTouchStart={s.pinned?(e=>subDragTouchStart(s.id,e)):undefined}
+                onTouchStart={e=>subDragTouchStart(s.id,e)}
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
                   cursor:"pointer",margin:"3px 8px",
-                  background:dragActive===s.id?"#33271B":(s.pinned?"#312618":"#2A2017"),
+                  background:dragActive===s.id?"#33271B":"#2A2017",
                   border:"1px solid #4A3A2A",
                   transform:dragActive===s.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
@@ -2747,7 +2741,6 @@ export default function App() {
                       ?{position:"fixed",bottom:(window.innerHeight-subMenu.rect.top+4),right:window.innerWidth-subMenu.rect.right}
                       :{position:"fixed",top:below,right:window.innerWidth-subMenu.rect.right}}
                     items={[
-                      {ic:s.pinned?IC.pinOff:IC.pin,label:s.pinned?"Открепить":"Закрепить",fn:()=>pinSub(s.id)},
                       {sep:true},
                       {ic:IC.edit,label:"Переименовать",fn:()=>{setSid(s.id);setModal("renS");}},
                       {ic:isDefaultLaunch(fid,s.id)?IC.launchOff:IC.launch,label:isDefaultLaunch(fid,s.id)?"Не открывать при запуске":"Открывать при запуске",fn:()=>toggleDefaultLaunch(fid,s.id)},
@@ -2954,14 +2947,15 @@ export default function App() {
             )}
             {/* Текст: растёт снизу вверх (содержимое прижато к низу) */}
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
-            <textarea ref={fullTaRef} value={note} className="editor-ta"
+            <textarea value={note} className="editor-ta"
               onChange={e=>setNote(e.target.value)}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
-              autoFocus placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
+              ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{el.focus();}catch{} },50); } }}
+              placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
               style={{flex:1,width:"100%",background:"#1A1410",border:"none",outline:"none",
                 color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",fontFamily:"var(--font-input)",
                 boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
@@ -3007,7 +3001,7 @@ export default function App() {
               {(note.trim()||patts.length>0||editId)
                 ? <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
                     style={{width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",cursor:"pointer",
-                      color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)"}}>{IC.send}</button>
+                      color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)"}}><span style={{display:"flex",transform:"rotate(90deg)"}}>{IC.send}</span></button>
                 : <button title="Удерживайте для записи" tabIndex={-1}
                     onPointerDown={e=>{ e.preventDefault(); }}
                     onTouchStart={e=>{ e.preventDefault(); e.stopPropagation(); startRec(e); }}
@@ -3143,9 +3137,9 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись аудио */}
             <button
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(e); },350); }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ stopRec(false); writeHoldFired.current=false; } else { closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ clearTimeout(writeHoldTimer.current); } }}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; writeStartX.current=e.touches[0].clientX; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(e); },350); }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ stopRec(false); writeHoldFired.current=false; } else { composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ clearTimeout(writeHoldTimer.current); return; } const t=e.touches[0]; if(writeStartX.current!=null && (t.clientX-writeStartX.current)>90){ stopRec(true); writeHoldFired.current=false; writeStartX.current=null; } }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               title="Написать (удерживайте для записи)"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
@@ -3153,7 +3147,7 @@ export default function App() {
                 background:recording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s",
                 boxShadow:recording?"0 0 0 6px rgba(224,83,60,.25)":"0 1px 5px rgba(239,108,0,.3)"}}>
-              <span style={{display:"flex",transform:"scale(.9)"}}>{recording?IC.mic:IC.sendUp}</span>
+              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform .3s cubic-bezier(.4,0,.2,1)"}}>{recording?IC.mic:IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
             <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
@@ -3274,12 +3268,12 @@ export default function App() {
             {[
               {ic:IC.gallery,  label:"Изображение",accept:"image/*"},
               {ic:IC.file,     label:"Файл",       accept:"*/*"},
-              {ic:IC.camera,   label:"Камера",     accept:"image/*;capture=camera"},
+              {ic:IC.camera,   label:"Камера",     accept:"image/*", capture:"environment"},
               {ic:IC.video,    label:"Видео",      accept:"video/*"},
               {ic:IC.audio,    label:"Аудио",      accept:"audio/*"},
-              {ic:IC.camcorder,label:"Видеозап.",  accept:"video/*;capture=camcorder"},
+              {ic:IC.camcorder,label:"Видеозап.",  accept:"video/*", capture:"environment"},
             ].map(o=>(
-              <button key={o.label} onClick={()=>pickFiles(o.accept)}
+              <button key={o.label} onClick={()=>pickFiles(o.accept,o.capture)}
                 style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:12,
                   cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5}}>
                 <span style={{color:"#EF6C00",display:"flex"}}>{o.ic}</span>
