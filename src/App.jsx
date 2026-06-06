@@ -1850,28 +1850,6 @@ export default function App() {
     return false; // на главном экране — не обработали (разрешаем выход по двойному нажатию)
   }
 
-  // Свайп/отпускание для записи кнопкой «Написать» — на уровне window,
-  // т.к. WebView во время удержания шлёт touchcancel и события перестают идти на кнопку
-  useEffect(()=>{
-    const tm=e=>{
-      if(!writeRecActive.current || !recActiveRef.current) return;
-      const t=e.touches&&e.touches[0]; if(!t) return;
-      const dx=t.clientX-recStartX.current; const left=Math.max(0,-dx);
-      setRecSlide(left);
-      if(left>90){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeRecActive.current=false; writeHoldFired.current=false; }
-    };
-    const te=()=>{
-      if(!writeRecActive.current) return;
-      writeRecActive.current=false; writeHoldFired.current=false;
-      clearTimeout(writeHoldTimer.current);
-      if(recActiveRef.current) stopRec(recCancelArm.current);
-      setRecSlide(0);
-    };
-    window.addEventListener("touchmove",tm,{passive:true});
-    window.addEventListener("touchend",te,{passive:true});
-    window.addEventListener("touchcancel",te,{passive:true});
-    return ()=>{ window.removeEventListener("touchmove",tm); window.removeEventListener("touchend",te); window.removeEventListener("touchcancel",te); };
-  },[]);
   // Свайп влево для возврата к черновику (работает поверх навигации, не мешая тапам)
   useEffect(()=>{
     if(!(composerFull && composerPeek)) return;
@@ -2543,7 +2521,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v104</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v105</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3239,9 +3217,10 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button tabIndex={-1}
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX, sy=e.touches[0].clientY; writeStartX.current=sx; recStartX.current=sx; recStartY.current=sy; recCancelArm.current=false; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; writeRecActive.current=true; startRec(); },280); }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } } }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ /* завершение записи обрабатывает window-слушатель */ return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; recCancelArm.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); },250); }}
+              onTouchMove={e=>{ const t=e.touches[0]; if(!t) return; const dx=t.clientX-writeStartX.current; if(!writeHoldFired.current){ if(Math.abs(dx)>14){ clearTimeout(writeHoldTimer.current); } return; } if(!recActiveRef.current) return; const left=Math.max(0,-dx); setRecSlide(left); if(left>80){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; } }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); } }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
