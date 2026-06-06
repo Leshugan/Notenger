@@ -2512,7 +2512,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v99</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v100</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3209,11 +3209,12 @@ export default function App() {
             {/* Кнопка Написать — по центру панели; удержание = независимая запись аудио */}
             <button
               onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; hdrGestureDone.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; hdrRecStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; hdrStartRec(); },300); }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!hdrRecording) return; const dx=e.touches[0].clientX-hdrRecStartX.current; const left=Math.max(0,-dx); setHdrRecSlide(left); if(left>120 && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(true); } }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!hdrRecording) return; const dx=e.touches[0].clientX-hdrRecStartX.current; const left=Math.max(0,-dx); setHdrRecSlide(left); if(left>80 && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(true); } }}
               onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(hdrGestureDone.current){ writeHoldFired.current=false; return; } if(writeHoldFired.current){ hdrStopRec(false); writeHoldFired.current=false; return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(hdrRecording && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(hdrRecSlide>60); } writeHoldFired.current=false; }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
-              style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)"+(hdrRecording?" scale(1.12)":""),
+              style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(hdrRecording?" scale(1.12)":""),
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
                 background:hdrRecording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s",
@@ -3229,7 +3230,7 @@ export default function App() {
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:4,pointerEvents:"none"}}>
                 <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(hdrRecSec)}</span>
-                <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-hdrRecSlide}px)`,opacity:Math.max(0,1-hdrRecSlide/120)}}>← смахните влево для отмены</span>
+                <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-hdrRecSlide}px)`,opacity:Math.max(0,1-hdrRecSlide/80)}}>← смахните влево для отмены</span>
               </div>
             )}
             {/* Поиск + ⋯ справа */}
