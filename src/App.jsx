@@ -478,23 +478,18 @@ function LinkPopup({ href, x, y, onClose }) {
 
 // ─── Preview modal ────────────────────────────────────────────
 function PlaneGhost({ phase }){
-  // 'in': центр(самолёт носом вверх) -> угол, поворот 0->90 вправо -> микрофон
-  // 'out': угол(самолёт носом влево) -> центр, поворот -90 -> 0 (носом вверх)
+  // 'in': самолёт носом вверх (0) -> поворот вправо на 90 -> микрофон
+  // 'out': самолёт носом влево (-90) -> поворот вправо до 0 (носом вверх)
   const [go,setGo]=useState(false);
   useEffect(()=>{ const id=requestAnimationFrame(()=>setGo(true)); return ()=>cancelAnimationFrame(id); },[]);
-  const centerPos={left:"50%",bottom:"6px",transform:"translateX(-50%) scale(1)"};
-  const cornerPos={left:"calc(100% - 60px)",bottom:"10px",transform:"translateX(0) scale(.92)"};
-  const pos = (phase==='in') ? (go?cornerPos:centerPos) : (go?centerPos:cornerPos);
   let planeRot, planeOpa, micOpa;
   if(phase==='in'){
-    // самолёт поворачивается 0->90 вправо и исчезает, появляется микрофон
     planeRot = go?90:0; planeOpa = go?0:1; micOpa = go?1:0;
   } else {
-    // возврат: самолёт носом влево (-90) -> вверх (0); микрофона нет
     planeRot = go?0:-90; planeOpa = 1; micOpa = 0;
   }
   return (
-    <div className="planeGhost" style={pos}>
+    <div className="planeGhost" style={{left:"50%",bottom:"6px",transform:"translateX(-50%) scale(1)"}}>
       <span style={{position:"relative",display:"flex",width:24,height:24,alignItems:"center",justifyContent:"center"}}>
         <span style={{position:"absolute",display:"flex",transition:"opacity var(--input-dur,.38s) ease, transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)",
           opacity:planeOpa, transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
@@ -2554,7 +2549,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v118</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v119</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
