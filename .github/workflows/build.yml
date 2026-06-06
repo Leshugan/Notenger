@@ -114,6 +114,20 @@ jobs:
             sed -i 's|dependencies {|dependencies {\n    implementation "com.google.android.gms:play-services-auth:21.2.0"|' "$GRADLE"
           fi
           echo "=== Manifest head ==="; head -30 "$MANIFEST"
+          # FileProvider для съёмки с камеры (capture -> EXTRA_OUTPUT)
+          RESXML=android/app/src/main/res/xml
+          mkdir -p "$RESXML"
+          cat > "$RESXML/file_paths.xml" <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths>
+            <cache-path name="capture" path="capture/"/>
+            <external-cache-path name="ext_capture" path="capture/"/>
+          </paths>
+          XML
+          if ! grep -q "fileprovider" "$MANIFEST"; then
+            PROVIDER='<provider android:name="androidx.core.content.FileProvider" android:authorities="leshugan.notenger.fileprovider" android:exported="false" android:grantUriPermissions="true">\n        <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths"/>\n      </provider>'
+            sed -i "s|</application>|    $PROVIDER\n    </application>|" "$MANIFEST"
+          fi
 
       - name: Разрешить WebView доступ + авто-запрос разрешений
         run: |
@@ -152,6 +166,7 @@ jobs:
           import android.accounts.Account;
           public class MainActivity extends BridgeActivity {
             private ValueCallback<Uri[]> filePathCallback;
+            private Uri pendingCameraUri;
             private ActivityResultLauncher<Intent> fileChooserLauncher;
             private ActivityResultLauncher<Intent> saveFileLauncher;
             private ActivityResultLauncher<Intent> signInLauncher;
@@ -169,16 +184,19 @@ jobs:
                 result -> {
                   if (filePathCallback == null) return;
                   Uri[] uris = null;
-                  if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                  if (result.getResultCode() == RESULT_OK) {
                     Intent data = result.getData();
-                    if (data.getClipData() != null) {
+                    if (data != null && data.getClipData() != null) {
                       int n = data.getClipData().getItemCount();
                       uris = new Uri[n];
                       for (int i = 0; i < n; i++) uris[i] = data.getClipData().getItemAt(i).getUri();
-                    } else if (data.getData() != null) {
+                    } else if (data != null && data.getData() != null) {
                       uris = new Uri[]{ data.getData() };
+                    } else if (pendingCameraUri != null) {
+                      uris = new Uri[]{ pendingCameraUri };
                     }
                   }
+                  pendingCameraUri = null;
                   filePathCallback.onReceiveValue(uris);
                   filePathCallback = null;
                 });
@@ -306,6 +324,29 @@ jobs:
                 public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> cb, FileChooserParams params) {
                   if (filePathCallback != null) { filePathCallback.onReceiveValue(null); }
                   filePathCallback = cb;
+                  pendingCameraUri = null;
+                  boolean wantCapture = false;
+                  try { wantCapture = params.isCaptureEnabled(); } catch (Exception e) {}
+                  String acc = "";
+                  try { String[] types = params.getAcceptTypes(); if (types!=null) for (String t: types) if (t!=null) acc += t.toLowerCase()+","; } catch (Exception e) {}
+                  if (wantCapture) {
+                    try {
+                      boolean isVideo = acc.contains("video");
+                      java.io.File dir = new java.io.File(getCacheDir(), "capture");
+                      dir.mkdirs();
+                      String ext = isVideo ? ".mp4" : ".jpg";
+                      java.io.File f = new java.io.File(dir, "cap_" + System.currentTimeMillis() + ext);
+                      Uri out = androidx.core.content.FileProvider.getUriForFile(this, getPackageName()+".fileprovider", f);
+                      pendingCameraUri = out;
+                      Intent cam = new Intent(isVideo ? android.provider.MediaStore.ACTION_VIDEO_CAPTURE : android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                      cam.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, out);
+                      cam.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                      if (cam.resolveActivity(getPackageManager()) != null) {
+                        fileChooserLauncher.launch(cam);
+                        return true;
+                      }
+                    } catch (Exception e) { pendingCameraUri = null; }
+                  }
                   Intent intent = params.createIntent();
                   intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                   try { fileChooserLauncher.launch(intent); } catch (Exception e) { filePathCallback = null; return false; }
