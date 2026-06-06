@@ -2073,7 +2073,7 @@ export default function App() {
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
     if(editId) cancelEdit();
     setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false);
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),360); }
+    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.max(180,Math.round(spd('input',0.38)*1000)+40)); }
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
@@ -2097,7 +2097,7 @@ export default function App() {
     // возврат в исходную тему + анимация полёта кнопки обратно в позицию "написать"
     setComposerFull(false); setComposerPeek(false);
     setFid(o.fid); setSid(o.sid); setScr("chat");
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),360); }
+    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.max(180,Math.round(spd('input',0.38)*1000)+40)); }
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),80);
   }
   // ── Notes ──
@@ -2554,7 +2554,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v117</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v118</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2602,7 +2602,7 @@ export default function App() {
       {/* Летящий самолётик: визуальный переход между «написать» (центр) и «отправить» (угол) */}
 
       {/* Летящий самолётик между «написать» (центр-низ) и «отправить» (угол) */}
-      {planePhase!=='idle' && !composerFull && <PlaneGhost phase={planePhase}/>}
+      {planePhase!=='idle' && <PlaneGhost phase={planePhase}/>}
 
       {/* Toast */}
       {toast&&<div style={{position:"fixed",bottom:84,left:"50%",transform:"translateX(-50%)",
@@ -3240,7 +3240,7 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button
-              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(160,_id)); setTimeout(()=>setPlanePhase('idle'),Math.max(180,_id+40)); } }}
               title="Написать"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
