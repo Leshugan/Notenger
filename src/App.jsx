@@ -478,10 +478,17 @@ function LinkPopup({ href, x, y, onClose }) {
 
 // ─── Preview modal ────────────────────────────────────────────
 function PlaneGhost({ phase }){
-  // 'in': самолёт носом вверх (0) -> поворот вправо на 90 -> микрофон
-  // 'out': самолёт носом влево (-90) -> поворот вправо до 0 (носом вверх)
+  // 'in': центр(самолёт носом вверх 0) летит вправо, поворот -> 90, превращается в микрофон
+  // 'out': справа(самолёт носом влево -90) летит в центр, доворот -> 0 (носом вверх)
   const [go,setGo]=useState(false);
-  useEffect(()=>{ const id=requestAnimationFrame(()=>setGo(true)); return ()=>cancelAnimationFrame(id); },[]);
+  useEffect(()=>{
+    let r2;
+    const r1=requestAnimationFrame(()=>{ r2=requestAnimationFrame(()=>setGo(true)); });
+    return ()=>{ cancelAnimationFrame(r1); if(r2)cancelAnimationFrame(r2); };
+  },[]);
+  const centerPos={left:"50%",bottom:"6px",transform:"translateX(-50%) scale(1)"};
+  const rightPos ={left:"calc(50% + 150px)",bottom:"6px",transform:"translateX(-50%) scale(.9)"};
+  const pos = (phase==='in') ? (go?rightPos:centerPos) : (go?centerPos:rightPos);
   let planeRot, planeOpa, micOpa;
   if(phase==='in'){
     planeRot = go?90:0; planeOpa = go?0:1; micOpa = go?1:0;
@@ -489,7 +496,7 @@ function PlaneGhost({ phase }){
     planeRot = go?0:-90; planeOpa = 1; micOpa = 0;
   }
   return (
-    <div className="planeGhost" style={{left:"50%",bottom:"6px",transform:"translateX(-50%) scale(1)"}}>
+    <div className="planeGhost" style={pos}>
       <span style={{position:"relative",display:"flex",width:24,height:24,alignItems:"center",justifyContent:"center"}}>
         <span style={{position:"absolute",display:"flex",transition:"opacity var(--input-dur,.38s) ease, transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)",
           opacity:planeOpa, transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
@@ -2055,7 +2062,7 @@ export default function App() {
     setSelectMode(null);
     composerOrigin.current={fid,sid};
     if(noInputAnim){ setComposerFull(true); setComposerPeek(false); }
-    else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); }
+    else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },_id+30); setTimeout(()=>setPlanePhase('idle'),_id+90); }
   }
   function cancelEdit() {
     setEditId(null); setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
@@ -2068,7 +2075,7 @@ export default function App() {
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
     if(editId) cancelEdit();
     setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false);
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.max(180,Math.round(spd('input',0.38)*1000)+40)); }
+    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.round(spd('input',0.38)*1000)+90); }
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
@@ -2092,7 +2099,7 @@ export default function App() {
     // возврат в исходную тему + анимация полёта кнопки обратно в позицию "написать"
     setComposerFull(false); setComposerPeek(false);
     setFid(o.fid); setSid(o.sid); setScr("chat");
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.max(180,Math.round(spd('input',0.38)*1000)+40)); }
+    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.round(spd('input',0.38)*1000)+90); }
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),80);
   }
   // ── Notes ──
@@ -2549,7 +2556,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v119</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v120</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3235,7 +3242,7 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button
-              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(160,_id)); setTimeout(()=>setPlanePhase('idle'),Math.max(180,_id+40)); } }}
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, _id+30); setTimeout(()=>setPlanePhase('idle'),_id+90); } }}
               title="Написать"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
