@@ -1114,7 +1114,8 @@ export default function App() {
   }
   function discardPendingVoice(){ setPendingVoice(null); }
   // ── Запись голосовых: чистая реализация, поток освобождается полностью ──
-  async function startRec(e){
+  async function startRec(e, fromHold){
+    if(fromHold && !writeTouchLive.current){ return; } // палец уже отпущен — не стартуем
     recCancel.current=false;
     if(e&&e.touches&&e.touches[0]){ recStartY.current=e.touches[0].clientY; recStartX.current=e.touches[0].clientX; } setRecSlide(0); recCancelArm.current=false;
     if(recording) return; // уже идёт
@@ -1133,7 +1134,10 @@ export default function App() {
         if(recTimer.current){clearInterval(recTimer.current);recTimer.current=null;}
         setRecSec(0); recSecRef.current=0;
         tst("Не удалось включить микрофон");
+        return;
       }
+      // если за время старта палец уже отпустили — сразу останавливаем
+      if(fromHold && !writeTouchLive.current){ stopRec(true); }
       return;
     }
     // Жёстко освобождаем любой прежний поток/рекордер
@@ -2524,7 +2528,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v108</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v109</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3220,11 +3224,11 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button tabIndex={-1}
-              onTouchStart={e=>{ e.stopPropagation(); writeTouchLive.current=true; writeHoldFired.current=false; recCancelArm.current=false; writeWasRecGesture.current=false; composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ if(!writeTouchLive.current){ return; } writeHoldFired.current=true; writeWasRecGesture.current=true; startRec(); },250); }}
+              onTouchStart={e=>{ e.stopPropagation(); if(recActiveRef.current){ return; } writeTouchLive.current=true; writeHoldFired.current=false; recCancelArm.current=false; writeWasRecGesture.current=false; composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ if(!writeTouchLive.current){ return; } writeHoldFired.current=true; writeWasRecGesture.current=true; startRec(null,true); },250); }}
               onTouchMove={e=>{ const t=e.touches[0]; if(!t) return; const dx=t.clientX-writeStartX.current; if(!writeHoldFired.current){ if(Math.abs(dx)>14){ clearTimeout(writeHoldTimer.current); } return; } if(!recActiveRef.current) return; const left=Math.max(0,-dx); setRecSlide(left); if(left>80){ recCancelArm.current=true; setRecSlide(0); writeHoldFired.current=false; stopRec(true); } }}
               onTouchEnd={e=>{ e.stopPropagation(); e.preventDefault(); writeTouchLive.current=false; clearTimeout(writeHoldTimer.current); if(writeWasRecGesture.current){ writeWasRecGesture.current=false; writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); else { try{ window.AndroidRec&&window.AndroidRec.cancelRec&&window.AndroidRec.cancelRec(); }catch{} } setRecSlide(0); return; } /* настоящий тап → редактор */ composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
               onTouchCancel={e=>{ writeTouchLive.current=false; clearTimeout(writeHoldTimer.current); if(writeWasRecGesture.current||recActiveRef.current){ writeWasRecGesture.current=false; writeHoldFired.current=false; recCancelArm.current=true; if(recActiveRef.current) stopRec(true); else { try{ window.AndroidRec&&window.AndroidRec.cancelRec&&window.AndroidRec.cancelRec(); }catch{} } setRecSlide(0); } }}
-              onClick={e=>{ if(writeWasRecGesture.current){ writeWasRecGesture.current=false; return; } if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
+              onClick={e=>{ if(recActiveRef.current){ return; } if(writeWasRecGesture.current){ writeWasRecGesture.current=false; return; } if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
