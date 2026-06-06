@@ -996,6 +996,8 @@ export default function App() {
   const writeHoldTimer = useRef(null);
   const writeHoldFired = useRef(false);
   const writeStartX = useRef(null);
+  const [bootDone, setBootDone] = useState(false);
+  useEffect(()=>{ const t=setTimeout(()=>setBootDone(true), 650); return ()=>clearTimeout(t); },[]);
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
@@ -1882,6 +1884,24 @@ export default function App() {
       return {...f,subfolders:f.subfolders.slice().sort((a,b)=>order[a.id]-order[b.id])};
     })}));
   }
+  // FLIP: плавно анимируем строки, чьи позиции изменились после перестановки
+  function flipRows(selector){
+    const nodes=Array.from(document.querySelectorAll(selector));
+    const first={}; nodes.forEach(n=>{ const id=n.getAttribute("data-fid")||n.getAttribute("data-sid"); first[id]=n.getBoundingClientRect().top; });
+    requestAnimationFrame(()=>{
+      const nodes2=Array.from(document.querySelectorAll(selector));
+      nodes2.forEach(n=>{
+        const id=n.getAttribute("data-fid")||n.getAttribute("data-sid");
+        if(first[id]==null) return;
+        const dy=first[id]-n.getBoundingClientRect().top;
+        if(!dy) return;
+        if(n.getAttribute("data-dragging")==="1") return; // перетаскиваемую не трогаем
+        n.style.transition="none";
+        n.style.transform=`translateY(${dy}px)`;
+        requestAnimationFrame(()=>{ n.style.transition="transform .22s cubic-bezier(.2,.8,.2,1)"; n.style.transform=""; });
+      });
+    });
+  }
   // Перетаскивание касанием (long-press + drag): определяем строку под пальцем
   function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function folderDragTouchMove(e){
@@ -1891,13 +1911,13 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>70){
+    if(now-dt.lastSwap>80){
       const self=document.querySelector(`[data-fid="${dt.id}"]`);
       const prevPE=self?self.style.pointerEvents:null; if(self) self.style.pointerEvents="none";
       const el=document.elementFromPoint(t.clientX,t.clientY);
       if(self) self.style.pointerEvents=prevPE||"";
       const row=el&&el.closest&&el.closest("[data-fid]");
-      if(row){ const overId=row.getAttribute("data-fid"); if(overId&&overId!==dt.id){ reorderPinFolder(dt.id,overId); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); } }
+      if(row){ const overId=row.getAttribute("data-fid"); if(overId&&overId!==dt.id){ flipRows("[data-fid]"); reorderPinFolder(dt.id,overId); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); } }
     }
   }
   function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -1915,7 +1935,7 @@ export default function App() {
       const el=document.elementFromPoint(t.clientX,t.clientY);
       if(self) self.style.pointerEvents=prevPE||"";
       const row=el&&el.closest&&el.closest("[data-sid]");
-      if(row){ const overId=row.getAttribute("data-sid"); if(overId&&overId!==dt.id){ reorderPinSub(dt.id,overId); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); } }
+      if(row){ const overId=row.getAttribute("data-sid"); if(overId&&overId!==dt.id){ flipRows("[data-sid]"); reorderPinSub(dt.id,overId); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); } }
     }
   }
   function subDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -2442,7 +2462,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v93</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v94</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2618,14 +2638,14 @@ export default function App() {
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div className={(noScrAnim||firstRender.current)?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={(noScrAnim||firstRender.current||!bootDone)?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
           {filtF.map(f=>{
             const last = f.isTheme ? (f.notes||[]).slice(-1)[0] : f.subfolders.flatMap(s=>s.notes).pop();
             return (
-              <div key={f.id} data-fid={f.id} className="row" onClick={()=>openF(f)}
+              <div key={f.id} data-fid={f.id} data-dragging={dragActive===f.id?"1":"0"} className="row" onClick={()=>openF(f)}
                 onTouchStart={e=>folderDragTouchStart(f.id,e)}
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",position:"relative",
                   cursor:"pointer",margin:"3px 8px",
@@ -2705,14 +2725,14 @@ export default function App() {
 
       {/* ═══ SUBFOLDERS ═══ */}
       {scr==="sub"&&folder&&(
-        <div className={noScrAnim?undefined:"scrAnim"} key={"scr-sub-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={(noScrAnim||!bootDone)?undefined:"scrAnim"} key={"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
           {folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())).map(s=>{
             const last=s.notes[s.notes.length-1];
             return (
-              <div key={s.id} data-sid={s.id} className="row" onClick={()=>openS(s)}
+              <div key={s.id} data-sid={s.id} data-dragging={dragActive===s.id?"1":"0"} className="row" onClick={()=>openS(s)}
                 onTouchStart={e=>subDragTouchStart(s.id,e)}
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
                   cursor:"pointer",margin:"3px 8px",
@@ -2821,7 +2841,7 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={updateActiveNote} className={(noScrAnim||(firstRender.current&&_initLaunch))?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
+        <div ref={scrollRef} onScroll={updateActiveNote} className={(noScrAnim||!bootDone)?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s"}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -3262,9 +3282,9 @@ export default function App() {
       {/* Attach picker — Telegram-style categories */}
       {attSh&&(
         <div onClick={()=>setAttSh(false)} style={{position:"fixed",inset:0,zIndex:450}}>
-          <div onClick={e=>e.stopPropagation()} style={{position:"absolute",left:14,bottom:74,
+          <div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:10,bottom:60,
             background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:16,padding:10,
-            boxShadow:"0 10px 36px rgba(0,0,0,.6)",animation:"fS .15s ease"}}>
+            boxShadow:"0 10px 36px rgba(0,0,0,.6)",animation:"fS .15s ease",transformOrigin:"bottom right"}}>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3, 78px)",gridAutoRows:"72px",gap:6}}>
             {[
               {ic:IC.gallery,  label:"Изображение",accept:"image/*"},
