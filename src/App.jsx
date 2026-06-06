@@ -1024,6 +1024,7 @@ export default function App() {
   const hdrRecStartX = useRef(0);
   const hdrRecCancel = useRef(false);
   const hdrRecOrigin = useRef(null);
+  const hdrGestureDone = useRef(false);
   function hdrStartRec(){
     if(hdrRecording) return;
     if(!(window.AndroidRec && typeof window.AndroidRec.startRec==="function")){ tst("Запись доступна в приложении"); return; }
@@ -2511,7 +2512,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v98</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v99</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3207,9 +3208,9 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = независимая запись аудио */}
             <button
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; hdrRecStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; hdrStartRec(); },300); }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!hdrRecording) return; const dx=e.touches[0].clientX-hdrRecStartX.current; const left=Math.max(0,-dx); setHdrRecSlide(left); if(left>120){ hdrRecCancel.current=true; hdrStopRec(true); writeHoldFired.current=false; } }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ hdrStopRec(hdrRecCancel.current); writeHoldFired.current=false; } else { composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; hdrGestureDone.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; hdrRecStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; hdrStartRec(); },300); }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!hdrRecording) return; const dx=e.touches[0].clientX-hdrRecStartX.current; const left=Math.max(0,-dx); setHdrRecSlide(left); if(left>120 && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(true); } }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(hdrGestureDone.current){ writeHoldFired.current=false; return; } if(writeHoldFired.current){ hdrStopRec(false); writeHoldFired.current=false; return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)"+(hdrRecording?" scale(1.12)":""),
@@ -3308,6 +3309,21 @@ export default function App() {
       </Sheet>
 
       {/* Просмотр изображения на весь экран */}
+      {/* Глобальное подтверждение голосового (для записи кнопкой «Написать») */}
+      {pendingVoice && !composerFull && (
+        <div onClick={discardPendingVoice} style={{position:"fixed",inset:0,zIndex:610,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",borderTop:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .2s ease"}}>
+            <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
+            <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={discardPendingVoice}
+                style={{flex:1,background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:10,padding:"12px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
+              <button onClick={sendPendingVoice}
+                style={{flex:1,background:"#EF6C00",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:600,cursor:"pointer",fontSize:14}}>Отправить</button>
+            </div>
+          </div>
+        </div>
+      )}
       {lightbox&&(()=>{
         let meta=null;
         try{
