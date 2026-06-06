@@ -172,6 +172,8 @@ jobs:
             private ActivityResultLauncher<Intent> signInLauncher;
             private byte[] pendingSaveBytes;
             private MediaRecorder audioRec;
+            private volatile boolean recStopRequested = false;
+            private volatile boolean recActive = false;
             private String audioPath;
             private GoogleSignInClient gsiClient;
             private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
@@ -244,6 +246,8 @@ jobs:
                 public boolean startRec(){
                   try{
                     stopRecInternal(false);
+                    recStopRequested = false;
+                    recActive = true;
                     audioPath = getCacheDir().getAbsolutePath() + "/voice_" + System.currentTimeMillis() + ".m4a";
                     audioRec = new MediaRecorder();
                     audioRec.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -254,15 +258,21 @@ jobs:
                     audioRec.setOutputFile(audioPath);
                     audioRec.prepare();
                     audioRec.start();
+                    // если за время prepare/start пришёл запрос на отмену — немедленно останавливаем
+                    if(recStopRequested){ recStopRequested=false; stopRecInternal(false); return false; }
                     return true;
-                  }catch(Exception e){ try{ if(audioRec!=null){audioRec.release();audioRec=null;} }catch(Exception ignore){} return false; }
+                  }catch(Exception e){ try{ if(audioRec!=null){audioRec.release();audioRec=null;} }catch(Exception ignore){} recActive=false; return false; }
                 }
                 @JavascriptInterface
                 public String stopRec(){
                   return stopRecInternal(true);
                 }
                 @JavascriptInterface
-                public void cancelRec(){ stopRecInternal(false); }
+                public void cancelRec(){
+                  // если запись ещё стартует — пометим, чтобы startRec сам остановил; иначе останавливаем сейчас
+                  recStopRequested = true;
+                  stopRecInternal(false);
+                }
                 @JavascriptInterface
                 public void vibrate(int ms){
                   try{
@@ -387,9 +397,11 @@ jobs:
             }
             private String stopRecInternal(boolean wantData){
               String result = null;
+              recActive = false;
               try{
                 if(audioRec!=null){
                   try{ audioRec.stop(); }catch(Exception ignore){}
+                  try{ audioRec.reset(); }catch(Exception ignore){}
                   try{ audioRec.release(); }catch(Exception ignore){}
                   audioRec=null;
                   if(wantData && audioPath!=null){
