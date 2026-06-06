@@ -996,8 +996,6 @@ export default function App() {
   const writeHoldTimer = useRef(null);
   const writeHoldFired = useRef(false);
   const writeStartX = useRef(null);
-  const [bootDone, setBootDone] = useState(false);
-  useEffect(()=>{ const t=setTimeout(()=>setBootDone(true), 650); return ()=>clearTimeout(t); },[]);
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
@@ -1898,7 +1896,7 @@ export default function App() {
         if(n.getAttribute("data-dragging")==="1") return; // перетаскиваемую не трогаем
         n.style.transition="none";
         n.style.transform=`translateY(${dy}px)`;
-        requestAnimationFrame(()=>{ n.style.transition="transform .22s cubic-bezier(.2,.8,.2,1)"; n.style.transform=""; });
+        requestAnimationFrame(()=>{ n.style.transition="transform .28s cubic-bezier(.2,.8,.2,1)"; n.style.transform=""; });
       });
     });
   }
@@ -1911,13 +1909,21 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>80){
+    if(now-dt.lastSwap>140){
       const self=document.querySelector(`[data-fid="${dt.id}"]`);
-      const prevPE=self?self.style.pointerEvents:null; if(self) self.style.pointerEvents="none";
-      const el=document.elementFromPoint(t.clientX,t.clientY);
-      if(self) self.style.pointerEvents=prevPE||"";
-      const row=el&&el.closest&&el.closest("[data-fid]");
-      if(row){ const overId=row.getAttribute("data-fid"); if(overId&&overId!==dt.id){ flipRows("[data-fid]"); reorderPinFolder(dt.id,overId); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); } }
+      if(!self) return;
+      const sr=self.getBoundingClientRect();
+      const selfMid=sr.top+sr.height/2;
+      // ищем соседнюю строку, которую перетаскиваемая почти накрыла (>75%)
+      const rows=Array.from(document.querySelectorAll("[data-fid]"));
+      let target=null;
+      for(const r of rows){
+        const id=r.getAttribute("data-fid"); if(id===dt.id) continue;
+        const rr=r.getBoundingClientRect();
+        const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
+        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
+      }
+      if(target){ flipRows("[data-fid]"); reorderPinFolder(dt.id,target); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
     }
   }
   function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -1929,13 +1935,19 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>70){
+    if(now-dt.lastSwap>140){
       const self=document.querySelector(`[data-sid="${dt.id}"]`);
-      const prevPE=self?self.style.pointerEvents:null; if(self) self.style.pointerEvents="none";
-      const el=document.elementFromPoint(t.clientX,t.clientY);
-      if(self) self.style.pointerEvents=prevPE||"";
-      const row=el&&el.closest&&el.closest("[data-sid]");
-      if(row){ const overId=row.getAttribute("data-sid"); if(overId&&overId!==dt.id){ flipRows("[data-sid]"); reorderPinSub(dt.id,overId); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); } }
+      if(!self) return;
+      const sr=self.getBoundingClientRect();
+      const rows=Array.from(document.querySelectorAll("[data-sid]"));
+      let target=null;
+      for(const r of rows){
+        const id=r.getAttribute("data-sid"); if(id===dt.id) continue;
+        const rr=r.getBoundingClientRect();
+        const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
+        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
+      }
+      if(target){ flipRows("[data-sid]"); reorderPinSub(dt.id,target); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
     }
   }
   function subDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -2462,7 +2474,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v94</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v95</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2638,7 +2650,7 @@ export default function App() {
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div className={(noScrAnim||firstRender.current||!bootDone)?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
@@ -2725,7 +2737,7 @@ export default function App() {
 
       {/* ═══ SUBFOLDERS ═══ */}
       {scr==="sub"&&folder&&(
-        <div className={(noScrAnim||!bootDone)?undefined:"scrAnim"} key={"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
@@ -2841,7 +2853,7 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={updateActiveNote} className={(noScrAnim||!bootDone)?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
+        <div ref={scrollRef} onScroll={updateActiveNote} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s"}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -3158,11 +3170,11 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись аудио */}
             <button
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; recCancelArm.current=false; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); },350); }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } const t=e.touches[0]; const dx=t.clientX-(writeStartX.current||0); if(dx>0){ setRecSlide(dx); } if(dx>110){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; writeStartX.current=null; } }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); setRecSlide(0); if(writeHoldFired.current){ if(recording) stopRec(recCancelArm.current); writeHoldFired.current=false; } else { composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
+              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(e); },300); }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && (Math.abs(t.clientX-writeStartX.current)>10||Math.abs(t.clientY-(0))>10)){ clearTimeout(writeHoldTimer.current); } return; } if(!recording) return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; } }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ if(recording) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; } else { composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } } }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
-              title="Написать (удерживайте для записи, свайп вправо — отмена)"
+              title="Написать (удерживайте для записи, смахните влево — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
                 background:recording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
