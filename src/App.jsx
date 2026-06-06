@@ -478,21 +478,28 @@ function LinkPopup({ href, x, y, onClose }) {
 
 // ─── Preview modal ────────────────────────────────────────────
 function PlaneGhost({ phase }){
-  // 'in': центр(самолёт) -> угол(микрофон) ; 'out': угол(микрофон) -> центр(самолёт)
+  // 'in': центр(самолёт носом вверх) -> угол, поворот 0->90 вправо -> микрофон
+  // 'out': угол(самолёт носом влево) -> центр, поворот -90 -> 0 (носом вверх)
   const [go,setGo]=useState(false);
   useEffect(()=>{ const id=requestAnimationFrame(()=>setGo(true)); return ()=>cancelAnimationFrame(id); },[]);
-  const centerPos={left:"50%",bottom:"6px",transform:"translateX(-50%) rotate(0deg) scale(1)"};
-  const cornerPos={left:"calc(100% - 60px)",bottom:"10px",transform:"translateX(0) rotate(90deg) scale(.92)"};
+  const centerPos={left:"50%",bottom:"6px",transform:"translateX(-50%) scale(1)"};
+  const cornerPos={left:"calc(100% - 60px)",bottom:"10px",transform:"translateX(0) scale(.92)"};
   const pos = (phase==='in') ? (go?cornerPos:centerPos) : (go?centerPos:cornerPos);
-  // прогресс «к микрофону»: in -> к концу =1 (микрофон), out -> к концу =0 (самолёт)
-  const atMic = (phase==='in') ? go : !go;
+  let planeRot, planeOpa, micOpa;
+  if(phase==='in'){
+    // самолёт поворачивается 0->90 вправо и исчезает, появляется микрофон
+    planeRot = go?90:0; planeOpa = go?0:1; micOpa = go?1:0;
+  } else {
+    // возврат: самолёт носом влево (-90) -> вверх (0); микрофона нет
+    planeRot = go?0:-90; planeOpa = 1; micOpa = 0;
+  }
   return (
     <div className="planeGhost" style={pos}>
       <span style={{position:"relative",display:"flex",width:24,height:24,alignItems:"center",justifyContent:"center"}}>
-        <span style={{position:"absolute",display:"flex",transition:"opacity .26s ease, transform .26s ease",
-          opacity:atMic?0:1, transform:`scale(${atMic?0.6:0.9}) rotate(${atMic?-90:0}deg)`}}>{IC.sendUp}</span>
-        <span style={{position:"absolute",display:"flex",transition:"opacity .26s ease, transform .26s ease",
-          opacity:atMic?1:0, transform:`scale(${atMic?0.9:0.6}) rotate(${atMic?0:90}deg)`}}>{IC.mic}</span>
+        <span style={{position:"absolute",display:"flex",transition:"opacity var(--input-dur,.38s) ease, transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)",
+          opacity:planeOpa, transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
+        <span style={{position:"absolute",display:"flex",transition:"opacity var(--input-dur,.38s) ease",
+          opacity:micOpa, transform:"scale(.9)"}}>{IC.mic}</span>
       </span>
     </div>
   );
@@ -1321,7 +1328,7 @@ export default function App() {
   // Множители скорости анимаций (0.3 = быстрее/короче … 1 = базовая длительность). Храним как множитель длительности.
   const [animSpeed, setAnimSpeed] = useState(()=>{ try{ return JSON.parse(localStorage.getItem("napp_animSpeed")||"{}"); }catch{ return {}; } });
   function setSpeed(key,val){ setAnimSpeed(s=>{ const ns={...s,[key]:val}; try{localStorage.setItem("napp_animSpeed",JSON.stringify(ns));}catch{} return ns; }); setNavTick(t=>t+1); }
-  const spd=(key,base)=>{ const m=animSpeed[key]; return (typeof m==="number"?m:1)*base; };
+  const spd=(key,base)=>base;
   function toggleScrAnim(){ setNoScrAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noScrAnim",nv?"1":"0");}catch{} return nv; }); }
   const dlaunchApplied = useRef(false);
   function setDefaultLaunch(target){ try{ if(target) localStorage.setItem(DLAUNCH_KEY, JSON.stringify(target)); else localStorage.removeItem(DLAUNCH_KEY); }catch{} tst(target?"Будет открываться при запуске":"Запуск сброшен на главный экран"); }
@@ -2547,7 +2554,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v116</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v117</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3135,8 +3142,7 @@ export default function App() {
             )}
             {/* Оверлей записи голосового (только в редакторе) */}
             {recording && composerFull && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,height:52,background:"#2A2017",borderTop:"1px solid #4A3A2A",
-                display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:20}}>
+              <div style={{position:"absolute",left:0,right:0,bottom:0,padding:"0 12px",background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
                 <span style={{flex:1,fontSize:13,textAlign:"center",color:recSlide>60?"#E05252":"#8A7A65",transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`}}>{recSlide>60?"Отпустите для отмены":"← смахните влево для отмены"}</span>
@@ -3182,9 +3188,14 @@ export default function App() {
                 color:selNote?.pinned?"#F5A623":"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
               {selNote?.pinned?IC.pinOff:IC.pin}</button>
           )}
-          {/* Копировать текст — только для одиночного сообщения с текстом */}
+          {/* Копировать текст — одиночное или несколько */}
           {single && selNote && selNote.text && (
           <button onClick={()=>{ if(selNote)copyText(selNote); closePanel(); }} title="Копировать текст"
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
+              cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
+          )}
+          {!single && (
+          <button onClick={()=>{ const ids=new Set(multiSelect); if(selectMode) ids.add(selectMode); const arr=(sid==="__top__"&&folder?.isTheme)?(folder.notes||[]):(subf?.notes||[]); const txt=arr.filter(n=>ids.has(n.id)&&n.text).map(n=>n.text).join("\n\n"); if(txt){ try{ navigator.clipboard?.writeText(txt); }catch{} tst("Скопировано: "+arr.filter(n=>ids.has(n.id)&&n.text).length); } closePanel(); }} title="Копировать текст"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
           )}
@@ -3573,35 +3584,23 @@ export default function App() {
           </div>
         </div>
       )}
-      <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Настройка анимаций">
+      <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Анимации">
         {[
-          {key:"scr",label:"Переходы между экранами",base:0.6,off:noScrAnim,toggle:toggleScrAnim},
-          {key:"input",label:"Поле ввода",base:0.5,off:noInputAnim,toggle:toggleInputAnim},
-          {key:"del",label:"Удаление сообщения",base:2,off:noDelAnim,toggle:toggleDelAnim},
+          {key:"scr",label:"Переходы между экранами",off:noScrAnim,toggle:toggleScrAnim},
+          {key:"input",label:"Поле ввода",off:noInputAnim,toggle:toggleInputAnim},
+          {key:"del",label:"Удаление сообщения",off:noDelAnim,toggle:toggleDelAnim},
         ].map(it=>{
-          const v=typeof animSpeed[it.key]==="number"?animSpeed[it.key]:1;
           const enabled=!it.off;
           return (
-            <div key={it.key} style={{background:"#2A2017",borderRadius:12,border:"1px solid #4A3A2A",padding:"12px 14px",marginBottom:10}}>
-              <div onClick={it.toggle} style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
-                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>{it.label}</span>
-                <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-                  <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-                </div>
-              </div>
-              <div style={{marginTop:12,opacity:enabled?1:0.4,pointerEvents:enabled?"auto":"none"}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                  <span style={{fontSize:13,color:"#8A7A65"}}>Скорость</span>
-                  <span style={{fontSize:13,color:"#EF6C00",fontVariantNumeric:"tabular-nums"}}>{v.toFixed(2)}×</span>
-                </div>
-                <input type="range" min="0.3" max="1" step="0.05" value={v>1?1:v} disabled={!enabled}
-                  onChange={e=>setSpeed(it.key,parseFloat(e.target.value))}
-                  style={{width:"100%",accentColor:"#EF6C00"}}/>
+            <div key={it.key} onClick={it.toggle} style={{background:"#2A2017",borderRadius:12,border:"1px solid #4A3A2A",padding:"14px",marginBottom:10,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+              <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>{it.label}</span>
+              <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
+                <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
               </div>
             </div>
           );
         })}
-        <div style={{fontSize:12,color:"#8A7A65",padding:"2px 4px"}}>0.3× — быстро, 1× — медленно. Ползунок активен, если анимация включена.</div>
+        <div style={{fontSize:12,color:"#8A7A65",padding:"2px 4px"}}>Включение или отключение анимаций.</div>
       </Sheet>
 
       <input ref={fontFileRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" style={{display:"none"}} onChange={onFontFile}/>
