@@ -1025,19 +1025,22 @@ export default function App() {
   const hdrRecCancel = useRef(false);
   const hdrRecOrigin = useRef(null);
   const hdrGestureDone = useRef(false);
+  const hdrRecActive = useRef(false);
   function hdrStartRec(){
-    if(hdrRecording) return;
+    if(hdrRecActive.current) return;
     if(!(window.AndroidRec && typeof window.AndroidRec.startRec==="function")){ tst("Запись доступна в приложении"); return; }
     hdrRecOrigin.current={fid,sid};
     hdrRecCancel.current=false; setHdrRecSlide(0);
+    hdrRecActive.current=true;
     setHdrRecording(true); setHdrRecSec(0); hdrRecSecRef.current=0;
     buzz(12);
     hdrRecTimer.current=setInterval(()=>{ hdrRecSecRef.current+=1; setHdrRecSec(hdrRecSecRef.current); },1000);
     let ok=false; try{ ok=window.AndroidRec.startRec(); }catch{ ok=false; }
-    if(!ok){ setHdrRecording(false); if(hdrRecTimer.current){clearInterval(hdrRecTimer.current);hdrRecTimer.current=null;} setHdrRecSec(0); hdrRecSecRef.current=0; tst("Не удалось включить микрофон"); }
+    if(!ok){ hdrRecActive.current=false; setHdrRecording(false); if(hdrRecTimer.current){clearInterval(hdrRecTimer.current);hdrRecTimer.current=null;} setHdrRecSec(0); hdrRecSecRef.current=0; tst("Не удалось включить микрофон"); }
   }
   function hdrStopRec(cancel){
-    if(!hdrRecording) return;
+    if(!hdrRecActive.current) return;
+    hdrRecActive.current=false;
     if(hdrRecTimer.current){ clearInterval(hdrRecTimer.current); hdrRecTimer.current=null; }
     const secs=hdrRecSecRef.current;
     setHdrRecording(false); setHdrRecSec(0); hdrRecSecRef.current=0; setHdrRecSlide(0);
@@ -2512,7 +2515,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v100</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v101</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3209,7 +3212,7 @@ export default function App() {
             {/* Кнопка Написать — по центру панели; удержание = независимая запись аудио */}
             <button
               onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; hdrGestureDone.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; hdrRecStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; hdrStartRec(); },300); }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!hdrRecording) return; const dx=e.touches[0].clientX-hdrRecStartX.current; const left=Math.max(0,-dx); setHdrRecSlide(left); if(left>80 && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(true); } }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!hdrRecActive.current) return; const dx=e.touches[0].clientX-hdrRecStartX.current; const left=Math.max(0,-dx); setHdrRecSlide(left); if(left>80 && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(true); } }}
               onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(hdrGestureDone.current){ writeHoldFired.current=false; return; } if(writeHoldFired.current){ hdrStopRec(false); writeHoldFired.current=false; return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(hdrRecording && !hdrGestureDone.current){ hdrGestureDone.current=true; hdrStopRec(hdrRecSlide>60); } writeHoldFired.current=false; }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
