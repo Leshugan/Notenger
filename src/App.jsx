@@ -2528,7 +2528,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v110</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v111</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3246,7 +3246,7 @@ export default function App() {
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:4,pointerEvents:"none"}}>
                 <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(recSec)}</span>
-                <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-recSlide}px)`,opacity:Math.max(0,1-recSlide/120)}}>← смахните влево для отмены</span>
+                <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-recSlide}px)`,opacity:Math.max(0,1-recSlide/90)}}>← смахните влево для отмены</span>
               </div>
             )}
             {/* Поиск + ⋯ справа */}
@@ -3326,6 +3326,14 @@ export default function App() {
       </Sheet>
 
       {/* Просмотр изображения на весь экран */}
+      {/* Перехватчик жеста записи кнопкой «Написать» — ловит движение/отпускание поверх всего */}
+      {recording && writeWasRecGesture.current && !composerFull && (
+        <div
+          onTouchMove={e=>{ const t=e.touches[0]; if(!t||!recActiveRef.current) return; const dx=t.clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>90){ recCancelArm.current=true; setRecSlide(0); writeWasRecGesture.current=false; stopRec(true); } }}
+          onTouchEnd={e=>{ e.preventDefault(); if(!recActiveRef.current){ writeWasRecGesture.current=false; return; } const tooShort=(recSecRef.current<1 && !recCancelArm.current); writeWasRecGesture.current=false; writeHoldFired.current=false; stopRec(recCancelArm.current||tooShort); setRecSlide(0); }}
+          onTouchCancel={e=>{ if(recActiveRef.current) stopRec(true); writeWasRecGesture.current=false; setRecSlide(0); }}
+          style={{position:"fixed",inset:0,zIndex:600,background:"transparent",touchAction:"none"}}/>
+      )}
       {/* Глобальное подтверждение голосового (для записи кнопкой «Написать») */}
       {pendingVoice && !composerFull && (
         <div onClick={discardPendingVoice} style={{position:"fixed",inset:0,zIndex:610,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}}>
