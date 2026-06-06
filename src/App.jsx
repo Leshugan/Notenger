@@ -644,7 +644,7 @@ function PinnedBanner({ note, color, onJump }) {
 }
 
 // ─── Media browser (Telegram-style, opens from avatar tap) ───
-function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, onJumpTo }) {
+function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, onJumpTo, onRename, onClear, onDelete, onPinned, isTopTheme }) {
   const [ctxMenu,setCtxMenu]=useState(null); // {item,x,y}
   const lpRef=useRef(null);
   const startLp=(item,e)=>{ const t=e.touches?e.touches[0]:e; const x=t.clientX,y=t.clientY; lpRef.current=setTimeout(()=>{ buzz(15); setCtxMenu({item,x,y}); },450); };
@@ -680,12 +680,30 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
             <div style={{fontSize:12,color:"#B0A498"}}>{subf.notes.length} сообщений</div>
           </div>
         </div>
-        <div style={{display:"flex",padding:"0 14px 12px",flexShrink:0}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8,padding:"0 14px 12px",flexShrink:0}}>
           <button onClick={()=>{onChangeIcon&&onChangeIcon();}} title="Изменить иконку темы"
-            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"5px 10px",
+            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",
               color:"#EF6C00",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
             <span style={{display:"flex",transform:"scale(.85)"}}>{IC.edit}</span> Иконка
           </button>
+          <button onClick={()=>{onPinned&&onPinned();}}
+            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+            <span style={{display:"flex",transform:"scale(.85)"}}>{IC.pin}</span> Закреплённые
+          </button>
+          <button onClick={()=>{onRename&&onRename();}}
+            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+            <span style={{display:"flex",transform:"scale(.85)"}}>{IC.edit}</span> Переименовать
+          </button>
+          <button onClick={()=>{onClear&&onClear();}}
+            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+            <span style={{display:"flex",transform:"scale(.85)"}}>{IC.archive}</span> Очистить
+          </button>
+          {isTopTheme && (
+          <button onClick={()=>{onDelete&&onDelete();}}
+            style={{background:"#2E251C",border:"1px solid #5A2A22",borderRadius:8,padding:"6px 10px",color:"#E0705C",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+            <span style={{display:"flex",transform:"scale(.85)"}}>{IC.trash}</span> Удалить
+          </button>
+          )}
         </div>
         {/* Tab bar */}
         <div style={{display:"flex",borderBottom:"1px solid #2A2017",flexShrink:0}}>
@@ -2528,7 +2546,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v111</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v112</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3223,24 +3241,20 @@ export default function App() {
               {subf&&<div style={{fontSize:11,color:"#8A7A65"}}>{subf.notes.length} сообщений</div>}
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
-            <button tabIndex={-1}
-              onTouchStart={e=>{ e.stopPropagation(); if(recActiveRef.current){ try{ stopRec(true); }catch{} try{ window.AndroidRec&&window.AndroidRec.cancelRec&&window.AndroidRec.cancelRec(); }catch{} setRecSlide(0); } writeTouchLive.current=true; writeHoldFired.current=false; recCancelArm.current=false; writeWasRecGesture.current=false; composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ if(!writeTouchLive.current){ return; } writeHoldFired.current=true; writeWasRecGesture.current=true; startRec(null,true); },250); }}
-              onTouchMove={e=>{ const t=e.touches[0]; if(!t) return; const dx=t.clientX-writeStartX.current; if(!writeHoldFired.current){ if(Math.abs(dx)>14){ clearTimeout(writeHoldTimer.current); } return; } if(!recActiveRef.current) return; const left=Math.max(0,-dx); setRecSlide(left); if(left>80){ recCancelArm.current=true; setRecSlide(0); writeHoldFired.current=false; stopRec(true); } }}
-              onTouchEnd={e=>{ e.stopPropagation(); e.preventDefault(); writeTouchLive.current=false; clearTimeout(writeHoldTimer.current); if(writeWasRecGesture.current){ writeWasRecGesture.current=false; writeHoldFired.current=false; const tooShort=(recSecRef.current<1 && !recCancelArm.current); if(recActiveRef.current) stopRec(recCancelArm.current||tooShort); else { try{ window.AndroidRec&&window.AndroidRec.cancelRec&&window.AndroidRec.cancelRec(); }catch{} } setRecSlide(0); return; } /* настоящий тап → редактор */ composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
-              onTouchCancel={e=>{ writeTouchLive.current=false; clearTimeout(writeHoldTimer.current); if(writeWasRecGesture.current||recActiveRef.current){ writeWasRecGesture.current=false; writeHoldFired.current=false; recCancelArm.current=true; if(recActiveRef.current) stopRec(true); else { try{ window.AndroidRec&&window.AndroidRec.cancelRec&&window.AndroidRec.cancelRec(); }catch{} } setRecSlide(0); } }}
-              onClick={e=>{ if(recActiveRef.current){ return; } if(writeWasRecGesture.current){ writeWasRecGesture.current=false; return; } if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
-              title="Написать (удерживайте для записи, смахните влево — отмена)"
-              style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
+            <button
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
+              title="Написать"
+              style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
-                background:recording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
+                background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s",
-                boxShadow:recording?"0 0 0 6px rgba(224,83,60,.25)":"0 1px 5px rgba(239,108,0,.3)"}}>
-              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{recording?IC.mic:IC.sendUp}</span>
+                boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>
+              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
             <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
               style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:recording?0:1,pointerEvents:recording?"none":"auto"}}>{IC.clip}</button>
-            {/* Оверлей записи кнопки «Написать»: таймер + смахните влево для отмены */}
+            {/* Оверлей записи микрофоном в шапке: таймер + смахните влево для отмены */}
             {recording && (!composerFull) && (
               <div style={{position:"absolute",inset:0,background:"#2A2017",borderRadius:"16px 16px 0 0",
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:4,pointerEvents:"none"}}>
@@ -3253,16 +3267,12 @@ export default function App() {
             <button onClick={e=>{e.stopPropagation(); if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setChatSearch(v=>v?"":" ");}} title="Поиск в теме"
               style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{IC.search}</button>
             <div style={{position:"relative",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-              <button data-menutrigger onClick={e=>openHdrMenu("sub",e)}
-                style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.dots}</button>
-              {hdrMenu==="sub"&&<DropMenu onClose={()=>setHdrMenu(null)}
-                style={{position:"absolute",bottom:"calc(100% + 6px)",right:0}}
-                items={[
-                  {ic:IC.pin,label:"Закреплённые сообщения",fn:()=>setPinnedOpen(true)},
-                  {ic:IC.edit,label:"Переименовать",fn:()=>setModal(sid==="__top__"?"renF":"renS")},
-                  {ic:IC.archive,label:"Очистить тему",fn:()=>setDlg({msg:`Очистить все сообщения в «${subf?.name}»?`,yes:()=>clearSub()})},
-                  ...(sid==="__top__"?[{ic:IC.trash,label:"Удалить тему",danger:true,fn:()=>setDlg({msg:`Удалить «${subf?.name}»?`,yes:()=>{delF(fid);setScr("main");setSid(null);}})}]:[]),
-                ]}/>}
+              <button
+                onTouchStart={e=>{ e.stopPropagation(); recCancelArm.current=false; writeWasRecGesture.current=true; composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; recStartX.current=sx; startRec(null,false); }}
+                title="Записать голосовое"
+                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none"}}>
+                <span style={{display:"flex"}}>{IC.mic}</span>
+              </button>
             </div>
           </div>
         )}
@@ -3289,7 +3299,12 @@ export default function App() {
       <MediaBrowser open={mediaBrowser} onClose={()=>setMediaBrowser(false)} subf={subf} color={subColor}
         onOpenImage={(u)=>{ setLightbox(u); }}
         onJumpTo={(id)=>{ setMediaBrowser(false); if(id) setTimeout(()=>jumpTo(id),120); }}
-        onChangeIcon={()=>{ setMediaBrowser(false); setModal(sid==="__top__"?"renF":"renS"); }}/>
+        onChangeIcon={()=>{ setMediaBrowser(false); setModal(sid==="__top__"?"renF":"renS"); }}
+        isTopTheme={sid==="__top__"}
+        onPinned={()=>{ setMediaBrowser(false); setPinnedOpen(true); }}
+        onRename={()=>{ setMediaBrowser(false); setModal(sid==="__top__"?"renF":"renS"); }}
+        onClear={()=>{ setMediaBrowser(false); setDlg({msg:`Очистить все сообщения в «${subf?.name}»?`,yes:()=>clearSub()}); }}
+        onDelete={()=>{ setMediaBrowser(false); setDlg({msg:`Удалить «${subf?.name}»?`,yes:()=>{delF(fid);setScr("main");setSid(null);}}); }}/>
       <Sheet open={pinnedOpen} onClose={()=>setPinnedOpen(false)} title="Закреплённые сообщения">
         {(()=>{
           const pins=(subf?.notes||[]).filter(n=>n.pinned);
