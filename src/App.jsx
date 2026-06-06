@@ -1098,6 +1098,7 @@ export default function App() {
   const micStream = useRef(null);
   const recSecRef = useRef(0);
   const nativeAudio = useRef(false);
+  const recActiveRef = useRef(false);
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   function sendPendingVoice(){
     const pv=pendingVoice; if(!pv) return;
@@ -1113,6 +1114,7 @@ export default function App() {
     recCancel.current=false;
     if(e&&e.touches&&e.touches[0]){ recStartY.current=e.touches[0].clientY; recStartX.current=e.touches[0].clientX; } setRecSlide(0); recCancelArm.current=false;
     if(recording) return; // уже идёт
+    recActiveRef.current=true;
     // НАТИВНАЯ запись (Android, минуя WebView/getUserMedia)
     if(window.AndroidRec && typeof window.AndroidRec.startRec==="function"){
       // показываем UI записи МГНОВЕННО, не дожидаясь нативного prepare()
@@ -1200,6 +1202,7 @@ export default function App() {
     buzz(12);
   }
   function stopRec(cancel){
+    recActiveRef.current=false;
     recCancel.current=!!cancel;
     // Нативная запись
     if(nativeAudio.current){
@@ -1814,7 +1817,7 @@ export default function App() {
     }catch(e){}
   }
   function handleHardwareBack(){
-    if(recording){ stopRec(true); setRecSlide(false?0:0); return true; }
+    if(recActiveRef.current){ stopRec(true); setRecSlide(0); return true; }
     if(pendingVoice){ discardPendingVoice(); return true; }
     if(imgCompressPopup){ setImgCompressPopup(false); return true; }
     if(lightbox){ closeLightbox(); return true; }
@@ -2517,7 +2520,7 @@ export default function App() {
           transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v102</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v103</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3214,9 +3217,9 @@ export default function App() {
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button tabIndex={-1}
               onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; const sx=e.touches[0].clientX, sy=e.touches[0].clientY; writeStartX.current=sx; recStartX.current=sx; recStartY.current=sy; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); },280); }}
-              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!recording)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ if(recording) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
-              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(recording) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; }}
+              onTouchMove={e=>{ if(!writeHoldFired.current){ const t=e.touches[0]; if(writeStartX.current!=null && Math.abs(t.clientX-writeStartX.current)>10){ clearTimeout(writeHoldTimer.current); } return; } if(!recActiveRef.current)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>90){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
+              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); writeHoldFired.current=false; }}
               onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
