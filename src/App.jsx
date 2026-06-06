@@ -1100,6 +1100,7 @@ export default function App() {
   const nativeAudio = useRef(false);
   const recActiveRef = useRef(false);
   const writeRecActive = useRef(false);
+  const writeTouchLive = useRef(false);
   const [dbg, setDbg] = useState("");
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   function sendPendingVoice(){
@@ -2028,7 +2029,7 @@ export default function App() {
     setSelectMode(null);
     composerOrigin.current={fid,sid};
     if(noInputAnim){ setComposerFull(true); setComposerPeek(false); }
-    else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },300); setTimeout(()=>setPlanePhase('idle'),360); }
+    else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); }
   }
   function cancelEdit() {
     setEditId(null); setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
@@ -2456,7 +2457,7 @@ export default function App() {
       className={booting?"booting":undefined}
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
-        "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s",
+        "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s","--input-dur":spd("input",0.38)+"s",
         color:"#F2EAE0",overflow:"hidden",position:"relative"}}
       data-ver-badge
       onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);}}
@@ -2519,11 +2520,10 @@ export default function App() {
         .planeGhost{position:fixed;width:44px;height:44px;border-radius:50%;background:#EF6C00;
           display:flex;align-items:center;justify-content:center;color:#fff;z-index:95;pointer-events:none;
           box-shadow:0 1px 5px rgba(239,108,0,.3);
-          transition:left .38s cubic-bezier(.45,0,.25,1),bottom .38s cubic-bezier(.45,0,.25,1),transform .38s cubic-bezier(.45,0,.25,1);}
+          transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v106</div>
-      {dbg&&<div style={{position:"fixed",top:14,left:2,right:2,zIndex:9999,fontSize:11,color:"#9FCF8F",background:"rgba(0,0,0,.7)",padding:"2px 6px",pointerEvents:"none",fontFamily:"monospace",borderRadius:4}}>DBG: {dbg}</div>}
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v107</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3219,18 +3219,18 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button tabIndex={-1}
-              onTouchStart={e=>{ e.stopPropagation(); writeHoldFired.current=false; recCancelArm.current=false; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; setDbg("start x="+Math.round(sx)); clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ writeHoldFired.current=true; startRec(); setDbg("REC active="+recActiveRef.current); },250); }}
-              onTouchMove={e=>{ const t=e.touches[0]; if(!t) return; const dx=t.clientX-writeStartX.current; if(!writeHoldFired.current){ if(Math.abs(dx)>14){ clearTimeout(writeHoldTimer.current); setDbg("move pre-hold dx="+Math.round(dx)); } return; } if(!recActiveRef.current){ setDbg("move but recActive=FALSE"); return; } const left=Math.max(0,-dx); setRecSlide(left); setDbg("move dx="+Math.round(dx)+" left="+Math.round(left)); if(left>80){ recCancelArm.current=true; stopRec(true); setRecSlide(0); writeHoldFired.current=false; setDbg("CANCELLED swipe"); } }}
-              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ writeHoldFired.current=false; setDbg("END recActive="+recActiveRef.current+" cancel="+recCancelArm.current); if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); return; } setDbg("END tap->editor"); composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
-              onTouchCancel={e=>{ clearTimeout(writeHoldTimer.current); setDbg("CANCEL event recActive="+recActiveRef.current); if(writeHoldFired.current){ writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); } }}
-              onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 300); setTimeout(()=>setPlanePhase('idle'),360); } }}
+              onTouchStart={e=>{ e.stopPropagation(); writeTouchLive.current=true; writeHoldFired.current=false; recCancelArm.current=false; composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; writeStartX.current=sx; recStartX.current=sx; clearTimeout(writeHoldTimer.current); writeHoldTimer.current=setTimeout(()=>{ if(!writeTouchLive.current) return; writeHoldFired.current=true; startRec(); },250); }}
+              onTouchMove={e=>{ const t=e.touches[0]; if(!t) return; const dx=t.clientX-writeStartX.current; if(!writeHoldFired.current){ if(Math.abs(dx)>14){ clearTimeout(writeHoldTimer.current); } return; } if(!recActiveRef.current) return; const left=Math.max(0,-dx); setRecSlide(left); if(left>80){ recCancelArm.current=true; setRecSlide(0); writeHoldFired.current=false; writeTouchLive.current=false; stopRec(true); } }}
+              onTouchEnd={e=>{ e.stopPropagation(); writeTouchLive.current=false; clearTimeout(writeHoldTimer.current); if(writeHoldFired.current){ writeHoldFired.current=false; if(recActiveRef.current) stopRec(recCancelArm.current); setRecSlide(0); return; } if(recActiveRef.current){ stopRec(true); setRecSlide(0); return; } composerWantFocus.current=true; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
+              onTouchCancel={e=>{ writeTouchLive.current=false; clearTimeout(writeHoldTimer.current); if(writeHoldFired.current||recActiveRef.current){ writeHoldFired.current=false; recCancelArm.current=true; if(recActiveRef.current) stopRec(true); setRecSlide(0); } }}
+              onClick={e=>{ if('ontouchstart' in window) return; closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, Math.max(120,_id*0.8)); setTimeout(()=>setPlanePhase('idle'),Math.max(160,_id)); } }}
               title="Написать (удерживайте для записи, смахните влево — отмена)"
               style={{position:"absolute",left:"50%",bottom:6,touchAction:"none",transform:"translateX(-50%)"+(recording?" scale(1.12)":""),
                 width:44,height:44,borderRadius:"50%",opacity:planePhase==='idle'?1:0,
                 background:recording?"#E0533C":"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:5,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s",
                 boxShadow:recording?"0 0 0 6px rgba(224,83,60,.25)":"0 1px 5px rgba(239,108,0,.3)"}}>
-              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform .3s cubic-bezier(.4,0,.2,1)"}}>{recording?IC.mic:IC.sendUp}</span>
+              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:planePhase==='out'?-90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{recording?IC.mic:IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
             <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
