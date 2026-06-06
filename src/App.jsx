@@ -2547,7 +2547,7 @@ export default function App() {
           transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v113</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v114</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3269,7 +3269,11 @@ export default function App() {
               style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{IC.search}</button>
             <div style={{position:"relative",flexShrink:0}} onClick={e=>e.stopPropagation()}>
               <button
-                onTouchStart={e=>{ e.stopPropagation(); recCancelArm.current=false; writeWasRecGesture.current=true; setHeaderRec(true); composerOrigin.current={fid,sid}; const sx=e.touches[0].clientX; recStartX.current=sx; startRec(null,false); }}
+                onPointerDown={e=>{ e.preventDefault(); }}
+                onTouchStart={e=>{ e.preventDefault(); e.stopPropagation(); composerOrigin.current={fid,sid}; startRec(e); }}
+                onTouchMove={e=>{ if(!recording)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
+                onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); if(recording) stopRec(recCancelArm.current); setRecSlide(0); }}
+                onMouseDown={e=>{ e.preventDefault(); composerOrigin.current={fid,sid}; startRec(e); }}
                 title="Записать голосовое"
                 style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none",touchAction:"none"}}>
                 <span style={{display:"flex"}}>{IC.mic}</span>
@@ -3342,15 +3346,7 @@ export default function App() {
       </Sheet>
 
       {/* Просмотр изображения на весь экран */}
-      {/* Перехватчик жеста записи кнопкой «Написать» — ловит движение/отпускание поверх всего */}
-      {headerRec && recording && !composerFull && (
-        <div
-          onTouchMove={e=>{ const t=e.touches[0]; if(!t||!recActiveRef.current) return; const dx=t.clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>90){ recCancelArm.current=true; setRecSlide(0); writeWasRecGesture.current=false; setHeaderRec(false); stopRec(true); } }}
-          onTouchEnd={e=>{ e.preventDefault(); writeWasRecGesture.current=false; setHeaderRec(false); if(!recActiveRef.current){ return; } const tooShort=(recSecRef.current<1 && !recCancelArm.current); stopRec(recCancelArm.current||tooShort); setRecSlide(0); }}
-          onTouchCancel={e=>{ if(recActiveRef.current) stopRec(true); writeWasRecGesture.current=false; setHeaderRec(false); setRecSlide(0); }}
-          style={{position:"fixed",inset:0,zIndex:600,background:"transparent",touchAction:"none"}}/>
-      )}
-      {/* Глобальное подтверждение голосового (для записи кнопкой «Написать») */}
+      {/* Глобальное подтверждение голосового (для записи кнопкой микрофона в шапке) */}
       {pendingVoice && !composerFull && (
         <div onClick={discardPendingVoice} style={{position:"fixed",inset:0,zIndex:610,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",borderTop:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .2s ease"}}>
