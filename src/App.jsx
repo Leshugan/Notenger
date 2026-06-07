@@ -1170,6 +1170,7 @@ export default function App() {
   const [msgPop,    setMsgPop]   = useState(null); // {id,x,y} popup копировать/редактировать при одиночном тапе
   const [imgSel,    setImgSel]   = useState([]); // выбранные отдельные картинки: "noteId|attId"
   function toggleImgSel(noteId, attId){ const key=noteId+"|"+attId; setImgSel(s=>s.includes(key)?s.filter(k=>k!==key):[...s,key]); }
+  const tileLp = useRef(null); const tileMoved = useRef(false);
   // link popup
   const [linkPopup, setLinkPopup]= useState(null);
   // clipboard for move/copy
@@ -2449,10 +2450,12 @@ export default function App() {
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
     if(lpScrolled.current){ lastTap.current={id:null,t:0}; lpScrolled.current=false; return; }
     if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; setTimeout(()=>setTextArmed(true),50); return; } // удержание уже выделило
-    // Чистый одиночный тап (не скролл, не удержание, вне выделения) → popup копировать/редактировать
+    // Чистый одиночный тап (не скролл, не свайп, не удержание, вне выделения) → popup копировать/редактировать
     if(selectMode || multiSelect.length>0) return;
     const t = e.changedTouches?e.changedTouches[0]:e;
     const x = (t&&t.clientX)||0, y=(t&&t.clientY)||0;
+    // если палец сместился от точки старта — это свайп/скролл, popup не показываем
+    if(lpStartXY.current){ if(Math.abs(x-lpStartXY.current.x)>8 || Math.abs(y-lpStartXY.current.y)>8){ return; } }
     setMsgPop({ id:n.id, x, y });
   }
 
@@ -2678,7 +2681,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v155</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v156</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3141,17 +3144,24 @@ export default function App() {
                     const atts=n.attachments||[];
                     const imgs=atts.filter(a=>a.dataUrl&&a.type?.startsWith("image/"));
                     const others=atts.filter(a=>!(a.dataUrl&&a.type?.startsWith("image/")));
-                    const inSel=multiActive||selActive;
+                    const noteImgSelActive = imgSel.some(k=>k.startsWith(n.id+"|"));
+                    const inSel=multiActive||selActive||noteImgSelActive;
                     return (<>
                       {imgs.length>=2 ? (
                         <div style={{display:"grid",gridTemplateColumns:imgs.length===2?"repeat(2,1fr)":"repeat(3,1fr)",gap:3,marginTop:0,width:imgs.length===2?180:210,maxWidth:"100%"}}>
                           {imgs.map(a=>{
-                            const picked=imgSel.includes(n.id+"|"+a.id);
+                            const key=n.id+"|"+a.id;
+                            const noteHasImgSel = imgSel.some(k=>k.startsWith(n.id+"|"));
+                            const picked = noteHasImgSel ? imgSel.includes(key) : inSel; // если по картинкам не выбирали — выделены все (как выделено сообщение)
                             return (
                             <div key={a.id} data-imgsrc={inSel?undefined:a.dataUrl}
-                              onClick={inSel?(e=>{ e.stopPropagation(); toggleImgSel(n.id,a.id); }):undefined}
+                              onClick={inSel?(e=>{ e.stopPropagation(); if(noteHasImgSel) toggleImgSel(n.id,a.id); }):undefined}
+                              onTouchStart={e=>{ e.stopPropagation(); tileMoved.current=false; const tt=e.touches[0]; const sx=tt.clientX,sy=tt.clientY; clearTimeout(tileLp.current);
+                                tileLp.current=setTimeout(()=>{ if(tileMoved.current)return; buzz(12); setSelectMode(null); setMultiSelect([]); setImgSel([key]); },380); }}
+                              onTouchMove={e=>{ tileMoved.current=true; clearTimeout(tileLp.current); }}
+                              onTouchEnd={e=>{ e.stopPropagation(); clearTimeout(tileLp.current); }}
                               style={{position:"relative",aspectRatio:"1 / 1",borderRadius:7,overflow:"hidden",cursor:"pointer",
-                                outline:picked?"2px solid #EF6C00":"none",outlineOffset:"-2px"}}>
+                                outline:(inSel&&picked)?"2px solid #EF6C00":"none",outlineOffset:"-2px"}}>
                               <img src={a.dataUrl} alt={a.name} draggable={false} style={{width:"100%",height:"100%",objectFit:"cover",display:"block",pointerEvents:"none"}}/>
                               {inSel&&<div style={{position:"absolute",top:4,right:4,width:18,height:18,borderRadius:"50%",
                                 background:picked?"#EF6C00":"rgba(0,0,0,.45)",border:"1.5px solid #fff",display:"flex",alignItems:"center",justifyContent:"center"}}>
