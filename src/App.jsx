@@ -2676,7 +2676,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v157</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v158</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3117,6 +3117,8 @@ export default function App() {
                       return;
                     }
                     if(imgSel.length>0){ return; }
+                    // popup только для текстовых сообщений (не для аудио/изображений)
+                    if(!(n.text && n.text.trim())){ return; }
                     // одиночный тап вне выделения → popup копировать/редактировать в точке клика
                     e.stopPropagation();
                     setMsgPop({ id:n.id, x:e.clientX||0, y:e.clientY||0 });
