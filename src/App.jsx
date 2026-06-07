@@ -1167,6 +1167,9 @@ export default function App() {
   const [asSettings,setAsSettings]= useState(loadAS);
   // context menu on note (long-press)
   const [noteCtx,   setNoteCtx]  = useState(null);
+  const [msgPop,    setMsgPop]   = useState(null); // {id,x,y} popup копировать/редактировать при одиночном тапе
+  const [imgSel,    setImgSel]   = useState([]); // выбранные отдельные картинки: "noteId|attId"
+  function toggleImgSel(noteId, attId){ const key=noteId+"|"+attId; setImgSel(s=>s.includes(key)?s.filter(k=>k!==key):[...s,key]); }
   // link popup
   const [linkPopup, setLinkPopup]= useState(null);
   // clipboard for move/copy
@@ -2187,14 +2190,16 @@ export default function App() {
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
+    const editedId=editId;
     updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,time:tnow(),ts:tstamp()}:n)));
     cancelEdit();
-    setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),50);
+    setTimeout(()=>{ const el=bubbleEls.current[editedId]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); },50);
   }
 
   // Отправка из полноэкранного редактора: пишем в origin и возвращаемся туда
   function composerCommit(){
     const o=composerOrigin.current||{fid,sid};
+    const wasEdit = !!editId; const editedId = editId;
     if(editId){
       if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,time:tnow(),ts:tstamp()}:n)); }
     } else {
@@ -2208,7 +2213,11 @@ export default function App() {
     setComposerFull(false); setComposerPeek(false);
     setFid(o.fid); setSid(o.sid); setScr("chat");
     if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
-    setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),80);
+    if(wasEdit){
+      setTimeout(()=>{ const el=bubbleEls.current[editedId]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); },80);
+    } else {
+      setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),80);
+    }
   }
   // ── Notes ──
   function send() {
@@ -2277,7 +2286,7 @@ export default function App() {
     else if(next.length===0){ setMultiSelect([]); setSelectMode(null); } // -> выход
     else { setMultiSelect(next); }
   }
-  function clearMulti() { if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setMultiSelect([]); setTextArmed(false); }
+  function clearMulti() { if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setMultiSelect([]); setTextArmed(false); setImgSel([]); }
   function deleteMulti() {
     const ids=new Set(multiSelect);
     updNotes(_n=>(_n.filter(n=>!ids.has(n.id))));
@@ -2440,6 +2449,11 @@ export default function App() {
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
     if(lpScrolled.current){ lastTap.current={id:null,t:0}; lpScrolled.current=false; return; }
     if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; setTimeout(()=>setTextArmed(true),50); return; } // удержание уже выделило
+    // Чистый одиночный тап (не скролл, не удержание, вне выделения) → popup копировать/редактировать
+    if(selectMode || multiSelect.length>0) return;
+    const t = e.changedTouches?e.changedTouches[0]:e;
+    const x = (t&&t.clientX)||0, y=(t&&t.clientY)||0;
+    setMsgPop({ id:n.id, x, y });
   }
 
   // ── Links ──
@@ -2664,7 +2678,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v154</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v155</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2723,6 +2737,28 @@ export default function App() {
       {undo&&<UndoToast onUndo={undoDel} onDone={commitDel}/>}
 
       {linkPopup&&<LinkPopup href={linkPopup.href} x={linkPopup.x} y={linkPopup.y} onClose={()=>setLinkPopup(null)}/>}
+
+      {msgPop&&(()=>{
+        const note=(subf?.notes||[]).find(x=>x.id===msgPop.id) || (folder?.isTheme?(folder.notes||[]):[]).find(x=>x.id===msgPop.id);
+        if(!note) return null;
+        const W=120, H=44; const pad=8;
+        let left=Math.min(Math.max(pad, msgPop.x - W/2), window.innerWidth - W - pad);
+        let top=msgPop.y - H - 10; if(top<pad) top=msgPop.y + 14;
+        return (
+        <div onClick={()=>setMsgPop(null)} onTouchStart={()=>setMsgPop(null)} style={{position:"fixed",inset:0,zIndex:480}}>
+          <div onClick={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()}
+            style={{position:"absolute",left,top,display:"flex",gap:4,background:"#33281C",border:"1px solid #4A3A2A",
+              borderRadius:12,padding:5,boxShadow:"0 8px 28px rgba(0,0,0,.55)",animation:"fS .12s ease"}}>
+            {note.text&&<button onClick={()=>{ copyText(note); setMsgPop(null); }} title="Копировать"
+              style={{width:44,height:34,borderRadius:8,background:"#2E251C",border:"none",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <span style={{display:"flex",transform:"scale(.85)"}}>{IC.copy||IC.text}</span></button>}
+            <button onClick={()=>{ setMsgPop(null); startEdit(note); }} title="Редактировать"
+              style={{width:44,height:34,borderRadius:8,background:"#2E251C",border:"none",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <span style={{display:"flex",transform:"scale(.85)"}}>{IC.edit}</span></button>
+          </div>
+        </div>
+        );
+      })()}
 
       {/* ══ HEADER — hidden in typing mode ══ */}
       {false&&!(isTyping&&note.length>0)&&!selectMode&&multiSelect.length===0&&(
@@ -3101,7 +3137,33 @@ export default function App() {
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
                   )}
-                  {n.attachments?.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time} selecting={multiActive||selActive}/>)}
+                  {(()=>{
+                    const atts=n.attachments||[];
+                    const imgs=atts.filter(a=>a.dataUrl&&a.type?.startsWith("image/"));
+                    const others=atts.filter(a=>!(a.dataUrl&&a.type?.startsWith("image/")));
+                    const inSel=multiActive||selActive;
+                    return (<>
+                      {imgs.length>=2 ? (
+                        <div style={{display:"grid",gridTemplateColumns:imgs.length===2?"repeat(2,1fr)":"repeat(3,1fr)",gap:3,marginTop:0,width:imgs.length===2?180:210,maxWidth:"100%"}}>
+                          {imgs.map(a=>{
+                            const picked=imgSel.includes(n.id+"|"+a.id);
+                            return (
+                            <div key={a.id} data-imgsrc={inSel?undefined:a.dataUrl}
+                              onClick={inSel?(e=>{ e.stopPropagation(); toggleImgSel(n.id,a.id); }):undefined}
+                              style={{position:"relative",aspectRatio:"1 / 1",borderRadius:7,overflow:"hidden",cursor:"pointer",
+                                outline:picked?"2px solid #EF6C00":"none",outlineOffset:"-2px"}}>
+                              <img src={a.dataUrl} alt={a.name} draggable={false} style={{width:"100%",height:"100%",objectFit:"cover",display:"block",pointerEvents:"none"}}/>
+                              {inSel&&<div style={{position:"absolute",top:4,right:4,width:18,height:18,borderRadius:"50%",
+                                background:picked?"#EF6C00":"rgba(0,0,0,.45)",border:"1.5px solid #fff",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                {picked&&<span style={{display:"flex",transform:"scale(.55)",color:"#fff"}}>{IC.check}</span>}</div>}
+                            </div>
+                            );
+                          })}
+                        </div>
+                      ) : imgs.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time} selecting={inSel}/>)}
+                      {others.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time} selecting={inSel}/>)}
+                    </>);
+                  })()}
                   {!(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))&&(
                   <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:1}}>
                     <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
@@ -3326,7 +3388,23 @@ export default function App() {
         </div>
         );
       })()}
-        {/* ── НИЖНЯЯ ШАПКА ЧАТА (единый блок: шапка ИЛИ поиск) ── */}
+      {scr==="chat" && imgSel.length>0 && (
+        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+          display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+          <button onClick={()=>setImgSel([])} title="Отмена"
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.close}</button>
+          <span style={{flex:1,fontSize:14,fontWeight:600}}>{imgSel.length} фото</span>
+          <button onClick={()=>{
+              const sel=new Set(imgSel);
+              updNotes(_n=>_n.map(n=>{
+                const keep=(n.attachments||[]).filter(a=>!sel.has(n.id+"|"+a.id));
+                return {...n, attachments:keep};
+              }).filter(n=>(n.text&&n.text.trim())|| (n.attachments&&n.attachments.length) ));
+              setImgSel([]); setSelectMode(null); setMultiSelect([]);
+            }} title="Удалить выбранные фото"
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#E05252",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.trash}</button>
+        </div>
+      )}
         {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
           <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
@@ -3360,7 +3438,7 @@ export default function App() {
               <span style={{display:"flex",transform:"scale(.9)"}}>{IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
-            <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
+            <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setAttSh(true);}} title="Вложение"
               style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:recording?0:1,pointerEvents:recording?"none":"auto"}}>{IC.clip}</button>
             {/* Оверлей записи микрофоном в шапке: таймер + смахните влево для отмены */}
             {recording && (!composerFull) && (
