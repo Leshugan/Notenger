@@ -242,7 +242,7 @@ const strip = t=>(t||"").replace(/\[\/?(b|i|s|spoiler|code|q)\]/g,"").replace(/\
 const tnow  = ()=>new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 const MES = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
 function tstamp(d){ return (d?new Date(d):new Date()).toISOString(); } // храним ISO
-// Формат метки: wordMonth=false -> "10:24 01.12.1997"; true -> "10:24 01.Дек.1997"
+// Формат метки времени: "10:24, 01.12.97"
 function fmtStamp(iso){
   let d; try{ d=new Date(iso); if(isNaN(d)) return iso; }catch{ return iso; }
   const p=n=>String(n).padStart(2,"0");
@@ -1056,43 +1056,7 @@ export default function App() {
   const [editId,    setEditId]    = useState(null); // note being edited
   const [taHeight,  setTaHeight]  = useState(null); // explicit textarea height (px) or null=auto
   const [recording, setRecording] = useState(false);
-  // Независимый рекордер кнопки «Написать» (на экране сообщений), не связан с полем ввода
-  const [hdrRecording, setHdrRecording] = useState(false);
-  const [hdrRecSec, setHdrRecSec] = useState(0);
-  const [hdrRecSlide, setHdrRecSlide] = useState(0);
-  const hdrRecSecRef = useRef(0);
-  const hdrRecTimer = useRef(null);
-  const hdrRecStartX = useRef(0);
-  const hdrRecCancel = useRef(false);
-  const hdrRecOrigin = useRef(null);
-  const hdrGestureDone = useRef(false);
-  const hdrRecActive = useRef(false);
-  function hdrStartRec(){
-    if(hdrRecActive.current) return;
-    if(!(window.AndroidRec && typeof window.AndroidRec.startRec==="function")){ tst("Запись доступна в приложении"); return; }
-    hdrRecOrigin.current={fid,sid};
-    hdrRecCancel.current=false; setHdrRecSlide(0);
-    hdrRecActive.current=true;
-    setHdrRecording(true); setHdrRecSec(0); hdrRecSecRef.current=0;
-    buzz(12);
-    hdrRecTimer.current=setInterval(()=>{ hdrRecSecRef.current+=1; setHdrRecSec(hdrRecSecRef.current); },1000);
-    let ok=false; try{ ok=window.AndroidRec.startRec(); }catch{ ok=false; }
-    if(!ok){ hdrRecActive.current=false; setHdrRecording(false); if(hdrRecTimer.current){clearInterval(hdrRecTimer.current);hdrRecTimer.current=null;} setHdrRecSec(0); hdrRecSecRef.current=0; tst("Не удалось включить микрофон"); }
-  }
-  function hdrStopRec(cancel){
-    if(!hdrRecActive.current) return;
-    hdrRecActive.current=false;
-    if(hdrRecTimer.current){ clearInterval(hdrRecTimer.current); hdrRecTimer.current=null; }
-    const secs=hdrRecSecRef.current;
-    setHdrRecording(false); setHdrRecSec(0); hdrRecSecRef.current=0; setHdrRecSlide(0);
-    if(cancel){ try{ window.AndroidRec.cancelRec(); }catch{} return; }
-    let dataUrl=null; try{ dataUrl=window.AndroidRec.stopRec(); }catch{}
-    if(!dataUrl){ tst("Запись не получилась"); return; }
-    if(secs<1){ return; }
-    const att={type:"audio/mp4",name:`Голосовое ${secs}s`,dataUrl,size:Math.round((dataUrl.length*3)/4),voice:true,dur:secs};
-    setPendingVoice({att, origin:hdrRecOrigin.current||{fid,sid}});
-  }
-  const [wordMonth, setWordMonth] = useState(false); // переключатель формата месяца в дате
+  // Независимый рекордер кнопки «Написать» — удалён (запись теперь через общий микрофон)
   const mediaRec = useRef(null);
   const recChunks = useRef([]);
   const [undo,      setUndo]      = useState(null);
@@ -1140,11 +1104,9 @@ export default function App() {
   const recSecRef = useRef(0);
   const nativeAudio = useRef(false);
   const recActiveRef = useRef(false);
-  const writeRecActive = useRef(false);
   const writeTouchLive = useRef(false);
   const writeWasRecGesture = useRef(false);
   const [headerRec, setHeaderRec] = useState(false);
-  const [dbg, setDbg] = useState("");
   const [pendingVoice, setPendingVoice] = useState(null); // {att,origin} ожидает подтверждения отправки
   function sendPendingVoice(){
     const pv=pendingVoice; if(!pv) return;
@@ -1342,8 +1304,6 @@ export default function App() {
     });
   }
   // Множители скорости анимаций (0.3 = быстрее/короче … 1 = базовая длительность). Храним как множитель длительности.
-  const [animSpeed, setAnimSpeed] = useState(()=>{ try{ return JSON.parse(localStorage.getItem("napp_animSpeed")||"{}"); }catch{ return {}; } });
-  function setSpeed(key,val){ setAnimSpeed(s=>{ const ns={...s,[key]:val}; try{localStorage.setItem("napp_animSpeed",JSON.stringify(ns));}catch{} return ns; }); setNavTick(t=>t+1); }
   const spd=(key,base)=>base;
   function toggleScrAnim(){ setNoScrAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noScrAnim",nv?"1":"0");}catch{} return nv; }); }
   const dlaunchApplied = useRef(false);
@@ -1358,6 +1318,9 @@ export default function App() {
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
   const [uiSh, setUiSh] = useState(false); // меню «Интерфейс»
+  const [miscSh, setMiscSh] = useState(false); // меню «Прочее»
+  const [hideVersion, setHideVersion] = useState(()=>{ try{ return localStorage.getItem("napp_hideVersion")==="1"; }catch{ return false; } });
+  function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
   function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
   const ACC = iconAccent==="choco" ? "#3A2E24" : "#EF6C00";
@@ -1432,7 +1395,7 @@ export default function App() {
   const DRIVE_FILE_NAME="notenger_backup.json";
   // Модули, которые можно синкать/сохранять выборочно
   const SYNC_MODULES=[
-    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent"]},
+    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion"]},
     {key:"notes",   label:"Заметки", keys:[SK]},
     {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
   ];
@@ -1902,6 +1865,7 @@ export default function App() {
     if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); return true; }
     if(animSh){ setAnimSh(false); return true; }
     if(uiSh){ setUiSh(false); return true; }
+    if(miscSh){ setMiscSh(false); return true; }
     if(dlg){ setDlg(null); return true; }
     if(modal){ setModal(null); return true; }
     if(pinnedOpen){ setPinnedOpen(false); return true; }
@@ -2590,7 +2554,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v133</div>
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v138</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2673,6 +2637,7 @@ export default function App() {
                   {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
                   {ic:IC.sparkle,label:"Интерфейс",fn:()=>setUiSh(true)},
                 {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
+                {ic:IC.dots,label:"Прочее",fn:()=>setMiscSh(true)},
                 ]}/>}
             </div>
           )}
@@ -2831,6 +2796,7 @@ export default function App() {
                 {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
                 {ic:IC.sparkle,label:"Интерфейс",fn:()=>setUiSh(true)},
                 {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
+                {ic:IC.dots,label:"Прочее",fn:()=>setMiscSh(true)},
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
@@ -3618,6 +3584,15 @@ export default function App() {
           </div>
         </div>
       )}
+            <Sheet open={miscSh} onClose={()=>setMiscSh(false)} title="Прочее">
+              <div onClick={toggleHideVersion} style={{background:"#2A2017",borderRadius:12,border:"1px solid #4A3A2A",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Скрыть номер версии</span>
+                <div style={{width:46,height:26,borderRadius:13,background:hideVersion?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
+                  <div style={{position:"absolute",top:2,left:hideVersion?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                </div>
+              </div>
+              <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Скрывает метку «beta v…» в углу экрана.</div>
+            </Sheet>
             <Sheet open={uiSh} onClose={()=>setUiSh(false)} title="Интерфейс">
         <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.sparkle}</span>
