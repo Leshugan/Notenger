@@ -1963,6 +1963,8 @@ export default function App() {
   }
   function handleHardwareBack(){
     if(recActiveRef.current){ stopRec(true); setRecSlide(0); return true; }
+    if(msgPop){ setMsgPop(null); return true; }
+    if(imgSel.length){ setImgSel([]); return true; }
     if(pendingVoice){ discardPendingVoice(); return true; }
     if(imgCompressPopup){ setImgCompressPopup(false); return true; }
     if(lightbox){ closeLightbox(); return true; }
@@ -2450,13 +2452,6 @@ export default function App() {
     if(editId){ lastTap.current={id:null,t:0}; lpFired.current=false; return; }
     if(lpScrolled.current){ lastTap.current={id:null,t:0}; lpScrolled.current=false; return; }
     if(lpFired.current){ lpFired.current=false; lastTap.current={id:null,t:0}; setTimeout(()=>setTextArmed(true),50); return; } // удержание уже выделило
-    // Чистый одиночный тап (не скролл, не свайп, не удержание, вне выделения) → popup копировать/редактировать
-    if(selectMode || multiSelect.length>0) return;
-    const t = e.changedTouches?e.changedTouches[0]:e;
-    const x = (t&&t.clientX)||0, y=(t&&t.clientY)||0;
-    // если палец сместился от точки старта — это свайп/скролл, popup не показываем
-    if(lpStartXY.current){ if(Math.abs(x-lpStartXY.current.x)>8 || Math.abs(y-lpStartXY.current.y)>8){ return; } }
-    setMsgPop({ id:n.id, x, y });
   }
 
   // ── Links ──
@@ -2681,7 +2676,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v156</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v157</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3082,7 +3077,7 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={updateActiveNote} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
+        <div ref={scrollRef} onScroll={()=>{ updateActiveNote(); if(msgPop) setMsgPop(null); }} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s",opacity:(booting&&navTick===0)?0:1}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -3119,7 +3114,12 @@ export default function App() {
                       e.stopPropagation();
                       if(textArmed){ setTextArmed(false); try{window.getSelection&&window.getSelection().removeAllRanges();}catch{} }
                       setSelectMode(null);
+                      return;
                     }
+                    if(imgSel.length>0){ return; }
+                    // одиночный тап вне выделения → popup копировать/редактировать в точке клика
+                    e.stopPropagation();
+                    setMsgPop({ id:n.id, x:e.clientX||0, y:e.clientY||0 });
                   }}
                   onTouchStart={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ setTextArmed(true); buzz(10); },350); } else bubbleLpStart(n,e); })}
                   onTouchMove={multiActive?undefined:(e=>{ bubbleLpMove(e); })}
