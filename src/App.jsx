@@ -349,12 +349,16 @@ async function aesDecrypt(b64, pwd) {
 function Av({ icon, img, color, size=44, onClick, acc }) {
   const isDefaultOrange = (color==="#EF6C00" || !color);
   const choco = acc==="choco" && isDefaultOrange;
-  const bg = choco ? "#3A2E24" : (color||"#EF6C00");
-  const iconColor = choco ? "#EF6C00" : "#fff";
+  const neon = acc==="neon" && isDefaultOrange;
+  const choconeon = acc==="choconeon" && isDefaultOrange;
+  const bg = choco ? "#3A2E24" : neon ? "#2E4A6B" : choconeon ? "#3A2E24" : (color||"#EF6C00");
+  const iconColor = choco ? "#EF6C00" : neon ? "#3A2E24" : choconeon ? "#EF6C00" : "#fff";
+  const softBorder = choco ? "1px solid #4A3A2A" : neon ? "1px solid #3E5C82" : choconeon ? "1px solid #4A3A2A" : "none";
+  const glow = (neon||choconeon) ? "0 0 14px rgba(239,108,0,.75), 0 0 5px rgba(239,108,0,.6)" : null;
   return <div onClick={onClick} style={{width:size,height:size,borderRadius:"50%",background:bg,display:"flex",
     alignItems:"center",justifyContent:"center",fontSize:size*.4,flexShrink:0,overflow:"hidden",
-    border:choco?"1px solid #4A3A2A":"none",
-    boxShadow:choco?"none":`0 2px 8px ${(color||"#EF6C00")}55`,cursor:onClick?"pointer":"default"}}>
+    border:softBorder,
+    boxShadow:glow || (choco?"none":`0 2px 8px ${bg}55`),cursor:onClick?"pointer":"default"}}>
     {img?<img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(IC[icon]?<span style={{display:"flex",color:iconColor}}>{IC[icon]}</span>:icon)}
   </div>;
 }
@@ -539,7 +543,7 @@ function LinkPopup({ href, x, y, onClose }) {
 }
 
 // ─── Preview modal ────────────────────────────────────────────
-function PlaneGhost({ phase, acc, accFg }){
+function PlaneGhost({ phase, acc, accFg, glow, anchor, accBorder }){
   // 'in': центр(самолёт носом вверх 0) летит вправо, ВИДИМЫЙ поворот -> 90, и только в конце -> микрофон
   // 'out': справа(самолёт носом влево -90) летит в центр, доворот -> 0 (носом вверх)
   const [go,setGo]=useState(false);
@@ -550,19 +554,25 @@ function PlaneGhost({ phase, acc, accFg }){
     const tl=setTimeout(()=>setLate(true), 360); // микрофон проявляется ближе к концу полёта
     return ()=>{ cancelAnimationFrame(r1); if(r2)cancelAnimationFrame(r2); clearTimeout(tl); };
   },[]);
-  const centerPos={left:"50%",bottom:"6px",transform:"translateX(-50%) scale(1)"};
-  const rightPos ={left:"calc(50% + 150px)",bottom:"6px",transform:"translateX(-50%) scale(.9)"};
+  // Центр = реальная позиция кнопки «Написать»; если не захвачена — запасной вариант по центру низа
+  const cx = anchor?anchor.cx:null, cy = anchor?anchor.cy:null;
+  const centerPos = anchor
+    ? {left:cx+"px", top:cy+"px", transform:"translate(-50%,-50%) scale(1)"}
+    : {left:"50%", bottom:"6px", transform:"translateX(-50%) scale(1)"};
+  const rightPos = anchor
+    ? {left:(cx+150)+"px", top:cy+"px", transform:"translate(-50%,-50%) scale(1)"}
+    : {left:"calc(50% + 150px)", bottom:"6px", transform:"translateX(-50%) scale(1)"};
   const pos = (phase==='in') ? (go?rightPos:centerPos) : (go?centerPos:rightPos);
   let planeRot, planeOpa, micOpa;
   if(phase==='in'){
-    planeRot = go?90:0;            // поворот виден всю дорогу
-    planeOpa = late?0:1;           // самолёт виден, пока не дошёл до конца
-    micOpa   = late?1:0;           // микрофон только в конце
+    planeRot = go?90:0;
+    planeOpa = late?0:1;
+    micOpa   = late?1:0;
   } else {
     planeRot = go?0:-90; planeOpa = 1; micOpa = 0;
   }
   return (
-    <div className="planeGhost" style={{...pos,background:acc||"#EF6C00",color:accFg||"#fff",boxShadow:(acc&&acc!=="#EF6C00")?"none":"0 1px 5px rgba(239,108,0,.3)"}}>
+    <div className="planeGhost" style={{...pos,background:acc||"#EF6C00",color:accFg||"#fff",border:(accBorder&&accBorder!=="transparent")?("1px solid "+accBorder):"none",boxShadow:glow||((acc&&acc!=="#EF6C00")?"none":"0 1px 5px rgba(239,108,0,.3)")}}>
       <span style={{position:"relative",display:"flex",width:24,height:24,alignItems:"center",justifyContent:"center"}}>
         <span style={{position:"absolute",display:"flex",transition:"opacity .16s ease, transform .5s cubic-bezier(.4,0,.2,1)",
           opacity:planeOpa, transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
@@ -883,9 +893,12 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
   const [color,setColor]=useState(initColor||COLORS[0]);
   const isOrange = (color==="#EF6C00");
   const choco = accent==="choco" && isOrange;
-  const selBg = choco ? "#3A2E24" : color;
-  const selFg = choco ? "#EF6C00" : "#fff";
-  const selBorder = choco ? "#4A3A2A" : color;
+  const neon = accent==="neon" && isOrange;
+  const choconeon = accent==="choconeon" && isOrange;
+  const selBg = choco ? "#3A2E24" : neon ? "#2E4A6B" : choconeon ? "#3A2E24" : color;
+  const selFg = choco ? "#EF6C00" : neon ? "#3A2E24" : choconeon ? "#EF6C00" : "#fff";
+  const selBorder = choco ? "#4A3A2A" : neon ? "#3E5C82" : choconeon ? "#4A3A2A" : color;
+  const selGlow = (neon||choconeon) ? "0 0 14px rgba(239,108,0,.7)" : "none";
   return (
     <>
       <div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>
@@ -921,8 +934,8 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
         </div>
       </div>
       <button onClick={()=>name.trim()&&onSubmit(name.trim(),icon,color)}
-        style={{width:"100%",background:choco?"#3A2E24":color,border:choco?"1px solid #4A3A2A":"none",borderRadius:12,padding:13,
-          color:choco?"#EF6C00":"#fff",fontWeight:600,fontSize:15,cursor:"pointer",opacity:name.trim()?1:.5,transition:"background .15s"}}>
+        style={{width:"100%",background:selBg,border:choco?"1px solid #4A3A2A":neon?"1px solid #3E5C82":choconeon?"1px solid #4A3A2A":"none",borderRadius:12,padding:13,
+          color:selFg,fontWeight:600,fontSize:15,cursor:"pointer",opacity:name.trim()?1:.5,transition:"background .15s",boxShadow:selGlow}}>
         {btnLabel}
       </button>
     </>
@@ -1398,6 +1411,9 @@ export default function App() {
   function toggleInputAnim(){ setNoInputAnim(v=>{ const nv=!v; try{localStorage.setItem("napp_noInputAnim",nv?"1":"0");}catch{} return nv; }); }
   const swipeRef = useRef(null);
   const composerOrigin = useRef(null); // {fid,sid} откуда начато сообщение/правка
+  const planeAnchor = useRef(null); // реальная позиция кнопки «Написать» на экране
+  const writeBtnRef = useRef(null);
+  function capturePlaneAnchor(){ try{ const r=writeBtnRef.current&&writeBtnRef.current.getBoundingClientRect(); if(r) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} }
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
   const [uiSh, setUiSh] = useState(false); // меню «Интерфейс»
@@ -1406,9 +1422,10 @@ export default function App() {
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
   function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
-  const ACC = iconAccent==="choco" ? "#3A2E24" : "#EF6C00";
-  const ACC_FG = iconAccent==="choco" ? "#EF6C00" : "#fff";
-  const ACC_BORDER = iconAccent==="choco" ? "#4A3A2A" : "transparent";
+  const ACC = iconAccent==="choco" ? "#3A2E24" : iconAccent==="neon" ? "#2E4A6B" : iconAccent==="choconeon" ? "#3A2E24" : "#EF6C00";
+  const ACC_FG = iconAccent==="choco" ? "#EF6C00" : iconAccent==="neon" ? "#3A2E24" : iconAccent==="choconeon" ? "#EF6C00" : "#fff";
+  const ACC_BORDER = iconAccent==="choco" ? "#4A3A2A" : iconAccent==="neon" ? "#3E5C82" : iconAccent==="choconeon" ? "#4A3A2A" : "transparent";
+  const ACC_GLOW = iconAccent==="neon" ? "0 0 14px rgba(239,108,0,.75), 0 0 5px rgba(239,108,0,.6)" : iconAccent==="choconeon" ? "0 0 14px rgba(239,108,0,.75), 0 0 5px rgba(239,108,0,.6)" : null;
   const [imgSh, setImgSh] = useState(false); // шторка сжатия изображений
   const [driveSh, setDriveSh] = useState(false); // отдельное меню Google Диска
   const [cloudWhenSh, setCloudWhenSh] = useState(false);
@@ -1800,6 +1817,13 @@ export default function App() {
       updateActiveNote();
     }
   },[scr,sid]);
+  useLayoutEffect(()=>{
+    if(!booting && scr==="chat" && scrollRef.current){
+      const sc=scrollRef.current;
+      const saved=scrollPos.current[sid];
+      sc.scrollTop = (saved!==undefined) ? saved : sc.scrollHeight;
+    }
+  },[booting]);
   // Сохранять позицию прокрутки при входе/выходе из режимов выделения (чтобы не скакало)
   const preserveScroll = useRef(null);
   useLayoutEffect(()=>{
@@ -2146,7 +2170,7 @@ export default function App() {
     setSelectMode(null);
     composerOrigin.current={fid,sid};
     if(noInputAnim){ setComposerFull(true); setComposerPeek(false); }
-    else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },500); setTimeout(()=>setPlanePhase('idle'),560); }
+    else { capturePlaneAnchor(); setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },500); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function cancelEdit() {
     setEditId(null); setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
@@ -2637,10 +2661,10 @@ export default function App() {
         .planeGhost{position:fixed;width:44px;height:44px;border-radius:50%;background:#EF6C00;
           display:flex;align-items:center;justify-content:center;color:#fff;z-index:95;pointer-events:none;
           box-shadow:0 1px 5px rgba(239,108,0,.3);
-          transition:left .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
+          transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v138</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v154</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2688,7 +2712,7 @@ export default function App() {
       {/* Летящий самолётик: визуальный переход между «написать» (центр) и «отправить» (угол) */}
 
       {/* Летящий самолётик между «написать» (центр-низ) и «отправить» (угол) */}
-      {planePhase!=='idle' && <PlaneGhost phase={planePhase} acc={ACC} accFg={ACC_FG}/>}
+      {planePhase!=='idle' && <PlaneGhost phase={planePhase} acc={ACC} accFg={ACC_FG} glow={ACC_GLOW} anchor={planeAnchor.current} accBorder={ACC_BORDER}/>}
 
       {/* Toast */}
       {toast&&<div style={{position:"fixed",bottom:84,left:"50%",transform:"translateX(-50%)",
@@ -2828,10 +2852,10 @@ export default function App() {
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",position:"relative",
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===f.id?"#33271B":"#2A2017",
-                  border:"1px solid #4A3A2A",
+                  border:"1px solid "+(iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"),
                   transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":"transform .25s cubic-bezier(.2,.8,.2,1), background .15s ease",
-                  boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":"none",
+                  boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:f.isTheme?22:12,
                   zIndex:dragActive===f.id?30:"auto"}}>
                 {/* Метка типа — прижата к верхней грани, правый угол */}
@@ -2889,7 +2913,7 @@ export default function App() {
           <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(v=>!v); }} title="Создать"
             style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",zIndex:5,
               width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",
-              fontSize:24,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
+              fontSize:24,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 1px 5px rgba(239,108,0,.3)":"none")}}>{IC.plus}</button>
           {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
             style={{position:"absolute",bottom:"calc(100% + 10px)",left:"50%",transform:"translateX(-50%)"}}
             items={[
@@ -2915,10 +2939,10 @@ export default function App() {
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===s.id?"#33271B":"#2A2017",
-                  border:"1px solid #4A3A2A",
+                  border:"1px solid "+(iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"),
                   transform:dragActive===s.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
-                  boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":"none",
+                  boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:22,
                   zIndex:dragActive===s.id?30:"auto"}}>
                 <Av icon={s.icon} color={s.color} acc={iconAccent}/>
@@ -2991,7 +3015,7 @@ export default function App() {
           <div style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",zIndex:5}}>
             <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(v=>!v); }} title="Создать"
               style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",
-                fontSize:22,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
+                fontSize:22,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 1px 5px rgba(239,108,0,.3)":"none")}}>{IC.plus}</button>
             {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
               style={{position:"absolute",bottom:"calc(100% + 8px)",left:"50%",transform:"translateX(-50%)"}}
               items={[
@@ -3020,7 +3044,7 @@ export default function App() {
           </div>
         )}
         <div ref={scrollRef} onScroll={updateActiveNote} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
-          style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s"}}
+          style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s",opacity:(booting&&navTick===0)?0:1}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
 
@@ -3200,7 +3224,7 @@ export default function App() {
               {(note.trim()||patts.length>0||editId)
                 ? <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
                     style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",
-                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 2px 10px rgba(239,108,0,.4)"}}><span style={{display:"flex",transform:"rotate(90deg)"}}>{IC.send}</span></button>
+                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none")}}><span style={{display:"flex",transform:"rotate(90deg)"}}>{IC.send}</span></button>
                 : <button title="Удерживайте для записи" tabIndex={-1}
                     onPointerDown={e=>{ e.preventDefault(); }}
                     onTouchStart={e=>{ e.preventDefault(); e.stopPropagation(); startRec(e); }}
@@ -3209,7 +3233,7 @@ export default function App() {
                     onMouseDown={e=>{ e.preventDefault(); startRec(e); }}
                     onMouseUp={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
                     style={{width:44,height:44,borderRadius:"50%",background:recording?"#E05252":ACC,border:"1px solid "+(recording?"transparent":ACC_BORDER),cursor:"pointer",
-                      color:recording?"#fff":ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 2px 10px rgba(239,108,0,.4)",
+                      color:recording?"#fff":ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none"),
                       transform:recording?"scale(1.15)":"scale(1)",transition:"transform .15s ease, background .15s ease"}}>{IC.mic}</button>}
             </div>
             {/* Подтверждение отправки голосового */}
@@ -3260,7 +3284,7 @@ export default function App() {
         const selNote = single ? subf?.notes.find(x=>x.id===selectMode) : null;
         const closePanel = ()=>{ if(single){ setSelectMode(null); setTextArmed(false); } else clearMulti(); };
         return (
-        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 10px",height:46,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",
@@ -3325,15 +3349,15 @@ export default function App() {
               {subf&&<div style={{fontSize:11,color:"#8A7A65"}}>{subf.notes.length} сообщений</div>}
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
-            <button
-              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 500); setTimeout(()=>setPlanePhase('idle'),560); } }}
+            <button ref={el=>{ writeBtnRef.current=el; if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { capturePlaneAnchor(); setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 500); setTimeout(()=>setPlanePhase('idle'),560); } }}
               title="Написать"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
                 background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",zIndex:3,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",
-                boxShadow:iconAccent==="choco"?"none":"0 1px 5px rgba(239,108,0,.3)"}}>
-              <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{IC.sendUp}</span>
+                boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 1px 5px rgba(239,108,0,.3)":"none")}}>
+              <span style={{display:"flex",transform:"scale(.9)"}}>{IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
             <button onClick={e=>{e.stopPropagation(); composerOrigin.current={fid,sid}; setEditId(null); setComposerFull(true); setComposerPeek(false); setTimeout(()=>setAttSh(true),60);}} title="Вложение"
@@ -3358,7 +3382,7 @@ export default function App() {
                 onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); if(recording) stopRec(recCancelArm.current); setRecSlide(0); }}
                 onMouseDown={e=>{ e.preventDefault(); composerOrigin.current={fid,sid}; startRec(e); }}
                 title="Записать голосовое"
-                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":(iconAccent==="choco"?"#B0A498":"#EF6C00"),cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,color .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none",touchAction:"none"}}>
+                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":(iconAccent==="choco"?"#B0A498":iconAccent==="neon"?"#3A2E24":iconAccent==="choconeon"?"#EF6C00":"#EF6C00"),cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,color .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none",touchAction:"none"}}>
                 <span style={{display:"flex"}}>{IC.mic}</span>
               </button>
             </div>
@@ -3690,26 +3714,27 @@ export default function App() {
         </div>
         <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10}}>
           <div style={{fontSize:15,color:"#F2EAE0",marginBottom:12}}>Цвет иконок</div>
-          <div style={{display:"flex",gap:10}}>
-            {[{k:"orange",label:"Оранжевая",bg:"#EF6C00",fg:"#fff",bd:"transparent"},{k:"choco",label:"Шоколадная",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A"}].map(o=>(
-              <div key={o.k} onClick={()=>setAccent(o.k)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"12px 6px",borderRadius:10,cursor:"pointer",
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {[{k:"orange",label:"Оранжевая",bg:"#EF6C00",fg:"#fff",bd:"transparent",glow:null},{k:"choco",label:"Шоколадная",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A",glow:null},{k:"choconeon",label:"Шоколадный неон",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A",glow:"0 0 14px rgba(239,108,0,.75)"}].map(o=>(
+              <div key={o.k} onClick={()=>setAccent(o.k)} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderRadius:10,cursor:"pointer",
                 background:iconAccent===o.k?"#33271B":"transparent",border:"1px solid "+(iconAccent===o.k?"#EF6C00":"#3A2E24")}}>
                 <div style={{display:"flex",gap:6}}>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <span style={{display:"flex",transform:"rotate(90deg) scale(.7)"}}>{IC.send}</span>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,boxShadow:o.glow||"none",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{display:"flex",transform:"rotate(90deg) scale(.66)"}}>{IC.send}</span>
                   </div>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <span style={{display:"flex",transform:"scale(.7)"}}>{IC.mic}</span>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,boxShadow:o.glow||"none",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{display:"flex",transform:"scale(.66)"}}>{IC.mic}</span>
                   </div>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <span style={{display:"flex",transform:"scale(.7)"}}>{IC.plus}</span>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,boxShadow:o.glow||"none",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{display:"flex",transform:"scale(.66)"}}>{IC.plus}</span>
                   </div>
                 </div>
-                <span style={{fontSize:13,color:iconAccent===o.k?"#F2EAE0":"#B0A498"}}>{o.label}</span>
+                <span style={{flex:1,fontSize:14,color:iconAccent===o.k?"#F2EAE0":"#B0A498"}}>{o.label}</span>
+                {iconAccent===o.k && <span style={{display:"flex",color:"#EF6C00"}}>{IC.check}</span>}
               </div>
             ))}
           </div>
-        </div>
+          </div>
       </Sheet>
       <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Анимации">
         {[
