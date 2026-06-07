@@ -289,11 +289,16 @@ async function aesDecrypt(b64, pwd) {
 // ═══════════════════════════════════════════════
 // UI PRIMITIVES
 // ═══════════════════════════════════════════════
-function Av({ icon, img, color, size=44, onClick }) {
-  return <div onClick={onClick} style={{width:size,height:size,borderRadius:"50%",background:color,display:"flex",
+function Av({ icon, img, color, size=44, onClick, acc }) {
+  const isDefaultOrange = (color==="#EF6C00" || !color);
+  const choco = acc==="choco" && isDefaultOrange;
+  const bg = choco ? "#3A2E24" : (color||"#EF6C00");
+  const iconColor = choco ? "#EF6C00" : "#fff";
+  return <div onClick={onClick} style={{width:size,height:size,borderRadius:"50%",background:bg,display:"flex",
     alignItems:"center",justifyContent:"center",fontSize:size*.4,flexShrink:0,overflow:"hidden",
-    boxShadow:`0 2px 8px ${color}55`,cursor:onClick?"pointer":"default"}}>
-    {img?<img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(IC[icon]?<span style={{display:"flex",color:"#fff"}}>{IC[icon]}</span>:icon)}
+    border:choco?"1px solid #4A3A2A":"none",
+    boxShadow:choco?"none":`0 2px 8px ${(color||"#EF6C00")}55`,cursor:onClick?"pointer":"default"}}>
+    {img?<img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:(IC[icon]?<span style={{display:"flex",color:iconColor}}>{IC[icon]}</span>:icon)}
   </div>;
 }
 
@@ -477,30 +482,34 @@ function LinkPopup({ href, x, y, onClose }) {
 }
 
 // ─── Preview modal ────────────────────────────────────────────
-function PlaneGhost({ phase }){
-  // 'in': центр(самолёт носом вверх 0) летит вправо, поворот -> 90, превращается в микрофон
+function PlaneGhost({ phase, acc, accFg }){
+  // 'in': центр(самолёт носом вверх 0) летит вправо, ВИДИМЫЙ поворот -> 90, и только в конце -> микрофон
   // 'out': справа(самолёт носом влево -90) летит в центр, доворот -> 0 (носом вверх)
   const [go,setGo]=useState(false);
+  const [late,setLate]=useState(false); // финальная фаза: превращение в микрофон
   useEffect(()=>{
     let r2;
     const r1=requestAnimationFrame(()=>{ r2=requestAnimationFrame(()=>setGo(true)); });
-    return ()=>{ cancelAnimationFrame(r1); if(r2)cancelAnimationFrame(r2); };
+    const tl=setTimeout(()=>setLate(true), 360); // микрофон проявляется ближе к концу полёта
+    return ()=>{ cancelAnimationFrame(r1); if(r2)cancelAnimationFrame(r2); clearTimeout(tl); };
   },[]);
   const centerPos={left:"50%",bottom:"6px",transform:"translateX(-50%) scale(1)"};
   const rightPos ={left:"calc(50% + 150px)",bottom:"6px",transform:"translateX(-50%) scale(.9)"};
   const pos = (phase==='in') ? (go?rightPos:centerPos) : (go?centerPos:rightPos);
   let planeRot, planeOpa, micOpa;
   if(phase==='in'){
-    planeRot = go?90:0; planeOpa = go?0:1; micOpa = go?1:0;
+    planeRot = go?90:0;            // поворот виден всю дорогу
+    planeOpa = late?0:1;           // самолёт виден, пока не дошёл до конца
+    micOpa   = late?1:0;           // микрофон только в конце
   } else {
     planeRot = go?0:-90; planeOpa = 1; micOpa = 0;
   }
   return (
-    <div className="planeGhost" style={pos}>
+    <div className="planeGhost" style={{...pos,background:acc||"#EF6C00",color:accFg||"#fff",boxShadow:(acc&&acc!=="#EF6C00")?"none":"0 1px 5px rgba(239,108,0,.3)"}}>
       <span style={{position:"relative",display:"flex",width:24,height:24,alignItems:"center",justifyContent:"center"}}>
-        <span style={{position:"absolute",display:"flex",transition:"opacity var(--input-dur,.38s) ease, transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)",
+        <span style={{position:"absolute",display:"flex",transition:"opacity .16s ease, transform .5s cubic-bezier(.4,0,.2,1)",
           opacity:planeOpa, transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
-        <span style={{position:"absolute",display:"flex",transition:"opacity var(--input-dur,.38s) ease",
+        <span style={{position:"absolute",display:"flex",transition:"opacity .16s ease",
           opacity:micOpa, transform:"scale(.9)"}}>{IC.mic}</span>
       </span>
     </div>
@@ -653,7 +662,7 @@ function PinnedBanner({ note, color, onJump }) {
 }
 
 // ─── Media browser (Telegram-style, opens from avatar tap) ───
-function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, onJumpTo, onRename, onClear, onDelete, onPinned, isTopTheme }) {
+function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, onJumpTo, onRename, onClear, onDelete, onPinned, isTopTheme, accent }) {
   const [ctxMenu,setCtxMenu]=useState(null); // {item,x,y}
   const lpRef=useRef(null);
   const startLp=(item,e)=>{ const t=e.touches?e.touches[0]:e; const x=t.clientX,y=t.clientY; lpRef.current=setTimeout(()=>{ buzz(15); setCtxMenu({item,x,y}); },450); };
@@ -683,7 +692,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
         borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",animation:"sUp .22s ease"}}>
         {/* Шапка темы + действия с иконкой */}
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 14px 10px",flexShrink:0}}>
-          <Av icon={subf.icon} img={subf.iconImg} color={subf.color||color} size={40}/>
+          <Av icon={subf.icon} img={subf.iconImg} color={subf.color||color} size={40} acc={accent}/>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"var(--font-title)"}}>{subf.name}</div>
             <div style={{fontSize:12,color:"#B0A498"}}>{subf.notes.length} сообщений</div>
@@ -811,10 +820,15 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
 
 
 // ─── Folder form ──────────────────────────────────────────────
-function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, onSubmit, btnLabel="Сохранить", onBrowse }) {
+function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, onSubmit, btnLabel="Сохранить", onBrowse, accent }) {
   const [name,setName]=useState(initName);
   const [icon,setIcon]=useState(initIcon);
   const [color,setColor]=useState(initColor||COLORS[0]);
+  const isOrange = (color==="#EF6C00");
+  const choco = accent==="choco" && isOrange;
+  const selBg = choco ? "#3A2E24" : color;
+  const selFg = choco ? "#EF6C00" : "#fff";
+  const selBorder = choco ? "#4A3A2A" : color;
   return (
     <>
       <div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>
@@ -834,8 +848,8 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, 42px)",gap:8,justifyContent:"center"}}>
           {icons.map(k=>(
             <button key={k} onClick={()=>setIcon(k)}
-              style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+color:"1px solid #4A3A2A",
-                background:icon===k?color:"#2E251C",color:icon===k?"#fff":"#B0A498",
+              style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+selBorder:"1px solid #4A3A2A",
+                background:icon===k?selBg:"#2E251C",color:icon===k?selFg:"#B0A498",
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"all .12s"}}>
               {IC[k]||IC.fFolder}
             </button>
@@ -850,8 +864,8 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
         </div>
       </div>
       <button onClick={()=>name.trim()&&onSubmit(name.trim(),icon,color)}
-        style={{width:"100%",background:color,border:"none",borderRadius:14,padding:14,
-          color:"#fff",fontWeight:700,fontSize:16,cursor:"pointer",opacity:name.trim()?1:.5}}>
+        style={{width:"100%",background:choco?"#3A2E24":color,border:choco?"1px solid #4A3A2A":"none",borderRadius:12,padding:13,
+          color:choco?"#EF6C00":"#fff",fontWeight:600,fontSize:15,cursor:"pointer",opacity:name.trim()?1:.5,transition:"background .15s"}}>
         {btnLabel}
       </button>
     </>
@@ -1343,6 +1357,12 @@ export default function App() {
   const composerOrigin = useRef(null); // {fid,sid} откуда начато сообщение/правка
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
+  const [uiSh, setUiSh] = useState(false); // меню «Интерфейс»
+  const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
+  function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
+  const ACC = iconAccent==="choco" ? "#3A2E24" : "#EF6C00";
+  const ACC_FG = iconAccent==="choco" ? "#EF6C00" : "#fff";
+  const ACC_BORDER = iconAccent==="choco" ? "#4A3A2A" : "transparent";
   const [imgSh, setImgSh] = useState(false); // шторка сжатия изображений
   const [driveSh, setDriveSh] = useState(false); // отдельное меню Google Диска
   const [cloudWhenSh, setCloudWhenSh] = useState(false);
@@ -1350,6 +1370,7 @@ export default function App() {
   const [cloudStorSh, setCloudStorSh] = useState(false);
   const [asOpen, setAsOpen] = useState(false); // локальное автосохранение (лифт из ExportSheet)
   const [fontSh, setFontSh] = useState(false); // шторка шрифтов
+  const [fontDelSh, setFontDelSh] = useState(false); // список удаления шрифтов
   const [fontOpen, setFontOpen] = useState(null); // {key,x,y} какой пункт шрифта раскрыт
   const FONT_KEY="napp_fonts_v1";
   // Встроенные тестовые шрифты (Google Fonts) + загруженные пользователем (data-URL ttf)
@@ -1369,7 +1390,7 @@ export default function App() {
   function loadFonts(){ try{ const r=localStorage.getItem(FONT_KEY); return r?JSON.parse(r):{assign:{},custom:[]}; }catch{ return {assign:{},custom:[]}; } }
   const [fonts,setFonts]=useState(loadFonts);
   function saveFonts(f){ try{ localStorage.setItem(FONT_KEY,JSON.stringify(f)); }catch{} setFonts(f); }
-  const allFonts=[...BUILTIN_FONTS, ...(fonts.custom||[])];
+  const allFonts=[...BUILTIN_FONTS, ...(fonts.custom||[])].filter(f=> f.id==="sys" || !((fonts.hidden||[]).includes(f.id)) );
   function fontCssFor(key){ const id=fonts.assign?.[key]; const f=allFonts.find(x=>x.id===id); return f?f.css:"'Noto Sans',sans-serif"; }
   // Подгружаем веб-шрифты и регистрируем кастомные @font-face
   useEffect(()=>{
@@ -1393,6 +1414,17 @@ export default function App() {
     r.readAsDataURL(f); e.target.value="";
   }
   function setFontAssign(key,id){ const next={...fonts,assign:{...(fonts.assign||{}),[key]:id}}; saveFonts(next); }
+  function removeFont(id){
+    if(id==="sys") return; // системный по умолчанию не удаляется
+    const assign={...(fonts.assign||{})};
+    Object.keys(assign).forEach(k=>{ if(assign[k]===id) delete assign[k]; });
+    const isCustom=(fonts.custom||[]).some(f=>f.id===id);
+    let next;
+    if(isCustom){ next={...fonts, assign, custom:(fonts.custom||[]).filter(f=>f.id!==id)}; }
+    else { next={...fonts, assign, hidden:[...new Set([...(fonts.hidden||[]),id])]}; }
+    saveFonts(next);
+    tst("Шрифт удалён");
+  }
 
   // ===== СИНХРОНИЗАЦИЯ С GOOGLE DRIVE (опционально) =====
   const SYNC_CFG_KEY="napp_sync_cfg_v1"; // настройки синка
@@ -1400,7 +1432,7 @@ export default function App() {
   const DRIVE_FILE_NAME="notenger_backup.json";
   // Модули, которые можно синкать/сохранять выборочно
   const SYNC_MODULES=[
-    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed"]},
+    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent"]},
     {key:"notes",   label:"Заметки", keys:[SK]},
     {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
   ];
@@ -1866,8 +1898,10 @@ export default function App() {
     if(cloudStorSh){ setCloudStorSh(false); return true; }
     if(driveSh){ setDriveSh(false); return true; }
     if(imgSh){ setImgSh(false); return true; }
+    if(fontDelSh){ setFontDelSh(false); return true; }
     if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); return true; }
     if(animSh){ setAnimSh(false); return true; }
+    if(uiSh){ setUiSh(false); return true; }
     if(dlg){ setDlg(null); return true; }
     if(modal){ setModal(null); return true; }
     if(pinnedOpen){ setPinnedOpen(false); return true; }
@@ -2062,7 +2096,7 @@ export default function App() {
     setSelectMode(null);
     composerOrigin.current={fid,sid};
     if(noInputAnim){ setComposerFull(true); setComposerPeek(false); }
-    else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },_id+30); setTimeout(()=>setPlanePhase('idle'),_id+90); }
+    else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },500); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function cancelEdit() {
     setEditId(null); setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
@@ -2075,7 +2109,7 @@ export default function App() {
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
     if(editId) cancelEdit();
     setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false);
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.round(spd('input',0.38)*1000)+90); }
+    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
@@ -2099,7 +2133,7 @@ export default function App() {
     // возврат в исходную тему + анимация полёта кнопки обратно в позицию "написать"
     setComposerFull(false); setComposerPeek(false);
     setFid(o.fid); setSid(o.sid); setScr("chat");
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),Math.round(spd('input',0.38)*1000)+90); }
+    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),80);
   }
   // ── Notes ──
@@ -2553,10 +2587,10 @@ export default function App() {
         .planeGhost{position:fixed;width:44px;height:44px;border-radius:50%;background:#EF6C00;
           display:flex;align-items:center;justify-content:center;color:#fff;z-index:95;pointer-events:none;
           box-shadow:0 1px 5px rgba(239,108,0,.3);
-          transition:left var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),bottom var(--input-dur,.38s) cubic-bezier(.45,0,.25,1),transform var(--input-dur,.38s) cubic-bezier(.45,0,.25,1);}
+          transition:left .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v120</div>
+      <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>v133</div>
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2604,7 +2638,7 @@ export default function App() {
       {/* Летящий самолётик: визуальный переход между «написать» (центр) и «отправить» (угол) */}
 
       {/* Летящий самолётик между «написать» (центр-низ) и «отправить» (угол) */}
-      {planePhase!=='idle' && <PlaneGhost phase={planePhase}/>}
+      {planePhase!=='idle' && <PlaneGhost phase={planePhase} acc={ACC} accFg={ACC_FG}/>}
 
       {/* Toast */}
       {toast&&<div style={{position:"fixed",bottom:84,left:"50%",transform:"translateX(-50%)",
@@ -2637,9 +2671,8 @@ export default function App() {
                 style={{position:"absolute",top:"calc(100% + 8px)",left:0}}
                 items={[
                   {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
-                  {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
+                  {ic:IC.sparkle,label:"Интерфейс",fn:()=>setUiSh(true)},
                 {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
-                {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
                 ]}/>}
             </div>
           )}
@@ -2648,7 +2681,7 @@ export default function App() {
             <div onClick={e=>{e.stopPropagation();setModal("renF");}}
               style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0,cursor:"pointer"}}>
               {/* Тап по иконке категории → форма смены иконки (без файлов) */}
-              <Av icon={folder.icon} img={folder.iconImg} color={folder.color} size={36}/>
+              <Av icon={folder.icon} img={folder.iconImg} color={folder.color} size={36} acc={iconAccent}/>
               <div style={{minWidth:0}}>
                 <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{folder.name}</div>
                 <div style={{fontSize:12,color:"#B0A498"}}>{folder.subfolders.length} тем</div>
@@ -2661,7 +2694,7 @@ export default function App() {
               style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0,cursor:"pointer"}}>
               {/* Тап по иконке темы → панель вложений (как в Telegram) */}
               <div style={{flexShrink:0}}>
-                <Av icon={subf.icon} img={subf.iconImg} color={subf.color} size={36}/>
+                <Av icon={subf.icon} img={subf.iconImg} color={subf.color} size={36} acc={iconAccent}/>
               </div>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"var(--font-title)"}}>{subf.name}</div>
@@ -2692,7 +2725,7 @@ export default function App() {
               </div>
               <div style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
                 <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(v=>!v); }} title="Создать"
-                  style={{width:38,height:38,background:"#EF6C00",border:"none",color:"#fff",borderRadius:"50%",cursor:"pointer",fontSize:22,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.plus}</button>
+                  style={{width:38,height:38,background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,borderRadius:"50%",cursor:"pointer",fontSize:22,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.plus}</button>
                 {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
                   style={{position:"absolute",top:"calc(100% + 6px)",right:0}}
                   items={[
@@ -2753,7 +2786,7 @@ export default function App() {
                 {/* Метка типа — прижата к верхней грани, правый угол */}
                 <span style={{position:"absolute",top:3,right:12,fontSize:8,letterSpacing:.3,
                   textTransform:"uppercase",color:"#6A5A48",pointerEvents:"none"}}>{f.isTheme?"тема":"катег"}</span>
-                <Av icon={f.icon} img={f.iconImg} color={f.color}/>
+                <Av icon={f.icon} img={f.iconImg} color={f.color} acc={iconAccent}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <span style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0,fontFamily:"var(--font-title)"}}>{f.name}</span>
@@ -2796,16 +2829,15 @@ export default function App() {
               style={{position:"absolute",bottom:"calc(100% + 8px)",left:0}}
               items={[
                 {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
-                {ic:IC.sparkle,label:"Настройка анимаций",fn:()=>setAnimSh(true)},
+                {ic:IC.sparkle,label:"Интерфейс",fn:()=>setUiSh(true)},
                 {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
-                {ic:IC.text,label:"Шрифты",fn:()=>setFontSh(true)},
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
           <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(v=>!v); }} title="Создать"
             style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",zIndex:5,
-              width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",
-              fontSize:24,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
+              width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",
+              fontSize:24,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
           {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
             style={{position:"absolute",bottom:"calc(100% + 10px)",left:"50%",transform:"translateX(-50%)"}}
             items={[
@@ -2837,7 +2869,7 @@ export default function App() {
                   boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":"none",
                   borderRadius:22,
                   zIndex:dragActive===s.id?30:"auto"}}>
-                <Av icon={s.icon} color={s.color}/>
+                <Av icon={s.icon} color={s.color} acc={iconAccent}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <span style={{fontWeight:600,fontSize:16,fontFamily:"var(--font-title)"}}>{s.name}</span>
@@ -2906,8 +2938,8 @@ export default function App() {
           {/* Центрированный FAB "+" как кнопка "Написать" */}
           <div style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",zIndex:5}}>
             <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(v=>!v); }} title="Создать"
-              style={{width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",
-                fontSize:22,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
+              style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",
+                fontSize:22,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 1px 5px rgba(239,108,0,.3)"}}>{IC.plus}</button>
             {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
               style={{position:"absolute",bottom:"calc(100% + 8px)",left:"50%",transform:"translateX(-50%)"}}
               items={[
@@ -3115,8 +3147,8 @@ export default function App() {
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.close}</button>
               {(note.trim()||patts.length>0||editId)
                 ? <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
-                    style={{width:44,height:44,borderRadius:"50%",background:"#EF6C00",border:"none",cursor:"pointer",
-                      color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)"}}><span style={{display:"flex",transform:"rotate(90deg)"}}>{IC.send}</span></button>
+                    style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",
+                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 2px 10px rgba(239,108,0,.4)"}}><span style={{display:"flex",transform:"rotate(90deg)"}}>{IC.send}</span></button>
                 : <button title="Удерживайте для записи" tabIndex={-1}
                     onPointerDown={e=>{ e.preventDefault(); }}
                     onTouchStart={e=>{ e.preventDefault(); e.stopPropagation(); startRec(e); }}
@@ -3124,8 +3156,8 @@ export default function App() {
                     onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); if(recording) stopRec(recCancelArm.current); setRecSlide(0); }}
                     onMouseDown={e=>{ e.preventDefault(); startRec(e); }}
                     onMouseUp={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
-                    style={{width:44,height:44,borderRadius:"50%",background:recording?"#E05252":"#EF6C00",border:"none",cursor:"pointer",
-                      color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(239,108,0,.4)",
+                    style={{width:44,height:44,borderRadius:"50%",background:recording?"#E05252":ACC,border:"1px solid "+(recording?"transparent":ACC_BORDER),cursor:"pointer",
+                      color:recording?"#fff":ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:iconAccent==="choco"?"none":"0 2px 10px rgba(239,108,0,.4)",
                       transform:recording?"scale(1.15)":"scale(1)",transition:"transform .15s ease, background .15s ease"}}>{IC.mic}</button>}
             </div>
             {/* Подтверждение отправки голосового */}
@@ -3242,13 +3274,13 @@ export default function App() {
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button
-              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); const _id=Math.round(spd('input',0.38)*1000); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, _id+30); setTimeout(()=>setPlanePhase('idle'),_id+90); } }}
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerWantFocus.current=true; composerOrigin.current={fid,sid}; setEditId(null); if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); }, 500); setTimeout(()=>setPlanePhase('idle'),560); } }}
               title="Написать"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
-                background:"#EF6C00",border:"none",color:"#fff",cursor:"pointer",zIndex:3,
-                display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,transform .15s,opacity .15s",
-                boxShadow:"0 1px 5px rgba(239,108,0,.3)"}}>
+                background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",zIndex:3,
+                display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",
+                boxShadow:iconAccent==="choco"?"none":"0 1px 5px rgba(239,108,0,.3)"}}>
               <span style={{display:"flex",transform:"scale(.9) rotate("+(planePhase==='in'?90:0)+"deg)",transition:"transform var(--input-dur,.38s) cubic-bezier(.4,0,.2,1)"}}>{IC.sendUp}</span>
             </button>
             {/* Скрепка справа от кнопки написать — быстрый доступ к вложениям */}
@@ -3274,7 +3306,7 @@ export default function App() {
                 onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); if(recording) stopRec(recCancelArm.current); setRecSlide(0); }}
                 onMouseDown={e=>{ e.preventDefault(); composerOrigin.current={fid,sid}; startRec(e); }}
                 title="Записать голосовое"
-                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none",touchAction:"none"}}>
+                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":(iconAccent==="choco"?"#B0A498":"#EF6C00"),cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,color .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none",touchAction:"none"}}>
                 <span style={{display:"flex"}}>{IC.mic}</span>
               </button>
             </div>
@@ -3300,7 +3332,7 @@ export default function App() {
       {/* ══ MODALS ══ */}
       <LinkDlg open={lnkDlg} selected={lnkSel} onClose={()=>setLnkDlg(false)} onInsert={insertLink}/>
       <PreviewModal open={prevSh} onClose={()=>setPrevSh(false)} onSend={composerCommit} text={note} atts={patts} color={subColor} isEdit={!!editId}/>
-      <MediaBrowser open={mediaBrowser} onClose={()=>setMediaBrowser(false)} subf={subf} color={subColor}
+      <MediaBrowser open={mediaBrowser} onClose={()=>setMediaBrowser(false)} subf={subf} color={subColor} accent={iconAccent}
         onOpenImage={(u)=>{ setLightbox(u); }}
         onJumpTo={(id)=>{ setMediaBrowser(false); if(id) setTimeout(()=>jumpTo(id),120); }}
         onChangeIcon={()=>{ setMediaBrowser(false); setModal(sid==="__top__"?"renF":"renS"); }}
@@ -3586,6 +3618,38 @@ export default function App() {
           </div>
         </div>
       )}
+            <Sheet open={uiSh} onClose={()=>setUiSh(false)} title="Интерфейс">
+        <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
+          <span style={{display:"flex",color:"#EF6C00"}}>{IC.sparkle}</span>
+          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Анимации</span>
+        </div>
+        <div onClick={()=>{setUiSh(false);setFontSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
+          <span style={{display:"flex",color:"#EF6C00"}}>{IC.text}</span>
+          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Шрифты</span>
+        </div>
+        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10}}>
+          <div style={{fontSize:15,color:"#F2EAE0",marginBottom:12}}>Цвет иконок</div>
+          <div style={{display:"flex",gap:10}}>
+            {[{k:"orange",label:"Оранжевая",bg:"#EF6C00",fg:"#fff",bd:"transparent"},{k:"choco",label:"Шоколадная",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A"}].map(o=>(
+              <div key={o.k} onClick={()=>setAccent(o.k)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"12px 6px",borderRadius:10,cursor:"pointer",
+                background:iconAccent===o.k?"#33271B":"transparent",border:"1px solid "+(iconAccent===o.k?"#EF6C00":"#3A2E24")}}>
+                <div style={{display:"flex",gap:6}}>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{display:"flex",transform:"rotate(90deg) scale(.7)"}}>{IC.send}</span>
+                  </div>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{display:"flex",transform:"scale(.7)"}}>{IC.mic}</span>
+                  </div>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:o.bg,border:"1px solid "+o.bd,color:o.fg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{display:"flex",transform:"scale(.7)"}}>{IC.plus}</span>
+                  </div>
+                </div>
+                <span style={{fontSize:13,color:iconAccent===o.k?"#F2EAE0":"#B0A498"}}>{o.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Sheet>
       <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Анимации">
         {[
           {key:"scr",label:"Переходы между экранами",off:noScrAnim,toggle:toggleScrAnim},
@@ -3672,11 +3736,16 @@ export default function App() {
       </Sheet>)}
 
       <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
-        <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
+        <div style={{display:"flex",gap:10,marginBottom:16}}>
           <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
-            style={{display:"inline-flex",alignItems:"center",gap:8,padding:"9px 18px",background:"#2E251C",border:"1px solid #5A4C40",borderRadius:22,cursor:"pointer"}}>
+            style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",background:"#2E251C",border:"1px solid #5A4C40",borderRadius:22,cursor:"pointer"}}>
             <span style={{display:"flex",color:"#EF6C00"}}><Icon d={["M12 4v12","M7 11l5 5 5-5","M5 20h14"]} stroke={2} size={17}/></span>
-            <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить шрифт</span>
+            <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить</span>
+          </button>
+          <button onClick={()=>setFontDelSh(true)}
+            style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",background:"#2E251C",border:"1px solid #5A3A2A",borderRadius:22,cursor:"pointer"}}>
+            <span style={{display:"flex",color:"#E05252"}}>{IC.trash}</span>
+            <span style={{fontSize:14,color:"#F2EAE0"}}>Удалить</span>
           </button>
         </div>
         {FONT_TARGETS.map(t=>{
@@ -3691,6 +3760,17 @@ export default function App() {
             </div>
           );
         })}
+      </Sheet>
+      {/* Список удаления шрифтов */}
+      <Sheet open={fontDelSh} onClose={()=>setFontDelSh(false)} title="Удалить шрифт">
+        {allFonts.filter(f=>f.id!=="sys").length===0 && <div style={{textAlign:"center",color:"#B0A498",fontSize:14,padding:"20px 0"}}>Нет шрифтов для удаления</div>}
+        {allFonts.filter(f=>f.id!=="sys").map(f=>(
+          <div key={f.id} onClick={()=>setDlg({msg:`Удалить шрифт «${f.name}»?`,yes:()=>removeFont(f.id)})}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,marginBottom:8,cursor:"pointer"}}>
+            <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontFamily:f.css,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
+            <span style={{display:"flex",color:"#E05252",transform:"scale(.85)"}}>{IC.trash}</span>
+          </div>
+        ))}
       </Sheet>
       {/* Popup выбора шрифта поверх */}
       {fontOpen&&(
@@ -3718,11 +3798,11 @@ export default function App() {
         </div>
       )}
 
-      <Sheet open={modal==="mkF"}  onClose={()=>setModal(null)}><FolderForm title="Новая категория"            icons={ICONS_F} btnLabel="Создать" onSubmit={mkF}/></Sheet>
-      <Sheet open={modal==="renF"} onClose={()=>setModal(null)}>{folder&&<FolderForm title="Редактировать категорию" icons={ICONS_F} initName={folder.name} initIcon={folder.icon} initColor={folder.color} onSubmit={renF} onBrowse={()=>browseIcon("folder")}/>}</Sheet>
-      <Sheet open={modal==="mkS"}  onClose={()=>setModal(null)}><FolderForm title="Новая тема"             icons={ICONS_S} btnLabel="Создать" onSubmit={mkS} initColor={folder?.color}/></Sheet>
-      <Sheet open={modal==="mkTop"} onClose={()=>setModal(null)}><FolderForm title="Новая тема" icons={ICONS_S} btnLabel="Создать" onSubmit={mkTopTheme}/></Sheet>
-      <Sheet open={modal==="renS"} onClose={()=>setModal(null)}>{subf&&<FolderForm title="Редактировать тему"     icons={ICONS_S} initName={subf.name} initIcon={subf.icon} initColor={subf.color} onSubmit={renS} onBrowse={()=>browseIcon("sub")}/>}</Sheet>
+      <Sheet open={modal==="mkF"}  onClose={()=>setModal(null)}><FolderForm title="Новая категория"            icons={ICONS_F} btnLabel="Создать" onSubmit={mkF} accent={iconAccent}/></Sheet>
+      <Sheet open={modal==="renF"} onClose={()=>setModal(null)}>{folder&&<FolderForm title="Редактировать категорию" icons={ICONS_F} initName={folder.name} initIcon={folder.icon} initColor={folder.color} onSubmit={renF} onBrowse={()=>browseIcon("folder")} accent={iconAccent}/>}</Sheet>
+      <Sheet open={modal==="mkS"}  onClose={()=>setModal(null)}><FolderForm title="Новая тема"             icons={ICONS_S} btnLabel="Создать" onSubmit={mkS} initColor={folder?.color} accent={iconAccent}/></Sheet>
+      <Sheet open={modal==="mkTop"} onClose={()=>setModal(null)}><FolderForm title="Новая тема" icons={ICONS_S} btnLabel="Создать" onSubmit={mkTopTheme} accent={iconAccent}/></Sheet>
+      <Sheet open={modal==="renS"} onClose={()=>setModal(null)}>{subf&&<FolderForm title="Редактировать тему"     icons={ICONS_S} initName={subf.name} initIcon={subf.icon} initColor={subf.color} onSubmit={renS} onBrowse={()=>browseIcon("sub")} accent={iconAccent}/>}</Sheet>
 
       <Dlg open={!!dlg} msg={dlg?.msg} anchor={dlg?.anchor} onYes={()=>{dlg?.yes();setDlg(null);}} onNo={()=>setDlg(null)}/>
     </div>
