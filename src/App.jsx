@@ -189,8 +189,57 @@ const SK = "napp_v9";
 const AS_KEY = "napp_v9_autosave"; // autosave settings
 const DRAFT_KEY = "napp_v9_drafts";
 const DLAUNCH_KEY = "napp_v9_defaultLaunch";
+
+// ───── IndexedDB «гараж»: ёмкое хранилище для тяжёлых данных (заметки + медиа) ─────
+// localStorage имеет лимит ~5-10МБ; IndexedDB — сотни МБ и больше.
+// Стратегия: IndexedDB — авторитетная копия (без лимита); localStorage — быстрый
+// синхронный кэш для мгновенного старта. Пишем в оба; если localStorage упёрся в
+// лимит — данные всё равно целы в IndexedDB.
+const IDB_NAME = "notenger_db";
+const IDB_STORE = "kv";
+let _idbPromise = null;
+function idbOpen(){
+  if(_idbPromise) return _idbPromise;
+  _idbPromise = new Promise((resolve)=>{
+    try{
+      if(!window.indexedDB){ resolve(null); return; }
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = ()=>{ try{ const db=req.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); }catch{} };
+      req.onsuccess = ()=>resolve(req.result);
+      req.onerror = ()=>resolve(null);
+    }catch{ resolve(null); }
+  });
+  return _idbPromise;
+}
+async function idbSet(key, value){
+  const db = await idbOpen(); if(!db) return false;
+  return new Promise((resolve)=>{
+    try{ const tx=db.transaction(IDB_STORE,"readwrite"); tx.objectStore(IDB_STORE).put(value,key);
+      tx.oncomplete=()=>resolve(true); tx.onerror=()=>resolve(false); tx.onabort=()=>resolve(false);
+    }catch{ resolve(false); }
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen(); if(!db) return undefined;
+  return new Promise((resolve)=>{
+    try{ const tx=db.transaction(IDB_STORE,"readonly"); const r=tx.objectStore(IDB_STORE).get(key);
+      r.onsuccess=()=>resolve(r.result); r.onerror=()=>resolve(undefined);
+    }catch{ resolve(undefined); }
+  });
+}
+async function idbDel(key){
+  const db = await idbOpen(); if(!db) return;
+  return new Promise((resolve)=>{
+    try{ const tx=db.transaction(IDB_STORE,"readwrite"); tx.objectStore(IDB_STORE).delete(key);
+      tx.oncomplete=()=>resolve(true); tx.onerror=()=>resolve(false);
+    }catch{ resolve(false); }
+  });
+}
+// Флаг: удалось ли последнее сохранение в localStorage (для индикации режима «только IndexedDB»)
+let _lsOK = true;
+
 function loadDrafts(){ try{ const r=localStorage.getItem(DRAFT_KEY); return r?JSON.parse(r):{}; }catch{ return {}; } }
-function saveDrafts(d){ try{ localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch{} }
+function saveDrafts(d){ try{ localStorage.setItem(DRAFT_KEY,JSON.stringify(d)); }catch{} idbSet(DRAFT_KEY, JSON.stringify(d)); }
 
 const defaultData = {
   folders:[
@@ -228,7 +277,15 @@ function dedupeIds(data){
 }
 
 function loadData() { try { const r=localStorage.getItem(SK); return dedupeIds(r?JSON.parse(r):defaultData); } catch { return defaultData; } }
-function saveData(d) { try { localStorage.setItem(SK,JSON.stringify(d)); localStorage.setItem("napp_data_mtime", String(Date.now())); } catch {} }
+function saveData(d) {
+  const json = JSON.stringify(d);
+  const ts = String(Date.now());
+  // 1) IndexedDB — авторитетная копия без лимита (всегда)
+  idbSet(SK, json); idbSet("napp_data_mtime", ts);
+  // 2) localStorage — быстрый синхронный кэш (по возможности)
+  try { localStorage.setItem(SK, json); localStorage.setItem("napp_data_mtime", ts); _lsOK=true; }
+  catch { _lsOK=false; /* лимит localStorage исчерпан — данные целы в IndexedDB */ }
+}
 function loadAS()   { try { const r=localStorage.getItem(AS_KEY); return r?JSON.parse(r):defaultAutoSave; } catch { return defaultAutoSave; } }
 function saveAS(s)  { try { localStorage.setItem(AS_KEY,JSON.stringify(s)); } catch {} }
 
@@ -1020,6 +1077,32 @@ export default function App() {
   const [highlightId, setHighlightId] = useState(null);
   const [selCopy, setSelCopy] = useState(null); // {x,y,text} плавающая кнопка копирования выделенного текста
   const [data,      setData]      = useState(loadData);
+  // Стартовая сверка с IndexedDB (гараж): подтягиваем данные, если localStorage
+  // пуст/устарел (например, ранее упёрся в лимит и не сохранил последнюю версию),
+  // и заодно мигрируем существующие localStorage-данные в IndexedDB при первом запуске.
+  useEffect(()=>{
+    let cancelled=false;
+    (async()=>{
+      try{
+        const idbJson = await idbGet(SK);
+        const idbTs = parseInt(await idbGet("napp_data_mtime")||"0",10);
+        const lsTs = parseInt(localStorage.getItem("napp_data_mtime")||"0",10);
+        if(idbJson){
+          // IndexedDB новее локального кэша → применяем (случай: LS упёрся в лимит)
+          if(idbTs>lsTs){
+            try{ const parsed=dedupeIds(JSON.parse(idbJson)); if(!cancelled){ setData(parsed); try{ localStorage.setItem(SK,idbJson); localStorage.setItem("napp_data_mtime",String(idbTs)); }catch{} } }catch{}
+          }
+        } else {
+          // Первый запуск с IndexedDB: мигрируем то, что уже есть в localStorage
+          const lsJson = localStorage.getItem(SK);
+          if(lsJson){ idbSet(SK, lsJson); idbSet("napp_data_mtime", String(lsTs||Date.now())); }
+          // и черновики
+          const dr = localStorage.getItem(DRAFT_KEY); if(dr) idbSet(DRAFT_KEY, dr);
+        }
+      }catch{}
+    })();
+    return ()=>{ cancelled=true; };
+  },[]);
   const _initLaunch = (()=>{
     try{
       const t=JSON.parse(localStorage.getItem(DLAUNCH_KEY)||"null"); if(!t) return null;
@@ -1549,7 +1632,10 @@ export default function App() {
     const out={__meta:{ts:Date.now(), v:2, app:"notenger"}, data:{}};
     SYNC_MODULES.forEach(m=>{
       if(!cfg.modules[m.key]) return;
-      m.keys.forEach(k=>{ try{ let v=localStorage.getItem(k); if(v==null) return;
+      m.keys.forEach(k=>{ try{
+        // SK берём из актуального состояния в памяти (localStorage мог не вместить всё)
+        let v = (k===SK) ? JSON.stringify(data) : localStorage.getItem(k);
+        if(v==null) return;
         if(k===SK) v=filterNotesMedia(v, cfg.media||{images:true,videos:true,files:true});
         out.data[k]=v; }catch{} });
     });
@@ -1562,11 +1648,11 @@ export default function App() {
     let changed=false, notesChanged=false;
     SYNC_MODULES.forEach(m=>{
       if(!cfg.modules[m.key]) return;
-      m.keys.forEach(k=>{ if(k in obj.data){ try{ localStorage.setItem(k,obj.data[k]); changed=true; if(k===SK) notesChanged=true; }catch{} } });
+      m.keys.forEach(k=>{ if(k in obj.data){ try{ localStorage.setItem(k,obj.data[k]); }catch{} try{ if(k===SK||k===DRAFT_KEY) idbSet(k, obj.data[k]); }catch{} changed=true; if(k===SK) notesChanged=true; } });
     });
     if(notesChanged){ try{ setData(loadData()); }catch{} }
     // фиксируем mtime по времени облачного снимка, чтобы не считать применённое «новее»
-    try{ const ts=(obj&&obj.__meta&&obj.__meta.ts)||Date.now(); localStorage.setItem("napp_data_mtime", String(ts)); }catch{}
+    try{ const ts=(obj&&obj.__meta&&obj.__meta.ts)||Date.now(); localStorage.setItem("napp_data_mtime", String(ts)); idbSet("napp_data_mtime", String(ts)); }catch{}
     return changed;
   }
   function applySyncData(obj){ return applyBackup(obj,syncCfg); }
