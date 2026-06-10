@@ -142,7 +142,13 @@ function parseMarkdown(text) {
     else if (m[9])  parts.push({ type:"code",    content:m[10] });
     else if (m[11]) parts.push({ type:"quote",   content:m[12] });
     else if (m[13]) parts.push({ type:"link",    content:m[14], href:m[15] });
-    else if (m[16]) parts.push({ type:"link",    content:m[16], href:m[16] });
+    else if (m[16]) {
+      // не включать в ссылку хвостовую пунктуацию (закрывающие скобки и знаки)
+      let url=m[16]; let trail="";
+      while(/[\u0029\u005D\u007D.,;:!?\u00BB"']$/.test(url)){ trail=url.slice(-1)+trail; url=url.slice(0,-1); }
+      parts.push({ type:"link", content:url, href:url });
+      if(trail) parts.push({ type:"text", content:trail });
+    }
     last = m.index + m[0].length;
   }
   if (last < text.length) parts.push({ type:"text", content:text.slice(last) });
@@ -353,7 +359,7 @@ function Av({ icon, img, color, size=44, onClick, acc }) {
   const choconeon = acc==="choconeon" && isDefaultOrange;
   const bg = choco ? "#3A2E24" : neon ? "#2E4A6B" : choconeon ? "#3A2E24" : (color||"#EF6C00");
   const iconColor = choco ? "#EF6C00" : neon ? "#3A2E24" : choconeon ? "#EF6C00" : "#fff";
-  const softBorder = choco ? "1px solid #4A3A2A" : neon ? "1px solid #3E5C82" : choconeon ? "1px solid #4A3A2A" : "none";
+  const softBorder = choco ? "1px solid var(--gline,#4A3A2A)" : neon ? "1px solid #3E5C82" : choconeon ? "1px solid var(--gline,#4A3A2A)" : "none";
   const glow = (neon||choconeon) ? "0 0 14px rgba(239,108,0,.75), 0 0 5px rgba(239,108,0,.6)" : null;
   return <div onClick={onClick} style={{width:size,height:size,borderRadius:"50%",background:bg,display:"flex",
     alignItems:"center",justifyContent:"center",fontSize:size*.4,flexShrink:0,overflow:"hidden",
@@ -373,7 +379,7 @@ function Sheet({ open, onClose, title="", children }) {
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
         {children}
-        <button onClick={onClose} style={{width:"100%",marginTop:18,background:"#2E251C",border:"1px solid #4A3A2A",
+        <button onClick={onClose} style={{width:"100%",marginTop:18,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",
           borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
       </div>
     </div>
@@ -390,7 +396,7 @@ function Dlg({ open, msg, onYes, onNo, anchor }) {
     let top=anchor.bottom + 6;
     if(top + 150 > window.innerHeight) top = Math.max(margin, anchor.top - 150);
     boxStyle={position:"fixed",top,left,width:W,background:"#2A2017",borderRadius:14,padding:16,
-      animation:"fS .15s ease",border:"1px solid #4A3A2A",boxShadow:"0 10px 36px rgba(0,0,0,.6)",zIndex:600};
+      animation:"fS .15s ease",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"0 10px 36px rgba(0,0,0,.6)",zIndex:600};
   } else {
     boxStyle={background:"#2A2017",borderRadius:16,padding:24,width:"100%",maxWidth:340,animation:"fS .18s ease"};
   }
@@ -419,11 +425,11 @@ function DropMenu({ items, onClose, style:extraStyle={} }) {
   },[onClose]);
   return (
     <div ref={ref} style={{background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
-      overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid #4A3A2A",...extraStyle}}>
+      overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid var(--gline,#4A3A2A)",...extraStyle}}>
       {items.map((item,i)=>item.sep
         ?<div key={i} style={{height:1,background:"#4A3A2A",margin:"2px 0"}}/>
         :<button key={i} onClick={()=>{item.fn();onClose();}}
-          style={{background:"none",border:"none",padding:"10px 14px",
+          style={{background:"none",border:"none",padding:"10px 14px",width:"100%",
             color:item.danger?"#E05252":"#F2EAE0",fontSize:14,cursor:"pointer",
             textAlign:"left",display:"flex",alignItems:"center",gap:9,whiteSpace:"nowrap"}}
           onMouseEnter={e=>(e.currentTarget.style.background="#332512")}
@@ -453,7 +459,7 @@ function UndoToast({ onUndo, onDone }) {
   return (
     <div style={{position:"fixed",bottom:72,left:10,right:10,zIndex:700,animation:"tIn .22s ease"}}>
       <div style={{background:"#2A2017",borderRadius:14,overflow:"hidden",
-        boxShadow:"0 6px 28px rgba(0,0,0,.55)",border:"1px solid #4A3A2A"}}>
+        boxShadow:"0 6px 28px rgba(0,0,0,.55)",border:"1px solid var(--gline,#4A3A2A)"}}>
         <div style={{height:3,background:"linear-gradient(90deg,#E05252,#FF6B6B)",width:pct+"%",transition:"width .08s linear"}}/>
         <div style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:12}}>
           <svg width={32} height={32} style={{flexShrink:0,transform:"rotate(-90deg)"}}>
@@ -524,14 +530,14 @@ function LinkPopup({ href, x, y, onClose }) {
   return (
     <div ref={ref} style={{position:"fixed",top:pos.top,left:pos.left,
       background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.7)",
-      overflow:"hidden",zIndex:700,animation:"fS .15s ease",border:"1px solid #4A3A2A",minWidth:200}}>
+      overflow:"hidden",zIndex:700,animation:"fS .15s ease",border:"1px solid var(--gline,#4A3A2A)",minWidth:200}}>
       <div style={{fontSize:11,color:"#B0A498",padding:"8px 14px 4px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shortHref}</div>
       {[
         {icon:"📋",label:"Копировать ссылку",fn:()=>{navigator.clipboard?.writeText(href);onClose();}},
         {icon:"↗",label:"Открыть ссылку",fn:()=>{window.open(href,"_blank");onClose();}},
       ].map((it,i)=>(
         <button key={i} onClick={it.fn} style={{width:"100%",background:"none",border:"none",
-          borderTop:"1px solid #4A3A2A",padding:"11px 14px",color:"#F2EAE0",fontSize:14,
+          borderTop:"1px solid var(--gline,#4A3A2A)",padding:"11px 14px",color:"#F2EAE0",fontSize:14,
           cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}
           onMouseEnter={e=>(e.currentTarget.style.background="#332512")}
           onMouseLeave={e=>(e.currentTarget.style.background="none")}>
@@ -602,9 +608,9 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
         </div>
       </div>
       {/* Нижняя панель: компактная «Изменить» рядом с «Отправить» */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"0 12px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"0 12px",borderTop:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0"}}>
         <button onClick={onClose} title="Изменить"
-          style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid #4A3A2A",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          style={{width:40,height:40,borderRadius:"50%",background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span>
         </button>
         <button onClick={()=>{onSend();onClose();}} title={isEdit?"Сохранить":"Отправить"}
@@ -767,20 +773,20 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
         </div>
         <div style={{display:"flex",flexWrap:"wrap",gap:8,padding:"0 14px 12px",flexShrink:0}}>
           <button onClick={()=>{onChangeIcon&&onChangeIcon();}} title="Изменить иконку темы"
-            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",
+            style={{background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:8,padding:"6px 10px",
               color:"#EF6C00",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
             <span style={{display:"flex",transform:"scale(.85)"}}>{IC.edit}</span> Иконка
           </button>
           <button onClick={()=>{onPinned&&onPinned();}}
-            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+            style={{background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
             <span style={{display:"flex",transform:"scale(.85)"}}>{IC.pin}</span> Закреплённые
           </button>
           <button onClick={()=>{onRename&&onRename();}}
-            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+            style={{background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
             <span style={{display:"flex",transform:"scale(.85)"}}>{IC.edit}</span> Переименовать
           </button>
           <button onClick={()=>{onClear&&onClear();}}
-            style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
+            style={{background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:8,padding:"6px 10px",color:"#D8CCBE",fontSize:12,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
             <span style={{display:"flex",transform:"scale(.85)"}}>{IC.archive}</span> Очистить
           </button>
           {isTopTheme && (
@@ -873,7 +879,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
         <div onClick={(e)=>{e.stopPropagation();setCtxMenu(null);}} style={{position:"fixed",inset:0,zIndex:500}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
             left:Math.max(8,Math.min(ctxMenu.x-100,window.innerWidth-210)),top:Math.max(8,ctxMenu.y-72),
-            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
+            background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
             <button onClick={()=>{ const id=ctxMenu.item.noteId; setCtxMenu(null); onClose&&onClose(); onJumpTo&&onJumpTo(id); }}
               style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:"#F2EAE0",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
               <span style={{display:"flex",color:"#EF6C00"}}>{IC.arrRight}</span> Перейти к сообщению
@@ -918,7 +924,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, 42px)",gap:8,justifyContent:"center"}}>
           {icons.map(k=>(
             <button key={k} onClick={()=>setIcon(k)}
-              style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+selBorder:"1px solid #4A3A2A",
+              style={{width:42,height:42,borderRadius:"50%",cursor:"pointer",border:icon===k?"2px solid "+selBorder:"1px solid var(--gline,#4A3A2A)",
                 background:icon===k?selBg:"#2E251C",color:icon===k?selFg:"#B0A498",
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"all .12s"}}>
               {IC[k]||IC.fFolder}
@@ -934,7 +940,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
         </div>
       </div>
       <button onClick={()=>name.trim()&&onSubmit(name.trim(),icon,color)}
-        style={{width:"100%",background:selBg,border:choco?"1px solid #4A3A2A":neon?"1px solid #3E5C82":choconeon?"1px solid #4A3A2A":"none",borderRadius:12,padding:13,
+        style={{width:"100%",background:selBg,border:choco?"1px solid var(--gline,#4A3A2A)":neon?"1px solid #3E5C82":choconeon?"1px solid var(--gline,#4A3A2A)":"none",borderRadius:12,padding:13,
           color:selFg,fontWeight:600,fontSize:15,cursor:"pointer",opacity:name.trim()?1:.5,transition:"background .15s",boxShadow:selGlow}}>
         {btnLabel}
       </button>
@@ -1030,7 +1036,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <div style={{marginBottom:8}}>
         <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Локальное автосохранение</div>
         <div onClick={()=>setAsOpen(true)}
-          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",border:"1px solid #4A3A2A"}}>
+          style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",border:"1px solid var(--gline,#4A3A2A)"}}>
           <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
           <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
         </div>
@@ -1038,7 +1044,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <Sheet open={asOpen} onClose={()=>setAsOpen(false)} title="Автосохранение">
         {AS_MODES.map(m=>(
           <div key={m.val} onClick={()=>{setAsSettings({mode:m.val});saveAS({mode:m.val});setAsOpen(false);}}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:6}}>
             <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(asSettings.mode===m.val?"#EF6C00":"#5A4C40"),
               display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               {asSettings.mode===m.val&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
@@ -1050,7 +1056,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
       <div style={{height:1,background:"#2A2017",margin:"16px 0"}}/>
       <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Ручная копия</div>
       <div onClick={()=>setUsePwd(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,
-        background:"#2A2017",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid #4A3A2A"}}>
+        background:"#2A2017",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid var(--gline,#4A3A2A)"}}>
         <div style={{width:20,height:20,borderRadius:6,
           background:usePwd?"#9B59B6":"transparent",border:"2px solid "+(usePwd?"#9B59B6":"#5A4C40"),
           display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -1059,12 +1065,12 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
         <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Шифровать (AES-256)</span>
       </div>
       {usePwd&&<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="Пароль..."
-        style={{width:"100%",background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:10,padding:"11px 14px",
+        style={{width:"100%",background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:10,padding:"11px 14px",
           color:"#F2EAE0",fontSize:14,marginBottom:10,outline:"none"}}/>}
       {msg&&<div style={{fontSize:13,color:"#7EC87E",marginBottom:10}}>{msg}</div>}
       <div style={{display:"flex",gap:10}}>
         <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
-          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:13,
+          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:13,
             color:"#F2EAE0",cursor:"pointer",fontSize:14}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.imp}</span>Импорт
         </button>
@@ -1425,6 +1431,8 @@ export default function App() {
   const [hideVersion, setHideVersion] = useState(()=>{ try{ return localStorage.getItem("napp_hideVersion")==="1"; }catch{ return false; } });
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
+  // Цвет серых граней: при «Шоколадном неоне» все грани тёплые оранжевые
+  useEffect(()=>{ try{ document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"); }catch{} },[iconAccent]);
   function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
   const ACC = iconAccent==="choco" ? "#3A2E24" : iconAccent==="neon" ? "#2E4A6B" : iconAccent==="choconeon" ? "#3A2E24" : "#EF6C00";
   const ACC_FG = iconAccent==="choco" ? "#EF6C00" : iconAccent==="neon" ? "#3A2E24" : iconAccent==="choconeon" ? "#EF6C00" : "#fff";
@@ -1555,12 +1563,12 @@ export default function App() {
     // заметки: текст vs медиа по типам
     let textBytes=0, img=0, vid=0, aud=0, files=0;
     try{
-      const d=JSON.parse(localStorage.getItem(SK)||"{}");
+      const d=data||JSON.parse(localStorage.getItem(SK)||"{}");
       const walk=arr=>arr&&arr.forEach(f=>{
         if(f.notes) f.notes.forEach(n=>{
           if(n.text) textBytes+=sizeOf(n.text);
           if(n.attachments) n.attachments.forEach(a=>{
-            const sz=sizeOf((a&&(a.data||a.url||a.src))||"");
+            const sz=sizeOf((a&&(a.dataUrl||a.data||a.url||a.src))||"");
             if(a&&(a.voice||(a.type&&a.type.startsWith("audio/")))) aud+=sz;
             else if(a&&a.type&&a.type.startsWith("image/")) img+=sz;
             else if(a&&a.type&&a.type.startsWith("video/")) vid+=sz;
@@ -1611,22 +1619,28 @@ export default function App() {
   // Пока абстракция: window.NotengerAuth.getToken() -> Promise<string> | null
   async function getAccessToken(interactive){
     try{
-      if(window.NotengerAuthNative && window.NotengerAuthNative.getToken){
-        return await Promise.race([
-          new Promise(resolve=>{
-            window.__ntgrResolveToken=(t)=>{ window.__ntgrResolveToken=null; resolve(t||null); };
-            try{ window.NotengerAuthNative.getToken(!!interactive); }catch(e){ resolve(null); }
-          }),
-          new Promise(res=>setTimeout(()=>res(null), 60000))
-        ]);
-      }
-      // запасной путь (если кто-то реализует window.NotengerAuth.getToken)
-      if(window.NotengerAuth && window.NotengerAuth.getToken){
-        return await Promise.race([
-          window.NotengerAuth.getToken(!!interactive),
-          new Promise(res=>setTimeout(()=>res(null), 60000))
-        ]);
-      }
+      const ask=(inter)=>{
+        if(window.NotengerAuthNative && window.NotengerAuthNative.getToken){
+          return Promise.race([
+            new Promise(resolve=>{
+              window.__ntgrResolveToken=(t)=>{ window.__ntgrResolveToken=null; resolve(t||null); };
+              try{ window.NotengerAuthNative.getToken(!!inter); }catch(e){ resolve(null); }
+            }),
+            new Promise(res=>setTimeout(()=>res(null), inter?60000:8000))
+          ]);
+        }
+        if(window.NotengerAuth && window.NotengerAuth.getToken){
+          return Promise.race([
+            window.NotengerAuth.getToken(!!inter),
+            new Promise(res=>setTimeout(()=>res(null), inter?60000:8000))
+          ]);
+        }
+        return Promise.resolve(null);
+      };
+      // всегда пробуем тихо: если уже авторизован — окно входа не показываем
+      const silent=await ask(false);
+      if(silent) return silent;
+      if(interactive) return await ask(true);
     }catch(e){}
     return null;
   }
@@ -2175,6 +2189,7 @@ export default function App() {
     setNoteCtx(null);
     setSelectMode(null);
     composerOrigin.current={fid,sid};
+    composerWantFocus.current=true;
     if(noInputAnim){ setComposerFull(true); setComposerPeek(false); }
     else { capturePlaneAnchor(); setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },500); setTimeout(()=>setPlanePhase('idle'),560); }
   }
@@ -2618,7 +2633,7 @@ export default function App() {
       {/* Глобальная панель пересылки — снизу, над полем ввода */}
       {moveBuffer&&(
         <div onClick={e=>e.stopPropagation()} style={{position:"fixed",left:0,right:0,bottom:0,
-          maxWidth:420,margin:"0 auto",background:"#2E251C",borderTop:"1px solid #4A3A2A",
+          maxWidth:420,margin:"0 auto",background:"#2E251C",borderTop:"1px solid var(--gline,#4A3A2A)",
           padding:"12px 14px",display:"flex",alignItems:"center",gap:10,zIndex:120,
           boxShadow:"0 -4px 16px rgba(0,0,0,.4)"}}>
           <span style={{fontSize:14,color:"#B0A498",flex:1}}>
@@ -2676,7 +2691,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v158</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v159</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2698,7 +2713,7 @@ export default function App() {
             ))}
           </div>
           {/* Панель поиска внизу — в едином стиле, высота 46 */}
-          <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
@@ -2713,7 +2728,7 @@ export default function App() {
       {composerFull && composerPeek && (
         <button onClick={()=>setComposerPeek(false)} title="Вернуться к сообщению (свайп влево)"
           style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",zIndex:430,
-            background:"rgba(46,37,28,.9)",border:"1px solid #4A3A2A",borderRight:"none",color:"#EF6C00",cursor:"pointer",
+            background:"rgba(46,37,28,.9)",border:"1px solid var(--gline,#4A3A2A)",borderRight:"none",color:"#EF6C00",cursor:"pointer",
             width:30,height:80,borderRadius:"12px 0 0 12px",display:"flex",alignItems:"center",justifyContent:"center",
             boxShadow:"-2px 0 12px rgba(0,0,0,.4)"}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.arrLeft}</span>
@@ -2745,7 +2760,7 @@ export default function App() {
         return (
         <div onClick={()=>setMsgPop(null)} onTouchStart={()=>setMsgPop(null)} style={{position:"fixed",inset:0,zIndex:480}}>
           <div onClick={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()}
-            style={{position:"absolute",left,top,display:"flex",gap:4,background:"#33281C",border:"1px solid #4A3A2A",
+            style={{position:"absolute",left,top,display:"flex",gap:4,background:"#33281C",border:"1px solid var(--gline,#4A3A2A)",
               borderRadius:12,padding:5,boxShadow:"0 8px 28px rgba(0,0,0,.55)",animation:"fS .12s ease"}}>
             {note.text&&<button onClick={()=>{ copyText(note); setMsgPop(null); }} title="Копировать"
               style={{width:44,height:34,borderRadius:8,background:"#2E251C",border:"none",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -2928,7 +2943,7 @@ export default function App() {
       {/* НИЖНЯЯ ШАПКА ГЛАВНОГО: Notenger ▾ · поиск · [центр FAB +] */}
       {scr==="main"&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
-          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <div style={{position:"relative",flex:1,minWidth:0}}>
             <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(v=>!v); }}
               style={{fontSize:17,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
@@ -3012,7 +3027,7 @@ export default function App() {
 
       {/* Строка поиска по темам — внизу */}
       {scr==="sub"&&folder&&subSearch!=="" && !selectMode && multiSelect.length===0 && (
-        <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+        <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
           <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
             <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
@@ -3024,7 +3039,7 @@ export default function App() {
       {/* ═══ НИЖНЯЯ ШАПКА КАТЕГОРИИ — назад · категория · поиск · ⋯ · + ═══ */}
       {scr==="sub"&&folder&&subSearch===""&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
-          background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <button onClick={back} title="Назад"
             style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -3066,7 +3081,7 @@ export default function App() {
       {scr==="chat"&&subf&&(<>
         {/* Фиксированная панель вставки/перемещения — всегда сверху до завершения выбора */}
         {clipboard&&(
-          <div style={{background:"#2E251C",borderBottom:"1px solid #4A3A2A",padding:"10px 14px",
+          <div style={{background:"#2E251C",borderBottom:"1px solid var(--gline,#4A3A2A)",padding:"10px 14px",
             display:"flex",alignItems:"center",gap:10,flexShrink:0,zIndex:30}}>
             <span style={{fontSize:14,color:"#B0A498",flex:1}}>
               {clipboard.mode==="cut"?"Сообщение вырезано":"Сообщение скопировано"}
@@ -3192,7 +3207,7 @@ export default function App() {
 
         {/* Pending attachments strip */}
         {patts.length>0&&(
-          <div style={{background:"#2A2017",borderTop:"1px solid #4A3A2A",
+          <div style={{background:"#2A2017",borderTop:"1px solid var(--gline,#4A3A2A)",
             padding:"8px 12px",display:"flex",gap:8,flexWrap:"wrap",flexShrink:0}}>
             {patts.map(a=>(
               <div key={a.id} style={{background:"#2A2017",borderRadius:10,
@@ -3228,7 +3243,7 @@ export default function App() {
             {patts.length>0&&(
               <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"10px 12px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
                 {patts.map(a=>(
-                  <div key={a.id} style={{position:"relative",borderRadius:10,overflow:"hidden",background:"#2E251C",border:"1px solid #4A3A2A"}}>
+                  <div key={a.id} style={{position:"relative",borderRadius:10,overflow:"hidden",background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)"}}>
                     {a.type&&a.type.startsWith("image/")
                       ? <img src={a.dataUrl} alt="" style={{width:72,height:72,objectFit:"cover",display:"block"}}/>
                       : <div style={{width:120,height:72,display:"flex",alignItems:"center",gap:6,padding:"0 10px"}}>
@@ -3261,7 +3276,7 @@ export default function App() {
             {/* Всплывающая панель ББ-кодов */}
             {fullFmt&&(
               <div style={{position:"absolute",left:10,bottom:54,background:"#2A2017",borderRadius:12,padding:"5px 6px",
-                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid #4A3A2A",zIndex:6}}>
+                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid var(--gline,#4A3A2A)",zIndex:6}}>
                 {[
                   {ic:<Icon size={18} d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" stroke={2} />, b:"[b]",a:"[/b]",x:"текст",t:"Жирный"},
                   {ic:<Icon size={18} d={["M15 5h-5","M14 19H9","M14 5l-4 14"]} stroke={2} />, b:"[i]",a:"[/i]",x:"текст",t:"Курсив"},
@@ -3280,7 +3295,7 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 8px",borderTop:"1px solid #4A3A2A",background:"#2A2017",flexShrink:0,height:52,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 8px",borderTop:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>Aa</button>
@@ -3312,13 +3327,13 @@ export default function App() {
             </div>
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#2A2017",borderTop:"1px solid #4A3A2A",
+              <div style={{position:"absolute",left:0,right:0,bottom:0,background:"#2A2017",borderTop:"1px solid var(--gline,#4A3A2A)",
                 padding:"12px 14px",zIndex:24,display:"flex",flexDirection:"column",gap:10}}>
                 <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
                 <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={discardPendingVoice}
-                    style={{flex:1,background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:10,padding:"11px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
+                    style={{flex:1,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:10,padding:"11px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
                   <button onClick={sendPendingVoice}
                     style={{flex:1,background:"#EF6C00",border:"none",borderRadius:10,padding:"11px",color:"#fff",fontWeight:600,cursor:"pointer",fontSize:14}}>Отправить</button>
                 </div>
@@ -3326,7 +3341,7 @@ export default function App() {
             )}
             {/* Оверлей записи голосового (только в редакторе) */}
             {recording && composerFull && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,padding:"0 12px",background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
+              <div style={{position:"absolute",left:0,right:0,bottom:0,padding:"0 12px",background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
                 <span style={{flex:1,fontSize:13,textAlign:"center",color:recSlide>60?"#E05252":"#8A7A65",transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`}}>{recSlide>60?"Отпустите для отмены":"← смахните влево для отмены"}</span>
@@ -3339,14 +3354,14 @@ export default function App() {
                 onTouchStart={e=>{ e.stopPropagation(); swipeRef.current=null; const t=e.touches[0]; selBar._d={dx:t.clientX-selBar.x,dy:t.clientY-selBar.y}; }}
                 onTouchMove={e=>{ e.stopPropagation(); e.preventDefault(); const t=e.touches[0]; const d=selBar._d||{dx:0,dy:0}; const w=selBar.hasSel?250:200,pad=10; const nx=Math.max(pad+w/2,Math.min(window.innerWidth-pad-w/2,t.clientX-d.dx)); const ny=Math.max(72,Math.min(window.innerHeight-70,t.clientY-d.dy)); setSelBar(s=>s?{...s,x:nx,y:ny,_d:d}:s); }}
                 style={{position:"fixed",left:selBar.x,top:selBar.y,transform:"translateX(-50%)",zIndex:520,
-                  background:"rgba(36,28,22,.96)",border:"1px solid #4A3A2A",borderRadius:10,boxShadow:"0 4px 16px rgba(0,0,0,.45)",
+                  background:"rgba(36,28,22,.96)",border:"1px solid var(--gline,#4A3A2A)",borderRadius:10,boxShadow:"0 4px 16px rgba(0,0,0,.45)",
                   display:"flex",overflow:"hidden",animation:"fS .1s ease",backdropFilter:"blur(2px)"}}>
                 {(selBar.hasSel
                   ? [{l:"Копировать",fn:tbCopy},{l:"Вырезать",fn:tbCut},{l:"Вставить",fn:tbPaste}]
                   : [{l:"Выбрать всё",fn:tbAll},{l:"Вставить",fn:tbPaste}]
                 ).map((b,i)=>(
                   <button key={i} onClick={b.fn} onTouchStart={e=>e.stopPropagation()} style={{background:"none",border:"none",color:"#D8CCBE",fontSize:12.5,
-                    padding:"8px 13px",cursor:"pointer",borderLeft:i?"1px solid #4A3A2A":"none",whiteSpace:"nowrap"}}>{b.l}</button>
+                    padding:"8px 13px",cursor:"pointer",borderLeft:i?"1px solid var(--gline,#4A3A2A)":"none",whiteSpace:"nowrap"}}>{b.l}</button>
                 ))}
               </div>
             )}
@@ -3358,7 +3373,7 @@ export default function App() {
         const selNote = single ? subf?.notes.find(x=>x.id===selectMode) : null;
         const closePanel = ()=>{ if(single){ setSelectMode(null); setTextArmed(false); } else clearMulti(); };
         return (
-        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+        <div style={{background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",
@@ -3401,7 +3416,7 @@ export default function App() {
         );
       })()}
       {scr==="chat" && imgSel.length>0 && (
-        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+        <div style={{background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
           <button onClick={()=>setImgSel([])} title="Отмена"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.close}</button>
@@ -3418,7 +3433,7 @@ export default function App() {
         </div>
       )}
         {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
-          <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
@@ -3430,7 +3445,7 @@ export default function App() {
         )}
         {!selectMode && multiSelect.length===0 && chatSearch==="" && (!composerFull||composerPeek) && (
           <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
-            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+            background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
@@ -3488,7 +3503,7 @@ export default function App() {
           onClick={e=>{e.stopPropagation();copySelection();}}
           style={{position:"fixed",left:Math.max(60,Math.min(selCopy.x,window.innerWidth-60)),
             top:Math.max(70,selCopy.y-46),transform:"translateX(-50%)",zIndex:200,
-            background:"rgba(36,28,22,.96)",color:"#D8CCBE",border:"1px solid #4A3A2A",borderRadius:10,padding:"8px 14px",
+            background:"rgba(36,28,22,.96)",color:"#D8CCBE",border:"1px solid var(--gline,#4A3A2A)",borderRadius:10,padding:"8px 14px",
             fontSize:12.5,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,.45)",backdropFilter:"blur(2px)",
             display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
           <span style={{display:"flex",transform:"scale(.85)"}}>{IC.copyT}</span> Копировать
@@ -3515,7 +3530,7 @@ export default function App() {
             <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"60vh",overflowY:"auto"}}>
               {pins.map(n=>(
                 <button key={n.id} onClick={()=>jumpTo(n.id)}
-                  style={{textAlign:"left",background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:12,
+                  style={{textAlign:"left",background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,
                     padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
                   <span style={{color:"#F5A623",display:"flex",flexShrink:0}}>{IC.pin}</span>
                   <span style={{flex:1,minWidth:0}}>
@@ -3546,12 +3561,12 @@ export default function App() {
       {/* Глобальное подтверждение голосового (для записи кнопкой микрофона в шапке) */}
       {pendingVoice && !composerFull && (
         <div onClick={discardPendingVoice} style={{position:"fixed",inset:0,zIndex:610,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",borderTop:"1px solid #4A3A2A",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .2s ease"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",borderTop:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .2s ease"}}>
             <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
             <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={discardPendingVoice}
-                style={{flex:1,background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:10,padding:"12px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
+                style={{flex:1,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:10,padding:"12px",color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
               <button onClick={sendPendingVoice}
                 style={{flex:1,background:"#EF6C00",border:"none",borderRadius:10,padding:"12px",color:"#fff",fontWeight:600,cursor:"pointer",fontSize:14}}>Отправить</button>
             </div>
@@ -3578,7 +3593,7 @@ export default function App() {
             </div>
           )}
           <button onClick={(e)=>{ e.stopPropagation(); saveImageToFolder(lightbox); }} title="Сохранить в папку"
-            style={{position:"absolute",right:16,bottom:24,width:44,height:44,borderRadius:"50%",background:"rgba(46,37,28,.85)",border:"1px solid #4A3A2A",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            style={{position:"absolute",right:16,bottom:24,width:44,height:44,borderRadius:"50%",background:"rgba(46,37,28,.85)",border:"1px solid var(--gline,#4A3A2A)",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <span style={{display:"flex"}}><Icon d={["M12 4v12","M7 11l5 5 5-5","M5 20h14"]} stroke={2}/></span>
           </button>
           <button onClick={closeLightbox} style={{position:"absolute",bottom:32,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,.5)",
@@ -3591,7 +3606,7 @@ export default function App() {
       {attSh&&(
         <div onClick={()=>setAttSh(false)} style={{position:"fixed",inset:0,zIndex:450}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:10,bottom:60,
-            background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:16,padding:10,
+            background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:16,padding:10,
             boxShadow:"0 10px 36px rgba(0,0,0,.6)",animation:"fS .15s ease",transformOrigin:"bottom right"}}>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3, 78px)",gridAutoRows:"72px",gap:6}}>
             {[
@@ -3603,7 +3618,7 @@ export default function App() {
               {ic:IC.camcorder,label:"Видеозап.",  accept:"video/*", capture:"environment"},
             ].map(o=>(
               <button key={o.label} onClick={()=>pickFiles(o.accept,o.capture)}
-                style={{background:"#2E251C",border:"1px solid #4A3A2A",borderRadius:12,
+                style={{background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,
                   cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5}}>
                 <span style={{color:"#EF6C00",display:"flex"}}>{o.ic}</span>
                 <span style={{fontSize:10,color:"#D8CCBE"}}>{o.label}</span>
@@ -3620,7 +3635,7 @@ export default function App() {
           <>
             <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
             <div onClick={()=>setDriveSh(true)}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer"}}>
+              style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
               <svg width="18" height="18" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
               <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
               <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="ok"?"подключён":"настроить"}</span>
@@ -3644,31 +3659,31 @@ export default function App() {
         ) : (
           <>
             {/* Статус + уроборос */}
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",marginBottom:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",marginBottom:10}}>
               <div style={{width:9,height:9,borderRadius:"50%",background:"#5BBF5B",flexShrink:0}}/>
               <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>Синхронизировано{syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):""}</span>
               <button onClick={()=>runSync("auto",false)} title="Синхронизировать сейчас"
-                style={{width:36,height:36,borderRadius:"50%",background:"#2E251C",border:"1px solid #4A3A2A",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                style={{width:36,height:36,borderRadius:"50%",background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <span style={{display:"flex",transform:"scale(.8)",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none"}}>{IC.ouro}</span>
               </button>
             </div>
 
             {/* Когда сохранять — отдельное меню */}
-            <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:8}}>
+            <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Когда сохранять</span>
               <span style={{fontSize:13,color:"#B0A498"}}>{(CLOUD_MODES.find(m=>m.val===(syncCfg.auto?(syncCfg.cloudMode||"change"):"off"))||CLOUD_MODES[0]).label}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Что сохранять — отдельное меню */}
-            <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:8}}>
+            <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Место на диске — отдельное меню */}
             <div onClick={()=>{ setCloudStorSh(true); refreshStorageInfo(); }}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:8}}>
+              style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:8}}>
               <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
               <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"")}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
@@ -3676,15 +3691,15 @@ export default function App() {
 
             {/* Выход */}
             {!signOutAsk ? (
-              <button onClick={()=>setSignOutAsk(true)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14,marginTop:4}}>
+              <button onClick={()=>setSignOutAsk(true)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14,marginTop:4}}>
                 <span style={{display:"flex",transform:"scale(.75)"}}>{IC.logout}</span>Выйти из аккаунта
               </button>
             ) : (
-              <div style={{marginTop:4,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #4A3A2A"}}>
+              <div style={{marginTop:4,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)"}}>
                 <div style={{fontSize:14,color:"#F2EAE0",marginBottom:10}}>Выйти из аккаунта Google?</div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={cloudSignOut} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Да</button>
-                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
+                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
                 </div>
               </div>
             )}
@@ -3694,7 +3709,7 @@ export default function App() {
 
       <Sheet open={cloudWhenSh} onClose={()=>setCloudWhenSh(false)} title="Когда сохранять">
         {CLOUD_MODES.map(m=>{ const sel=(syncCfg.auto?(syncCfg.cloudMode||"change"):"off")===m.val; const timed=(m.val==="1d"||m.val==="1w"); return (
-          <div key={m.val} style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",marginBottom:6}}>
+          <div key={m.val} style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",marginBottom:6}}>
             <div onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); }} style={{display:"flex",alignItems:"center",gap:10,flex:1,cursor:"pointer"}}>
               <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
               <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
@@ -3704,7 +3719,7 @@ export default function App() {
                 <span style={{display:"flex",color:"#EF6C00",transform:"scale(.85)"}}>{IC.clock||IC.ouro}</span>
                 <input type="time" value={syncCfg.cloudTime||"03:00"}
                   onChange={e=>saveSyncCfg({...syncCfg,cloudTime:e.target.value})}
-                  style={{background:"transparent",border:"1px solid #4A3A2A",borderRadius:8,color:"#EF6C00",fontSize:13,padding:"4px 6px",outline:"none",fontWeight:600}}/>
+                  style={{background:"transparent",border:"1px solid var(--gline,#4A3A2A)",borderRadius:8,color:"#EF6C00",fontSize:13,padding:"4px 6px",outline:"none",fontWeight:600}}/>
               </label>
             )}
           </div>
@@ -3715,7 +3730,7 @@ export default function App() {
       <Sheet open={cloudWhatSh} onClose={()=>setCloudWhatSh(false)} title="Что сохранять">
         {SYNC_MODULES.map(m=>(
           <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
-            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer",marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3725,7 +3740,7 @@ export default function App() {
         <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 6px"}}>Медиа {(syncCfg.modules&&syncCfg.modules.notes)?"":"(нужны «Заметки»)"}</div>
         {MEDIA_MODULES.map(m=>{ const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes); return (
           <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
-            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3741,7 +3756,7 @@ export default function App() {
           <div style={{fontSize:13,color:"#B0A498",marginBottom:10}}>Всего: <span style={{color:"#EF6C00",fontWeight:600}}>{humanBytes(storageInfo.total)}</span></div>
         )}
         {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{ const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0; return (
-          <div key={i} style={{padding:"10px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",marginBottom:6}}>
+          <div key={i} style={{padding:"10px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",marginBottom:6}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
               <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
               <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
@@ -3758,14 +3773,14 @@ export default function App() {
             <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
-              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
             </div>
           </div>
         )}
       </Sheet>
 
       <Sheet open={imgSh} onClose={()=>setImgSh(false)} title="Сжатие изображений">
-        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid #4A3A2A",cursor:"pointer"}}>
+        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
           <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3777,7 +3792,7 @@ export default function App() {
       </Sheet>
       {imgCompressPopup && (
         <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid #4A3A2A",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid var(--gline,#4A3A2A)",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
             <div style={{fontSize:16,color:"#F2EAE0",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
             <div style={{fontSize:14,color:"#D8CCBE",lineHeight:1.55,marginBottom:16}}>Качество, заметное человеческому глазу, не пострадает. Изображения станут заметно легче и будут быстрее синхронизироваться.</div>
             <button onClick={()=>setImgCompressPopup(false)} style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Понятно</button>
@@ -3785,7 +3800,7 @@ export default function App() {
         </div>
       )}
             <Sheet open={miscSh} onClose={()=>setMiscSh(false)} title="Прочее">
-              <div onClick={toggleHideVersion} style={{background:"#2A2017",borderRadius:12,border:"1px solid #4A3A2A",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+              <div onClick={toggleHideVersion} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
                 <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Скрыть номер версии</span>
                 <div style={{width:46,height:26,borderRadius:13,background:hideVersion?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:2,left:hideVersion?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3794,15 +3809,15 @@ export default function App() {
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Скрывает метку «beta v…» в углу экрана.</div>
             </Sheet>
             <Sheet open={uiSh} onClose={()=>setUiSh(false)} title="Интерфейс">
-        <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
+        <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.sparkle}</span>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Анимации</span>
         </div>
-        <div onClick={()=>{setUiSh(false);setFontSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
+        <div onClick={()=>{setUiSh(false);setFontSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.text}</span>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Шрифты</span>
         </div>
-        <div style={{background:"#2A2017",border:"1px solid #4A3A2A",borderRadius:12,padding:"14px",marginBottom:10}}>
+        <div style={{background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10}}>
           <div style={{fontSize:15,color:"#F2EAE0",marginBottom:12}}>Цвет иконок</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {[{k:"orange",label:"Оранжевая",bg:"#EF6C00",fg:"#fff",bd:"transparent",glow:null},{k:"choco",label:"Шоколадная",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A",glow:null},{k:"choconeon",label:"Шоколадный неон",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A",glow:"0 0 14px rgba(239,108,0,.75)"}].map(o=>(
@@ -3834,7 +3849,7 @@ export default function App() {
         ].map(it=>{
           const enabled=!it.off;
           return (
-            <div key={it.key} onClick={it.toggle} style={{background:"#2A2017",borderRadius:12,border:"1px solid #4A3A2A",padding:"14px",marginBottom:10,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+            <div key={it.key} onClick={it.toggle} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",marginBottom:10,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
               <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>{it.label}</span>
               <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
                 <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -3953,7 +3968,7 @@ export default function App() {
         <div onClick={()=>setFontOpen(null)} style={{position:"fixed",inset:0,zIndex:700}}>
           <div onClick={e=>e.stopPropagation()} style={{position:"fixed",
             left:Math.max(8,Math.min(fontOpen.x+fontOpen.w/2-125,window.innerWidth-258)),top:Math.max(8,Math.min(fontOpen.y-20,window.innerHeight-340)),
-            background:"#2A2017",borderRadius:14,width:"max-content",minWidth:180,maxWidth:280,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid #4A3A2A",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
+            background:"#2A2017",borderRadius:14,width:"max-content",minWidth:180,maxWidth:280,maxHeight:"64vh",display:"flex",flexDirection:"column",animation:"fS .12s ease",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"0 10px 36px rgba(0,0,0,.6)"}}>
             <div style={{padding:"12px 16px 8px",fontSize:13,fontWeight:700,color:"#8A7A65"}}>{FONT_TARGETS.find(t=>t.key===fontOpen.key)?.label}</div>
             <div style={{overflowY:"auto",flex:1}}>
             {allFonts.map(f=>{
