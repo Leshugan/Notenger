@@ -427,8 +427,8 @@ function DropMenu({ items, onClose, style:extraStyle={} }) {
     <div ref={ref} style={{background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
       overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid var(--gline,#4A3A2A)",...extraStyle}}>
       {items.map((item,i)=>item.sep
-        ?<div key={i} style={{height:1,background:"#4A3A2A",margin:"2px 0"}}/>
-        :<button key={i} onClick={()=>{item.fn();onClose();}}
+        ?<div key={i} style={{height:1,background:"var(--gline,#4A3A2A)",margin:"2px 0"}}/>
+        :<button key={i} className="dmi" onClick={()=>{item.fn();onClose();}}
           style={{background:"none",border:"none",padding:"10px 14px",width:"100%",
             color:item.danger?"#E05252":"#F2EAE0",fontSize:14,cursor:"pointer",
             textAlign:"left",display:"flex",alignItems:"center",gap:9,whiteSpace:"nowrap"}}
@@ -593,7 +593,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
   return (
     <div style={{position:"fixed",inset:0,background:"#1A1410",zIndex:600,display:"flex",flexDirection:"column"}}>
       {/* Шапка без стрелки */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
         <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Предпросмотр</div>
       </div>
       {/* Содержимое — как пузырь сообщения */}
@@ -722,7 +722,7 @@ function PinnedBanner({ note, color, onJump }) {
   return (
     <div onClick={onJump} style={{background:"#2A2017",borderLeft:`3px solid ${color}`,
       padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,
-      borderBottom:"1px solid #2A2017",flexShrink:0}}>
+      borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
       <span style={{fontSize:14}}>📌</span>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:11,color,fontWeight:600,marginBottom:1}}>Закреплено</div>
@@ -797,7 +797,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
           )}
         </div>
         {/* Tab bar */}
-        <div style={{display:"flex",borderBottom:"1px solid #2A2017",flexShrink:0}}>
+        <div style={{display:"flex",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
           {Object.entries(cats).map(([k,c])=>(
             <button key={k} onClick={()=>setTab(k)} style={{flex:1,background:"none",border:"none",
               padding:"12px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,
@@ -871,7 +871,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
             </div>
           )}
         </div>
-        <div style={{padding:"12px 16px 24px",borderTop:"1px solid #2A2017",flexShrink:0}}>
+        <div style={{padding:"12px 16px 24px",borderTop:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
           <button onClick={onClose} style={{width:"100%",background:"#2A2017",border:"none",borderRadius:12,padding:13,color:"#B0A498",cursor:"pointer",fontSize:14}}>Закрыть</button>
         </div>
       </div>
@@ -1432,7 +1432,7 @@ export default function App() {
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
   // Цвет серых граней: при «Шоколадном неоне» все грани тёплые оранжевые
-  useEffect(()=>{ try{ document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"); }catch{} },[iconAccent]);
+  useEffect(()=>{ try{ document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"); document.documentElement.style.setProperty("--gline2", iconAccent==="choconeon"?"#4A2E14":"#2A2017"); }catch{} },[iconAccent]);
   function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
   const ACC = iconAccent==="choco" ? "#3A2E24" : iconAccent==="neon" ? "#2E4A6B" : iconAccent==="choconeon" ? "#3A2E24" : "#EF6C00";
   const ACC_FG = iconAccent==="choco" ? "#EF6C00" : iconAccent==="neon" ? "#3A2E24" : iconAccent==="choconeon" ? "#EF6C00" : "#fff";
@@ -1732,7 +1732,7 @@ export default function App() {
     syncRunning.current=true; setSyncStatus("syncing");
     try{
       const token=await getAccessToken(interactive);
-      if(!token){ setSyncStatus("signedout"); syncRunning.current=false; return; }
+      if(!token){ setSyncStatus("signedout"); syncRunning.current=false; if(!interactive) tst("Нет доступа к аккаунту — войдите в Google"); return; }
       const remote=await driveFindFile(token);
       if(remote && (mode==="pull" || mode==="auto")){
         const obj=await driveDownload(token,remote.id);
@@ -1978,6 +1978,10 @@ export default function App() {
   function handleHardwareBack(){
     if(recActiveRef.current){ stopRec(true); setRecSlide(0); return true; }
     if(msgPop){ setMsgPop(null); return true; }
+    if(noteCtx){ setNoteCtx(null); return true; }
+    if(linkPopup){ setLinkPopup(null); return true; }
+    if(fullFmt){ setFullFmt(false); return true; }
+    if(prevSh){ setPrevSh(false); return true; }
     if(imgSel.length){ setImgSel([]); return true; }
     if(pendingVoice){ discardPendingVoice(); return true; }
     if(imgCompressPopup){ setImgCompressPopup(false); return true; }
@@ -2190,8 +2194,8 @@ export default function App() {
     setSelectMode(null);
     composerOrigin.current={fid,sid};
     composerWantFocus.current=true;
-    if(noInputAnim){ setComposerFull(true); setComposerPeek(false); }
-    else { capturePlaneAnchor(); setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); },500); setTimeout(()=>setPlanePhase('idle'),560); }
+    // без анимации перелёта — редактирование открывается сразу
+    setComposerFull(true); setComposerPeek(false);
   }
   function cancelEdit() {
     setEditId(null); setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
@@ -2202,9 +2206,10 @@ export default function App() {
     const o=composerOrigin.current||{fid,sid};
     const dk=o.sid==="__top__"?("__top__"+o.fid):o.sid;
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
+    const wasEdit=!!editId;
     if(editId) cancelEdit();
     setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false);
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
+    if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
@@ -2230,7 +2235,7 @@ export default function App() {
     // возврат в исходную тему + анимация полёта кнопки обратно в позицию "написать"
     setComposerFull(false); setComposerPeek(false);
     setFid(o.fid); setSid(o.sid); setScr("chat");
-    if(!noInputAnim){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
+    if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
     if(wasEdit){
       setTimeout(()=>{ const el=bubbleEls.current[editedId]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); },80);
     } else {
@@ -2669,6 +2674,7 @@ export default function App() {
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#4A3A2A;}
+        .dmi:active{background:#332512;}
         .row:has(button:active){background:transparent;}
         .menu-dots:active{background:#4A3A2A;border-radius:50%;}
         textarea:focus,input:focus{outline:none;}
@@ -2691,7 +2697,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v159</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v160</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2705,7 +2711,7 @@ export default function App() {
             {globalSearch.trim().length>=2 && globalResults(globalSearch).length===0 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Ничего не найдено</div>}
             {globalResults(globalSearch).map((r,i)=>(
               <div key={i} onClick={()=>openThemeAt(r.folderId,r.subId,r.note.id)}
-                style={{padding:"10px 16px",borderBottom:"1px solid #2A2017",cursor:"pointer"}}>
+                style={{padding:"10px 16px",borderBottom:"1px solid var(--gline2,#2A2017)",cursor:"pointer"}}>
                 <div style={{fontSize:12,color:"#EF6C00",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.themeName}</div>
                 <div style={{fontSize:14,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{strip(r.note.text)}</div>
                 <div style={{fontSize:10,color:"#6A5A48",marginTop:3}}>{r.note.ts?fmtStamp(r.note.ts):r.note.time}</div>
@@ -2726,7 +2732,14 @@ export default function App() {
 
       {/* Возвратная вкладка к черновику — видна на ЛЮБОМ экране, пока пишется/редактируется сообщение */}
       {composerFull && composerPeek && (
-        <button onClick={()=>setComposerPeek(false)} title="Вернуться к сообщению (свайп влево)"
+        <button onClick={()=>{
+            // закрыть всё, что может перекрывать редактор, и вернуться к нему
+            setAttSh(false); setCloudWhenSh(false); setCloudWhatSh(false); setCloudStorSh(false); setDriveSh(false);
+            setImgSh(false); setFontDelSh(false); setFontSh(false); setAnimSh(false); setUiSh(false); setMiscSh(false);
+            setExpSh(false); setAsOpen(false); setMediaBrowser(false); setPinnedOpen(false); setModal(null); setDlg(null);
+            setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setNoteCtx(null);
+            setComposerPeek(false);
+          }} title="Вернуться к сообщению (свайп влево)"
           style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",zIndex:430,
             background:"rgba(46,37,28,.9)",border:"1px solid var(--gline,#4A3A2A)",borderRight:"none",color:"#EF6C00",cursor:"pointer",
             width:30,height:80,borderRadius:"12px 0 0 12px",display:"flex",alignItems:"center",justifyContent:"center",
@@ -2776,7 +2789,7 @@ export default function App() {
       {/* ══ HEADER — hidden in typing mode ══ */}
       {false&&!(isTyping&&note.length>0)&&!selectMode&&multiSelect.length===0&&(
         <div style={{background:"#2A2017",padding:"0 12px",height:46,display:"flex",alignItems:"center",
-          gap:10,borderBottom:"1px solid #2A2017",flexShrink:0}}>
+          gap:10,borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
           {scr!=="main"
             ?<button onClick={back} title="Назад"
                style={{width:38,height:38,borderRadius:"50%",background:"#2A2017",border:"none",
@@ -3236,12 +3249,12 @@ export default function App() {
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
             {/* Верхняя строка: заголовок темы */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
               <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{editId?"Редактирование":(subf?.name||"Сообщение")}</div>
             </div>
             {/* Прикреплённые файлы в наборе */}
             {patts.length>0&&(
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"10px 12px",borderBottom:"1px solid #2A2017",flexShrink:0}}>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"10px 12px",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
                 {patts.map(a=>(
                   <div key={a.id} style={{position:"relative",borderRadius:10,overflow:"hidden",background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)"}}>
                     {a.type&&a.type.startsWith("image/")
@@ -3276,7 +3289,7 @@ export default function App() {
             {/* Всплывающая панель ББ-кодов */}
             {fullFmt&&(
               <div style={{position:"absolute",left:10,bottom:54,background:"#2A2017",borderRadius:12,padding:"5px 6px",
-                display:"flex",gap:2,boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid var(--gline,#4A3A2A)",zIndex:6}}>
+                display:"flex",gap:2,flexWrap:"wrap",maxWidth:"calc(100vw - 20px)",boxShadow:"0 6px 24px rgba(0,0,0,.6)",border:"1px solid var(--gline,#4A3A2A)",zIndex:6}}>
                 {[
                   {ic:<Icon size={18} d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" stroke={2} />, b:"[b]",a:"[/b]",x:"текст",t:"Жирный"},
                   {ic:<Icon size={18} d={["M15 5h-5","M14 19H9","M14 5l-4 14"]} stroke={2} />, b:"[i]",a:"[/i]",x:"текст",t:"Курсив"},
@@ -3390,22 +3403,22 @@ export default function App() {
           {/* Копировать текст — одиночное или несколько */}
           {single && selNote && selNote.text && (
           <button onClick={()=>{ if(selNote)copyText(selNote); closePanel(); }} title="Копировать текст"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
           )}
           {!single && (
           <button onClick={()=>{ const ids=new Set(multiSelect); if(selectMode) ids.add(selectMode); const arr=(sid==="__top__"&&folder?.isTheme)?(folder.notes||[]):(subf?.notes||[]); const txt=arr.filter(n=>ids.has(n.id)&&n.text).map(n=>n.text).join("\n\n"); if(txt){ try{ navigator.clipboard?.writeText(txt); }catch{} tst("Скопировано: "+arr.filter(n=>ids.has(n.id)&&n.text).length); } closePanel(); }} title="Копировать текст"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
           )}
           {/* Копировать сообщение */}
           <button onClick={()=>{ if(single){ if(selNote){ setSelectMode(null); copyMulti("cut",[selNote.id]); } } else { copyMulti("cut"); } setScr("main"); }} title="Переместить в раздел"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyMsg}</button>
           {/* Редактировать — только для одиночного */}
           {single&&(
             <button onClick={()=>{ if(selNote){ startEdit(selNote); } setMultiSelect([]); }} title="Редактировать"
-              style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid #4A3A22",color:"#EF6C00",
+              style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.edit}</button>
           )}
           {/* Удалить */}
@@ -3904,7 +3917,7 @@ export default function App() {
           </div>
 
           {/* Кнопка ручного синка */}
-          <button onClick={()=>runSync("auto",true)} disabled={syncStatus==="syncing"}
+          <button onClick={()=>runSync("auto",false)} disabled={syncStatus==="syncing"}
             style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,margin:"8px 0",opacity:syncStatus==="syncing"?.6:1}}>
             {syncStatus==="syncing"?"Синхронизация…":"Синхронизировать сейчас"}
           </button>
@@ -3929,7 +3942,7 @@ export default function App() {
       <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
         <div style={{display:"flex",gap:10,marginBottom:16}}>
           <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
-            style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",background:"#2E251C",border:"1px solid #5A4C40",borderRadius:22,cursor:"pointer"}}>
+            style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",background:"#2E251C",border:"1px solid var(--gline,#5A4C40)",borderRadius:22,cursor:"pointer"}}>
             <span style={{display:"flex",color:"#EF6C00"}}><Icon d={["M12 4v12","M7 11l5 5 5-5","M5 20h14"]} stroke={2} size={17}/></span>
             <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить</span>
           </button>
