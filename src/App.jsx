@@ -418,22 +418,23 @@ function Dlg({ open, msg, onYes, onNo, anchor }) {
 // Generic dropdown menu (inline positioned by caller)
 function DropMenu({ items, onClose, style:extraStyle={} }) {
   const ref=useRef(null);
+  const armed=useRef(false); // защита от «хвостового» клика при открытии длинным нажатием
   useEffect(()=>{
+    const t=setTimeout(()=>{ armed.current=true; },250);
     function h(e){ if(e.target&&e.target.closest&&e.target.closest("[data-menutrigger]")) return; if(ref.current&&!ref.current.contains(e.target))onClose(); }
     setTimeout(()=>document.addEventListener("mousedown",h),0);
-    return()=>document.removeEventListener("mousedown",h);
+    return()=>{ clearTimeout(t); document.removeEventListener("mousedown",h); };
   },[onClose]);
   return (
     <div ref={ref} style={{background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
       overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid var(--gline,#4A3A2A)",...extraStyle}}>
       {items.map((item,i)=>item.sep
         ?<div key={i} style={{height:1,background:"var(--gline,#4A3A2A)",margin:"2px 0"}}/>
-        :<button key={i} className="dmi" onClick={()=>{item.fn();onClose();}}
+        :<button key={i} className="dmi" onClick={()=>{ if(!armed.current) return; item.fn();onClose();}}
           style={{background:"none",border:"none",padding:"10px 14px",width:"100%",
             color:item.danger?"#E05252":"#F2EAE0",fontSize:14,cursor:"pointer",
             textAlign:"left",display:"flex",alignItems:"center",gap:9,whiteSpace:"nowrap"}}
-          onMouseEnter={e=>(e.currentTarget.style.background="#332512")}
-          onMouseLeave={e=>(e.currentTarget.style.background="none")}>
+          >
           <span style={{width:20,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:item.special||"#B0A498"}}>{item.ic}</span>
           <span>{item.label}</span>
         </button>
@@ -539,8 +540,7 @@ function LinkPopup({ href, x, y, onClose }) {
         <button key={i} onClick={it.fn} style={{width:"100%",background:"none",border:"none",
           borderTop:"1px solid var(--gline,#4A3A2A)",padding:"11px 14px",color:"#F2EAE0",fontSize:14,
           cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}
-          onMouseEnter={e=>(e.currentTarget.style.background="#332512")}
-          onMouseLeave={e=>(e.currentTarget.style.background="none")}>
+          >
           <span style={{fontSize:16,width:22,textAlign:"center"}}>{it.icon}</span>{it.label}
         </button>
       ))}
@@ -1432,7 +1432,7 @@ export default function App() {
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
   // Цвет серых граней: при «Шоколадном неоне» все грани тёплые оранжевые
-  useEffect(()=>{ try{ document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"); document.documentElement.style.setProperty("--gline2", iconAccent==="choconeon"?"#4A2E14":"#2A2017"); }catch{} },[iconAccent]);
+  useEffect(()=>{ try{ document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"); document.documentElement.style.setProperty("--gline2", iconAccent==="choconeon"?"rgba(239,108,0,.3)":"#2A2017"); }catch{} },[iconAccent]);
   function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
   const ACC = iconAccent==="choco" ? "#3A2E24" : iconAccent==="neon" ? "#2E4A6B" : iconAccent==="choconeon" ? "#3A2E24" : "#EF6C00";
   const ACC_FG = iconAccent==="choco" ? "#EF6C00" : iconAccent==="neon" ? "#3A2E24" : iconAccent==="choconeon" ? "#EF6C00" : "#fff";
@@ -2674,7 +2674,8 @@ export default function App() {
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .row:active{background:#4A3A2A;}
-        .dmi:active{background:#332512;}
+        .dmi:active{background:#4A3A2A;}
+        .dmi:hover{background:#332512;}
         .row:has(button:active){background:transparent;}
         .menu-dots:active{background:#4A3A2A;border-radius:50%;}
         textarea:focus,input:focus{outline:none;}
@@ -2697,7 +2698,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v161</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v163</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2914,7 +2915,7 @@ export default function App() {
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",position:"relative",
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===f.id?"#33271B":"#2A2017",
-                  border:"1px solid "+(iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"),
+                  border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
                   transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":"transform .25s cubic-bezier(.2,.8,.2,1), background .15s ease",
                   boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
@@ -3001,7 +3002,7 @@ export default function App() {
                 style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===s.id?"#33271B":"#2A2017",
-                  border:"1px solid "+(iconAccent==="choconeon"?"#5A3A1A":"#4A3A2A"),
+                  border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
                   transform:dragActive===s.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
                   transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
                   boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
