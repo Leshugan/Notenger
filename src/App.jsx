@@ -549,7 +549,7 @@ function LinkPopup({ href, x, y, onClose }) {
 }
 
 // ─── Preview modal ────────────────────────────────────────────
-function PlaneGhost({ phase, acc, accFg, glow, anchor, accBorder }){
+function PlaneGhost({ phase, acc, accFg, glow, anchor, micAnchor, accBorder }){
   // 'in': центр(самолёт носом вверх 0) летит вправо, ВИДИМЫЙ поворот -> 90, и только в конце -> микрофон
   // 'out': справа(самолёт носом влево -90) летит в центр, доворот -> 0 (носом вверх)
   const [go,setGo]=useState(false);
@@ -565,9 +565,11 @@ function PlaneGhost({ phase, acc, accFg, glow, anchor, accBorder }){
   const centerPos = anchor
     ? {left:cx+"px", top:cy+"px", transform:"translate(-50%,-50%) scale(1)"}
     : {left:"50%", bottom:"6px", transform:"translateX(-50%) scale(1)"};
-  const rightPos = anchor
-    ? {left:(cx+150)+"px", top:cy+"px", transform:"translate(-50%,-50%) scale(1)"}
-    : {left:"calc(50% + 150px)", bottom:"6px", transform:"translateX(-50%) scale(1)"};
+  const rightPos = micAnchor
+    ? {left:micAnchor.cx+"px", top:micAnchor.cy+"px", transform:"translate(-50%,-50%) scale(1)"}
+    : (anchor
+      ? {left:(cx+150)+"px", top:cy+"px", transform:"translate(-50%,-50%) scale(1)"}
+      : {left:"calc(50% + 150px)", bottom:"6px", transform:"translateX(-50%) scale(1)"});
   const pos = (phase==='in') ? (go?rightPos:centerPos) : (go?centerPos:rightPos);
   let planeRot, planeOpa, micOpa;
   if(phase==='in'){
@@ -1422,6 +1424,8 @@ export default function App() {
   const swipeRef = useRef(null);
   const composerOrigin = useRef(null); // {fid,sid} откуда начато сообщение/правка
   const planeAnchor = useRef(null); // реальная позиция кнопки «Написать» на экране
+  const prevLoc = useRef(null); // где был пользователь до перехода на правый экран (восстанавливаем при peek)
+  const micAnchor = useRef(null); // реальная позиция кнопки микрофона в шапке
   const writeBtnRef = useRef(null);
   function capturePlaneAnchor(){ try{ const r=writeBtnRef.current&&writeBtnRef.current.getBoundingClientRect(); if(r) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} }
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
@@ -2022,11 +2026,22 @@ export default function App() {
     if(!(composerFull && composerPeek)) return;
     let sx=null, sy=null;
     const ts=e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; };
-    const te=e=>{ if(sx===null) return; const t=e.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy; if(dx<-70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(false); } sx=null; sy=null; };
+    const te=e=>{ if(sx===null) return; const t=e.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy;
+      if(dx<-70 && Math.abs(dx)>Math.abs(dy)*1.3){
+        // полный переход к редактору: закрыть шторки, перейти в тему черновика, раскрыть
+        setAttSh(false); setCloudWhenSh(false); setCloudWhatSh(false); setCloudStorSh(false); setDriveSh(false);
+        setImgSh(false); setFontDelSh(false); setFontSh(false); setAnimSh(false); setUiSh(false); setMiscSh(false);
+        setExpSh(false); setAsOpen(false); setMediaBrowser(false); setPinnedOpen(false); setModal(null); setDlg(null);
+        setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setNoteCtx(null);
+        setPrevSh(false); setFullFmt(false); setMsgPop(null); setLinkPopup(null);
+        const o=composerOrigin.current||{fid,sid};
+        if(o&&o.fid!=null){ if(scr!=="chat"||sid!==o.sid||fid!==o.fid){ prevLoc.current={scr,fid,sid}; } setFid(o.fid); setSid(o.sid); setScr("chat"); }
+        setComposerPeek(false);
+      } sx=null; sy=null; };
     window.addEventListener("touchstart",ts,{passive:true});
     window.addEventListener("touchend",te,{passive:true});
     return ()=>{ window.removeEventListener("touchstart",ts); window.removeEventListener("touchend",te); };
-  },[composerFull,composerPeek]);
+  },[composerFull,composerPeek,scr,fid,sid]);
 
   // Аппаратная кнопка «Назад» (Capacitor)
   const exitArm = useRef(false);
@@ -2203,6 +2218,7 @@ export default function App() {
   }
   // Закрытие полноэкранного редактора с анимацией возврата микрофона/самолёта
   function closeComposer(){
+    prevLoc.current=null;
     const o=composerOrigin.current||{fid,sid};
     const dk=o.sid==="__top__"?("__top__"+o.fid):o.sid;
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
@@ -2221,6 +2237,7 @@ export default function App() {
 
   // Отправка из полноэкранного редактора: пишем в origin и возвращаемся туда
   function composerCommit(){
+    prevLoc.current=null;
     const o=composerOrigin.current||{fid,sid};
     const wasEdit = !!editId; const editedId = editId;
     if(editId){
@@ -2633,6 +2650,21 @@ export default function App() {
         "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s","--input-dur":spd("input",0.38)+"s",
         color:"#F2EAE0",overflow:"hidden",position:"relative"}}
       data-ver-badge
+      onTouchStart={e=>{ const t=e.touches[0]; window.__ntgrEdge = (t.clientX > window.innerWidth-34) ? {x:t.clientX,y:t.clientY} : null; }}
+      onTouchEnd={e=>{ const st=window.__ntgrEdge; window.__ntgrEdge=null; if(!st) return; const t=e.changedTouches[0]; const dx=t.clientX-st.x, dy=t.clientY-st.y;
+        if(dx < -60 && Math.abs(dx) > Math.abs(dy)*1.3){
+          const hasDraft = composerFull ? composerPeek : (note.trim()!=="" || patts.length>0 || !!editId);
+          if(!hasDraft) return;
+          setAttSh(false); setCloudWhenSh(false); setCloudWhatSh(false); setCloudStorSh(false); setDriveSh(false);
+          setImgSh(false); setFontDelSh(false); setFontSh(false); setAnimSh(false); setUiSh(false); setMiscSh(false);
+          setExpSh(false); setAsOpen(false); setMediaBrowser(false); setPinnedOpen(false); setModal(null); setDlg(null);
+          setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setNoteCtx(null);
+          setPrevSh(false); setFullFmt(false); setMsgPop(null); setLinkPopup(null);
+          const o=composerOrigin.current||{fid,sid};
+          if(o&&o.fid!=null){ if(scr!=="chat"||sid!==o.sid||fid!==o.fid){ prevLoc.current={scr,fid,sid}; } setFid(o.fid); setSid(o.sid); setScr("chat"); } // редактор живёт в экране чата
+          if(!composerFull){ composerOrigin.current=o; setComposerFull(true); }
+          setComposerPeek(false);
+        } }}
       onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);}}
     >
       {/* Глобальная панель пересылки — снизу, над полем ввода */}
@@ -2698,7 +2730,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v163</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v172</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2732,16 +2764,20 @@ export default function App() {
       )}
 
       {/* Возвратная вкладка к черновику — видна на ЛЮБОМ экране, пока пишется/редактируется сообщение */}
-      {composerFull && composerPeek && (
+      {((composerFull && composerPeek) || (!composerFull && (note.trim()!=="" || patts.length>0 || editId))) && (
         <button onClick={()=>{
             // закрыть всё, что может перекрывать редактор, и вернуться к нему
             setAttSh(false); setCloudWhenSh(false); setCloudWhatSh(false); setCloudStorSh(false); setDriveSh(false);
             setImgSh(false); setFontDelSh(false); setFontSh(false); setAnimSh(false); setUiSh(false); setMiscSh(false);
             setExpSh(false); setAsOpen(false); setMediaBrowser(false); setPinnedOpen(false); setModal(null); setDlg(null);
             setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setNoteCtx(null);
+            setPrevSh(false); setFullFmt(false); setMsgPop(null); setLinkPopup(null);
+            const o=composerOrigin.current||{fid,sid};
+            if(o&&o.fid!=null){ if(scr!=="chat"||sid!==o.sid||fid!==o.fid){ prevLoc.current={scr,fid,sid}; } setFid(o.fid); setSid(o.sid); setScr("chat"); } // редактор живёт в экране чата
+            if(!composerFull){ composerOrigin.current=o; setComposerFull(true); }
             setComposerPeek(false);
           }} title="Вернуться к сообщению (свайп влево)"
-          style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",zIndex:430,
+          style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",zIndex:1300,
             background:"rgba(46,37,28,.9)",border:"1px solid var(--gline,#4A3A2A)",borderRight:"none",color:"#EF6C00",cursor:"pointer",
             width:30,height:80,borderRadius:"12px 0 0 12px",display:"flex",alignItems:"center",justifyContent:"center",
             boxShadow:"-2px 0 12px rgba(0,0,0,.4)"}}>
@@ -2753,7 +2789,7 @@ export default function App() {
       {/* Летящий самолётик: визуальный переход между «написать» (центр) и «отправить» (угол) */}
 
       {/* Летящий самолётик между «написать» (центр-низ) и «отправить» (угол) */}
-      {planePhase!=='idle' && <PlaneGhost phase={planePhase} acc={ACC} accFg={ACC_FG} glow={ACC_GLOW} anchor={planeAnchor.current} accBorder={ACC_BORDER}/>}
+      {planePhase!=='idle' && <PlaneGhost phase={planePhase} acc={ACC} accFg={ACC_FG} glow={ACC_GLOW} anchor={planeAnchor.current} micAnchor={micAnchor.current} accBorder={ACC_BORDER}/>}
 
       {/* Toast */}
       {toast&&<div style={{position:"fixed",bottom:84,left:"50%",transform:"translateX(-50%)",
@@ -3243,7 +3279,7 @@ export default function App() {
         {composerFull && (
           <div
             onTouchStart={e=>{ const t=e.touches[0]; swipeRef.current={x:t.clientX,y:t.clientY}; }}
-            onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); } swipeRef.current=null; }}
+            onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); const pl=prevLoc.current; if(pl){ prevLoc.current=null; setScr(pl.scr); setFid(pl.fid); setSid(pl.sid); } } swipeRef.current=null; }}
             style={{position:"fixed",inset:0,background:"#1A1410",zIndex:400,display:"flex",flexDirection:"column",
               transform: composerPeek?"translateX(100%)":"translateX(0)",
               transition: noInputAnim ? "none" : ("transform "+spd("input",0.5)+"s cubic-bezier(.32,.72,0,1)"),
@@ -3296,7 +3332,7 @@ export default function App() {
                   {ic:<Icon size={18} d={["M15 5h-5","M14 19H9","M14 5l-4 14"]} stroke={2} />, b:"[i]",a:"[/i]",x:"текст",t:"Курсив"},
                   {ic:<Icon size={18} d={["M5 12h14","M8 8a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3","M16 16a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3"]} stroke={2} />, b:"[s]",a:"[/s]",x:"текст",t:"Зачёркнутый"},
                   {ic:<Icon size={18} d={["M9 8l-4 4 4 4","M15 8l4 4-4 4"]} stroke={2} />, b:"[code]",a:"[/code]",x:"код",t:"Моноширинный"},
-                  {ic:<Icon size={18} d={["M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"]} stroke={2} />, b:"[spoiler]",a:"[/spoiler]",x:"текст",t:"Спойлер"},
+                  {ic:<Icon size={18} d={["M3 3l18 18","M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17.5 17.5 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.4","M9.9 9.9a3 3 0 0 0 4.2 4.2"]} stroke={2} />, b:"[spoiler]",a:"[/spoiler]",x:"текст",t:"Спойлер"},
                   {ic:<Icon size={18} d={["M7 7h4v5a4 4 0 0 1-4 4","M14 7h4v5a4 4 0 0 1-4 4"]} stroke={2} />, b:"[q]",a:"[/q]",x:"цитата",t:"Цитата"},
                   {ic:<Icon size={18} d={["M9 15l6-6","M10 7l1-1a3.5 3.5 0 0 1 5 5l-1 1","M14 17l-1 1a3.5 3.5 0 0 1-5-5l1-1"]} stroke={2} />, link:true,x:"ссылка",t:"Ссылка"},
                 ].map((it,i)=>(
@@ -3312,13 +3348,11 @@ export default function App() {
             <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 8px",borderTop:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,overflowX:"auto",borderRadius:"16px 16px 0 0"}}>
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
-                  color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>Aa</button>
+                  color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</button>
               <button onClick={undoNote} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
               <button onClick={redoNote} title="Вернуть"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
-              <button onMouseDown={e=>e.preventDefault()} onClick={()=>{ const el=fullTaRef.current; if(!el)return; let s=el.selectionStart,e2=el.selectionEnd; if(s===e2 && lastSel.current && lastSel.current.s!==lastSel.current.e){ s=lastSel.current.s; e2=lastSel.current.e; } const sel=note.slice(s,e2)||"ссылка"; const ins="["+sel+"](https://)"; setNote(note.slice(0,s)+ins+note.slice(e2)); lastSel.current=null; setTimeout(()=>{ try{ el.focus(); const urlPos=s+sel.length+3+("https://").length; el.setSelectionRange(urlPos,urlPos); }catch{} },0); }} title="Вставить ссылку"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><Icon size={18} d={["M9 15l6-6","M10 7l1-1a3.5 3.5 0 0 1 5 5l-1 1","M14 17l-1 1a3.5 3.5 0 0 1-5-5l1-1"]} stroke={2}/></button>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
               <div style={{flex:1}}/>
@@ -3496,7 +3530,7 @@ export default function App() {
             <button onClick={e=>{e.stopPropagation(); if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setChatSearch(v=>v?"":" ");}} title="Поиск в теме"
               style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{IC.search}</button>
             <div style={{position:"relative",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-              <button
+              <button ref={el=>{ if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) micAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
                 onPointerDown={e=>{ e.preventDefault(); }}
                 onTouchStart={e=>{ e.preventDefault(); e.stopPropagation(); composerOrigin.current={fid,sid}; startRec(e); }}
                 onTouchMove={e=>{ if(!recording)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
