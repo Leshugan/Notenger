@@ -2697,7 +2697,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v160</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v161</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3244,7 +3244,7 @@ export default function App() {
             onTouchStart={e=>{ const t=e.touches[0]; swipeRef.current={x:t.clientX,y:t.clientY}; }}
             onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); } swipeRef.current=null; }}
             style={{position:"fixed",inset:0,background:"#1A1410",zIndex:400,display:"flex",flexDirection:"column",
-              transform: noInputAnim ? "translateX(0)" : (composerPeek?"translateX(100%)":"translateX(0)"),
+              transform: composerPeek?"translateX(100%)":"translateX(0)",
               transition: noInputAnim ? "none" : ("transform "+spd("input",0.5)+"s cubic-bezier(.32,.72,0,1)"),
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
@@ -3316,6 +3316,8 @@ export default function App() {
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
               <button onClick={redoNote} title="Вернуть"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
+              <button onMouseDown={e=>e.preventDefault()} onClick={()=>{ const el=fullTaRef.current; if(!el)return; let s=el.selectionStart,e2=el.selectionEnd; if(s===e2 && lastSel.current && lastSel.current.s!==lastSel.current.e){ s=lastSel.current.s; e2=lastSel.current.e; } const sel=note.slice(s,e2)||"ссылка"; const ins="["+sel+"](https://)"; setNote(note.slice(0,s)+ins+note.slice(e2)); lastSel.current=null; setTimeout(()=>{ try{ el.focus(); const urlPos=s+sel.length+3+("https://").length; el.setSelectionRange(urlPos,urlPos); }catch{} },0); }} title="Вставить ссылку"
+                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><Icon size={18} d={["M9 15l6-6","M10 7l1-1a3.5 3.5 0 0 1 5 5l-1 1","M14 17l-1 1a3.5 3.5 0 0 1-5-5l1-1"]} stroke={2}/></button>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
               <div style={{flex:1}}/>
