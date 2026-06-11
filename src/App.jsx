@@ -374,7 +374,7 @@ function Sheet({ open, onClose, title="", children }) {
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:300,backdropFilter:"blur(3px)"}}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"#2A2017",
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",
         borderRadius:"20px 20px 0 0",padding:"20px 20px 36px",animation:"sUp .22s ease",
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
@@ -593,7 +593,7 @@ function PlaneGhost({ phase, acc, accFg, glow, anchor, micAnchor, accBorder }){
 function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
   if(!open) return null;
   return (
-    <div style={{position:"fixed",inset:0,background:"#1A1410",zIndex:600,display:"flex",flexDirection:"column"}}>
+    <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:600,display:"flex",flexDirection:"column"}}>
       {/* Шапка без стрелки */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
         <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Предпросмотр</div>
@@ -763,7 +763,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:400,backdropFilter:"blur(3px)"}}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"#2A2017",
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",
         borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",animation:"sUp .22s ease"}}>
         {/* Шапка темы + действия с иконкой */}
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 14px 10px",flexShrink:0}}>
@@ -2705,6 +2705,7 @@ export default function App() {
         @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        html,body,#root{background:#1A1410 !important;margin:0;}
         .row:active{background:#4A3A2A;}
         .dmi:active{background:#4A3A2A;}
         .dmi:hover{background:#332512;}
@@ -2730,7 +2731,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v183</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v186</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3280,7 +3281,7 @@ export default function App() {
           <div
             onTouchStart={e=>{ const t=e.touches[0]; swipeRef.current={x:t.clientX,y:t.clientY}; }}
             onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); const pl=prevLoc.current; if(pl){ prevLoc.current=null; setScr(pl.scr); setFid(pl.fid); setSid(pl.sid); } } swipeRef.current=null; }}
-            style={{position:"fixed",inset:0,background:"#1A1410",zIndex:400,display:"flex",flexDirection:"column",
+            style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:400,display:"flex",flexDirection:"column",
               transform: composerPeek?"translateX(100%)":"translateX(0)",
               transition: noInputAnim ? "none" : ("transform "+spd("input",0.5)+"s cubic-bezier(.32,.72,0,1)"),
               pointerEvents:composerPeek?"none":"auto",
@@ -3345,7 +3346,7 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,overflowX:"auto",borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</button>
