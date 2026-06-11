@@ -2731,7 +2731,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v186</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v187</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3685,12 +3685,12 @@ export default function App() {
         syncSection={(
           <>
             <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
-            <div onClick={()=>setDriveSh(true)}
+            <div onClick={()=>{ if(syncCfg.enabled && syncStatus!=="signedout"){ runSync("auto",false); } else { setDriveSh(true); } }}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
               <svg width="18" height="18" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
               <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
-              <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="ok"?"подключён":"настроить"}</span>
-              <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
+              <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="syncing"?"синхронизация…":syncStatus==="ok"?"подключён":"настроить"}</span>
+              <span onClick={e=>{ e.stopPropagation(); setDriveSh(true); }} style={{display:"flex",color:"#8A7A65",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none",padding:4}}>{syncStatus==="syncing"?IC.sync||IC.arrRight:IC.arrRight}</span>
             </div>
             <div style={{height:1,background:"#2A2017",margin:"16px 0"}}/>
           </>
