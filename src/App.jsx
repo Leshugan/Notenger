@@ -64,7 +64,8 @@ const IC = {
   fHome:   <Icon d={["M4 11l8-7 8 7","M6 10v9h12v-9"]} stroke={2} />,
   fBook:   <Icon d={["M5 4h13v16H5z","M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"]} stroke={2} />,
   fGame:   <Icon d={["M7 10h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8Z","M9 14h2M8 13v2"]} stroke={2} />,
-  fConsole:<Icon d={["M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z","M9 6h6v6H9z","M8.5 16h0.01M11 16h0.01","M14 15.5l2 1","M15 17l-1 .5"]} stroke={1.7} />,
+  fConsole:<Icon d={["M7.5 6h9a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z","M8 9.5v3M6.5 11h3","M15.5 10h.01M17.5 10h.01M16.5 12h.01M15.5 13.5h.01M17.5 13.5h.01","M2.5 9.5a1.5 1.5 0 0 1 1.5-1.5v8a1.5 1.5 0 0 1-1.5-1.5Z","M21.5 9.5a1.5 1.5 0 0 0-1.5-1.5v8a1.5 1.5 0 0 0 1.5-1.5Z"]} stroke={1.7} />,
+  fGamepad:<Icon d={["M8 8h8a5 5 0 0 1 5 5 4 4 0 0 1-7 2.6l-.6-.6h-2.8l-.6.6A4 4 0 0 1 3 13a5 5 0 0 1 5-5Z","M7 11.5v2.5M5.8 12.7h2.4","M15.5 11.5h.01M17.3 13h.01"]} stroke={1.7} />,
   fMusic:  <Icon d={["M9 18V6l10-2v12","M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z","M19 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"]} stroke={2} />,
   fPlane:  <Icon d="M2 12l20-8-8 20-2-8-10-4Z" stroke={2} />,
   fHeart:  <Icon d="M12 20s-7-4.5-9.5-9A4.5 4.5 0 0 1 12 6a4.5 4.5 0 0 1 9.5 5c-2.5 4.5-9.5 9-9.5 9Z" stroke={2} />,
@@ -300,8 +301,8 @@ function saveAS(s)  { try { localStorage.setItem(AS_KEY,JSON.stringify(s)); } ca
 // HELPERS
 // ═══════════════════════════════════════════════
 const COLORS = ["#EF6C00","#F5A623","#FF8A3D","#D2691E","#C75B39","#8D6E63","#A1887F","#BCAAA4"];
-const ICONS_F = ["fFolder","fWork","fHome","fBook","fGame","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
-const ICONS_S = ["fFolder","fWork","fHome","fBook","fGame","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_F = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_S = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
 const strip = t=>(t||"").replace(/\[\/?(b|i|s|spoiler|code|q)\]/g,"").replace(/\[.*?\]\(.*?\)/g,"$1").slice(0,52);
 const tnow  = ()=>new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 const MES = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
@@ -1155,6 +1156,7 @@ export default function App() {
   const [note,      setNote]      = useState("");
   const drafts = useRef(loadDrafts());
   const [patts,     setPatts]     = useState([]);
+  const [capPos,    setCapPos]    = useState("top"); // позиция подписи для текущего сообщения с фото
   const [modal,     setModal]     = useState(null);
   const [dlg,       setDlg]       = useState(null);
   // edit in main input field
@@ -1434,8 +1436,6 @@ export default function App() {
   const [uiSh, setUiSh] = useState(false); // меню «Интерфейс»
   const [miscSh, setMiscSh] = useState(false); // меню «Прочее»
   const [hideVersion, setHideVersion] = useState(()=>{ try{ return localStorage.getItem("napp_hideVersion")==="1"; }catch{ return false; } });
-  const [captionPos, setCaptionPos] = useState(()=>{ try{ return localStorage.getItem("napp_captionPos")||"top"; }catch{ return "top"; } });
-  function toggleCaptionPos(){ setCaptionPos(p=>{ const np=p==="top"?"bottom":"top"; try{ localStorage.setItem("napp_captionPos",np); }catch{} return np; }); }
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
   // Цвет серых граней: при «Шоколадном неоне» все грани тёплые оранжевые
@@ -1514,7 +1514,7 @@ export default function App() {
   const DRIVE_FILE_NAME="notenger_backup.json";
   // Модули, которые можно синкать/сохранять выборочно
   const SYNC_MODULES=[
-    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion","napp_captionPos"]},
+    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion"]},
     {key:"notes",   label:"Заметки", keys:[SK]},
     {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
   ];
@@ -2208,6 +2208,7 @@ export default function App() {
     setEditId(n.id);
     setNote(n.text||"");
     setPatts(n.attachments||[]);
+    setCapPos(n.capPos||"top");
     setNoteCtx(null);
     setSelectMode(null);
     composerOrigin.current={fid,sid};
@@ -2233,7 +2234,7 @@ export default function App() {
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
     const editedId=editId;
-    updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,time:tnow(),ts:tstamp()}:n)));
+    updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,time:tnow(),ts:tstamp()}:n)));
     cancelEdit();
     setTimeout(()=>{ const el=bubbleEls.current[editedId]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); },50);
   }
@@ -2244,9 +2245,9 @@ export default function App() {
     const o=composerOrigin.current||{fid,sid};
     const wasEdit = !!editId; const editedId = editId;
     if(editId){
-      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,time:tnow(),ts:tstamp()}:n)); }
+      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,time:tnow(),ts:tstamp()}:n)); }
     } else {
-      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts}]); }
+      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos}]); }
     }
     // очистка черновика
     const dKey = o.sid==="__top__" ? "__top__"+o.fid : o.sid;
@@ -2266,7 +2267,7 @@ export default function App() {
   function send() {
     if(!note.trim()&&patts.length===0) return;
     if(editId) { saveEdit(); return; }
-    updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts}]));
+    updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos}]));
     setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
     if(taRef.current) taRef.current.style.height="auto";
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),50);
@@ -2734,14 +2735,14 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v188</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v189</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
 
       {/* Глобальный поиск по сообщениям */}
       {globalSearch!==null&&(
-        <div style={{position:"fixed",inset:0,background:"#1A1410",zIndex:420,display:"flex",flexDirection:"column"}}>
+        <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:420,display:"flex",flexDirection:"column"}}>
           {/* Результаты сверху */}
           <div style={{flex:1,overflowY:"auto",padding:"6px 0"}}>
             {globalSearch.trim().length<2 && <div style={{textAlign:"center",color:"#6A5A48",marginTop:50,fontSize:14}}>Введите минимум 2 символа</div>}
@@ -3206,7 +3207,7 @@ export default function App() {
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
-                  {n.text&&captionPos==="top"&&(
+                  {n.text&&(n.capPos||"top")==="top"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
@@ -3247,7 +3248,7 @@ export default function App() {
                       {others.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={(n.text&&n.text.trim())?null:(n.ts?fmtStamp(n.ts):n.time)} selecting={inSel}/>)}
                     </>);
                   })()}
-                  {n.text&&captionPos==="bottom"&&(
+                  {n.text&&n.capPos==="bottom"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginTop:4,
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
@@ -3368,6 +3369,16 @@ export default function App() {
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
+              {note.trim() && patts.some(a=>a.dataUrl&&a.type?.startsWith("image/")) && (
+                <button onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
+                  style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    {capPos==="top"
+                      ? <><rect x="4" y="4" width="16" height="3.2" rx="1" fill="currentColor"/><rect x="4" y="9" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><circle cx="9" cy="13.5" r="1.4" fill="currentColor"/><path d="M7 18l3-3 3 2.5 2-1.8 2 2.3" stroke="currentColor" strokeWidth="1.6" fill="none"/></>
+                      : <><rect x="4" y="4" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><circle cx="9" cy="8.5" r="1.4" fill="currentColor"/><path d="M7 13l3-3 3 2.5 2-1.8 2 2.3" stroke="currentColor" strokeWidth="1.6" fill="none"/><rect x="4" y="16.8" width="16" height="3.2" rx="1" fill="currentColor"/></>}
+                  </svg>
+                </button>
+              )}
               <div style={{flex:1}}/>
               <button onClick={()=>setAttSh(true)} title="Прикрепить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.clip}</button>
@@ -3870,13 +3881,6 @@ export default function App() {
                 </div>
               </div>
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Скрывает метку «beta v…» в углу экрана.</div>
-              <div onClick={toggleCaptionPos} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",marginTop:6}}>
-                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Подпись под изображением</span>
-                <div style={{width:46,height:26,borderRadius:13,background:captionPos==="bottom"?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-                  <div style={{position:"absolute",top:2,left:captionPos==="bottom"?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-                </div>
-              </div>
-              <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Текст-подпись будет под фото, а не над ним.</div>
             </Sheet>
             <Sheet open={uiSh} onClose={()=>setUiSh(false)} title="Интерфейс">
         <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
