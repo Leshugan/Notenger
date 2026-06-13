@@ -64,7 +64,7 @@ const IC = {
   fHome:   <Icon d={["M4 11l8-7 8 7","M6 10v9h12v-9"]} stroke={2} />,
   fBook:   <Icon d={["M5 4h13v16H5z","M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"]} stroke={2} />,
   fGame:   <Icon d={["M7 10h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8Z","M9 14h2M8 13v2"]} stroke={2} />,
-  fConsole:<Icon d={["M7.5 6h9a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z","M8 9.5v3M6.5 11h3","M15.5 10h.01M17.5 10h.01M16.5 12h.01M15.5 13.5h.01M17.5 13.5h.01","M2.5 9.5a1.5 1.5 0 0 1 1.5-1.5v8a1.5 1.5 0 0 1-1.5-1.5Z","M21.5 9.5a1.5 1.5 0 0 0-1.5-1.5v8a1.5 1.5 0 0 0 1.5-1.5Z"]} stroke={1.7} />,
+  fConsole:<Icon d={["M6.5 7h11a2.5 2.5 0 0 1 2.5 2.5v1a3.5 3.5 0 0 1 0 3v.5a3 3 0 0 1-5.4 1.8l-.4-.6h-4.4l-.4.6A3 3 0 0 1 4 14v-.5a3.5 3.5 0 0 1 0-3v-1A2.5 2.5 0 0 1 6.5 7Z","M8.5 9.5v3M7 11h3","M15.2 10h.01M17 10.6h.01M15.2 13h.01M16.6 11.8h.01","M2.2 11a2 2 0 0 0 0 2","M21.8 11a2 2 0 0 1 0 2"]} stroke={1.6} />,
   fGamepad:<Icon d={["M8 8h8a5 5 0 0 1 5 5 4 4 0 0 1-7 2.6l-.6-.6h-2.8l-.6.6A4 4 0 0 1 3 13a5 5 0 0 1 5-5Z","M7 11.5v2.5M5.8 12.7h2.4","M15.5 11.5h.01M17.3 13h.01"]} stroke={1.7} />,
   fMusic:  <Icon d={["M9 18V6l10-2v12","M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z","M19 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"]} stroke={2} />,
   fPlane:  <Icon d="M2 12l20-8-8 20-2-8-10-4Z" stroke={2} />,
@@ -2735,7 +2735,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v189</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v190</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3369,7 +3369,7 @@ export default function App() {
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
               <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
-              {note.trim() && patts.some(a=>a.dataUrl&&a.type?.startsWith("image/")) && (
+              {patts.some(a=>a.dataUrl&&a.type?.startsWith("image/")) && (
                 <button onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
                   style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -3523,9 +3523,9 @@ export default function App() {
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
-            <div style={{minWidth:0,flex:1,paddingLeft:4}}>
-              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{display:"inline-block",maxWidth:"100%",fontWeight:600,fontSize:15,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer",fontFamily:"var(--font-title)"}}>{subf?.name||"Сообщение"}</div>
-              {subf&&<div style={{fontSize:11,color:"#8A7A65"}}>{subf.notes.length} сообщений</div>}
+            <div style={{minWidth:0,maxWidth:"calc(50% - 34px)",paddingLeft:4}}>
+              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{fontWeight:600,fontSize:15,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",lineHeight:1.15,wordBreak:"break-word",cursor:"pointer",fontFamily:"var(--font-title)"}}>{subf?.name||"Сообщение"}</div>
+              {subf&&<div style={{fontSize:11,color:"#8A7A65",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{subf.notes.length} сообщений</div>}
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button ref={el=>{ writeBtnRef.current=el; if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
