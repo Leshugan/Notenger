@@ -64,6 +64,7 @@ const IC = {
   fHome:   <Icon d={["M4 11l8-7 8 7","M6 10v9h12v-9"]} stroke={2} />,
   fBook:   <Icon d={["M5 4h13v16H5z","M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"]} stroke={2} />,
   fGame:   <Icon d={["M7 10h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8Z","M9 14h2M8 13v2"]} stroke={2} />,
+  fConsole:<Icon d={["M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z","M9 6h6v6H9z","M8.5 16h0.01M11 16h0.01","M14 15.5l2 1","M15 17l-1 .5"]} stroke={1.7} />,
   fMusic:  <Icon d={["M9 18V6l10-2v12","M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z","M19 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"]} stroke={2} />,
   fPlane:  <Icon d="M2 12l20-8-8 20-2-8-10-4Z" stroke={2} />,
   fHeart:  <Icon d="M12 20s-7-4.5-9.5-9A4.5 4.5 0 0 1 12 6a4.5 4.5 0 0 1 9.5 5c-2.5 4.5-9.5 9-9.5 9Z" stroke={2} />,
@@ -299,8 +300,8 @@ function saveAS(s)  { try { localStorage.setItem(AS_KEY,JSON.stringify(s)); } ca
 // HELPERS
 // ═══════════════════════════════════════════════
 const COLORS = ["#EF6C00","#F5A623","#FF8A3D","#D2691E","#C75B39","#8D6E63","#A1887F","#BCAAA4"];
-const ICONS_F = ["fFolder","fWork","fHome","fBook","fGame","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
-const ICONS_S = ["fFolder","fWork","fHome","fBook","fGame","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_F = ["fFolder","fWork","fHome","fBook","fGame","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_S = ["fFolder","fWork","fHome","fBook","fGame","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
 const strip = t=>(t||"").replace(/\[\/?(b|i|s|spoiler|code|q)\]/g,"").replace(/\[.*?\]\(.*?\)/g,"$1").slice(0,52);
 const tnow  = ()=>new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 const MES = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
@@ -1433,6 +1434,8 @@ export default function App() {
   const [uiSh, setUiSh] = useState(false); // меню «Интерфейс»
   const [miscSh, setMiscSh] = useState(false); // меню «Прочее»
   const [hideVersion, setHideVersion] = useState(()=>{ try{ return localStorage.getItem("napp_hideVersion")==="1"; }catch{ return false; } });
+  const [captionPos, setCaptionPos] = useState(()=>{ try{ return localStorage.getItem("napp_captionPos")||"top"; }catch{ return "top"; } });
+  function toggleCaptionPos(){ setCaptionPos(p=>{ const np=p==="top"?"bottom":"top"; try{ localStorage.setItem("napp_captionPos",np); }catch{} return np; }); }
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
   // Цвет серых граней: при «Шоколадном неоне» все грани тёплые оранжевые
@@ -1511,7 +1514,7 @@ export default function App() {
   const DRIVE_FILE_NAME="notenger_backup.json";
   // Модули, которые можно синкать/сохранять выборочно
   const SYNC_MODULES=[
-    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion"]},
+    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion","napp_captionPos"]},
     {key:"notes",   label:"Заметки", keys:[SK]},
     {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
   ];
@@ -1998,10 +2001,10 @@ export default function App() {
     if(cloudWhatSh){ setCloudWhatSh(false); return true; }
     if(cloudStorSh){ setCloudStorSh(false); return true; }
     if(driveSh){ setDriveSh(false); return true; }
-    if(imgSh){ setImgSh(false); return true; }
     if(fontDelSh){ setFontDelSh(false); return true; }
-    if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); return true; }
-    if(animSh){ setAnimSh(false); return true; }
+    if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); setUiSh(true); return true; }
+    if(animSh){ setAnimSh(false); setUiSh(true); return true; }
+    if(imgSh){ setImgSh(false); return true; }
     if(uiSh){ setUiSh(false); return true; }
     if(miscSh){ setMiscSh(false); return true; }
     if(dlg){ setDlg(null); return true; }
@@ -2731,7 +2734,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v187</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v188</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2754,7 +2757,7 @@ export default function App() {
           </div>
           {/* Панель поиска внизу — в едином стиле, высота 46 */}
           <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
-            <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
+            <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
                 style={{background:"none",border:"none",color:"#F2EAE0",fontSize:14,flex:1}}/>
@@ -2940,7 +2943,7 @@ export default function App() {
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={noScrAnim?"scr-main":"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
@@ -3027,7 +3030,7 @@ export default function App() {
 
       {/* ═══ SUBFOLDERS ═══ */}
       {scr==="sub"&&folder&&(
-        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={noScrAnim?"scr-sub":"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
@@ -3079,7 +3082,7 @@ export default function App() {
       {/* Строка поиска по темам — внизу */}
       {scr==="sub"&&folder&&subSearch!=="" && !selectMode && multiSelect.length===0 && (
         <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
-          <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
+          <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
             <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
               placeholder="Поиск темы..." style={{background:"none",border:"none",color:"#F2EAE0",fontSize:14,flex:1}}/>
@@ -3143,7 +3146,7 @@ export default function App() {
               style={{background:"#332820",border:"none",borderRadius:8,padding:"7px 12px",color:"#B0A498",cursor:"pointer",fontSize:13}}>Отмена</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={()=>{ updateActiveNote(); if(msgPop) setMsgPop(null); }} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={"scr-chat-"+sid+"-"+navTick}
+        <div ref={scrollRef} onScroll={()=>{ updateActiveNote(); if(msgPop) setMsgPop(null); }} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={noScrAnim?"scr-chat-"+sid:"scr-chat-"+sid+"-"+navTick}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s",opacity:(booting&&navTick===0)?0:1}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
@@ -3183,6 +3186,8 @@ export default function App() {
                       return;
                     }
                     if(imgSel.length>0){ return; }
+                    // тап по изображению → открыть его (даже если в сообщении есть текст)
+                    { const it=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(it){ const src=it.getAttribute("data-imgsrc"); if(src){ e.stopPropagation(); setLightbox(src); return; } } }
                     // popup только для текстовых сообщений (не для аудио/изображений)
                     if(!(n.text && n.text.trim())){ return; }
                     // одиночный тап вне выделения → popup копировать/редактировать в точке клика
@@ -3201,7 +3206,7 @@ export default function App() {
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
-                  {n.text&&(
+                  {n.text&&captionPos==="top"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
@@ -3238,10 +3243,17 @@ export default function App() {
                             );
                           })}
                         </div>
-                      ) : imgs.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time} selecting={inSel}/>)}
-                      {others.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={n.ts?fmtStamp(n.ts):n.time} selecting={inSel}/>)}
+                      ) : imgs.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={(n.text&&n.text.trim())?null:(n.ts?fmtStamp(n.ts):n.time)} selecting={inSel}/>)}
+                      {others.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={(n.text&&n.text.trim())?null:(n.ts?fmtStamp(n.ts):n.time)} selecting={inSel}/>)}
                     </>);
                   })()}
+                  {n.text&&captionPos==="bottom"&&(
+                    <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
+                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginTop:4,
+                      userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
+                      <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
+                    </div>
+                  )}
                   {!(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))&&(
                   <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:1}}>
                     <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
@@ -3317,7 +3329,7 @@ export default function App() {
               onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
-              ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{el.focus();}catch{} },50); } }}
+              ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } }}
               placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
               style={{flex:1,width:"100%",background:"#1A1410",border:"none",outline:"none",
                 color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",fontFamily:"var(--font-input)",
@@ -3485,7 +3497,7 @@ export default function App() {
       )}
         {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
           <div style={{padding:"0 12px",flexShrink:0,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
-            <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:36,gap:8,width:"100%"}}>
+            <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
                 placeholder="Поиск в теме..."
@@ -3858,6 +3870,13 @@ export default function App() {
                 </div>
               </div>
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Скрывает метку «beta v…» в углу экрана.</div>
+              <div onClick={toggleCaptionPos} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",marginTop:6}}>
+                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Подпись под изображением</span>
+                <div style={{width:46,height:26,borderRadius:13,background:captionPos==="bottom"?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
+                  <div style={{position:"absolute",top:2,left:captionPos==="bottom"?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                </div>
+              </div>
+              <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Текст-подпись будет под фото, а не над ним.</div>
             </Sheet>
             <Sheet open={uiSh} onClose={()=>setUiSh(false)} title="Интерфейс">
         <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
