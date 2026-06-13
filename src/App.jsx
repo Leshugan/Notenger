@@ -64,7 +64,6 @@ const IC = {
   fHome:   <Icon d={["M4 11l8-7 8 7","M6 10v9h12v-9"]} stroke={2} />,
   fBook:   <Icon d={["M5 4h13v16H5z","M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"]} stroke={2} />,
   fGame:   <Icon d={["M7 10h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8Z","M9 14h2M8 13v2"]} stroke={2} />,
-  fConsole:<Icon d={["M6.5 7h11a2.5 2.5 0 0 1 2.5 2.5v1a3.5 3.5 0 0 1 0 3v.5a3 3 0 0 1-5.4 1.8l-.4-.6h-4.4l-.4.6A3 3 0 0 1 4 14v-.5a3.5 3.5 0 0 1 0-3v-1A2.5 2.5 0 0 1 6.5 7Z","M8.5 9.5v3M7 11h3","M15.2 10h.01M17 10.6h.01M15.2 13h.01M16.6 11.8h.01","M2.2 11a2 2 0 0 0 0 2","M21.8 11a2 2 0 0 1 0 2"]} stroke={1.6} />,
   fGamepad:<Icon d={["M8 8h8a5 5 0 0 1 5 5 4 4 0 0 1-7 2.6l-.6-.6h-2.8l-.6.6A4 4 0 0 1 3 13a5 5 0 0 1 5-5Z","M7 11.5v2.5M5.8 12.7h2.4","M15.5 11.5h.01M17.3 13h.01"]} stroke={1.7} />,
   fMusic:  <Icon d={["M9 18V6l10-2v12","M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z","M19 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"]} stroke={2} />,
   fPlane:  <Icon d="M2 12l20-8-8 20-2-8-10-4Z" stroke={2} />,
@@ -301,8 +300,8 @@ function saveAS(s)  { try { localStorage.setItem(AS_KEY,JSON.stringify(s)); } ca
 // HELPERS
 // ═══════════════════════════════════════════════
 const COLORS = ["#EF6C00","#F5A623","#FF8A3D","#D2691E","#C75B39","#8D6E63","#A1887F","#BCAAA4"];
-const ICONS_F = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
-const ICONS_S = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fConsole","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_F = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_S = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
 const strip = t=>(t||"").replace(/\[\/?(b|i|s|spoiler|code|q)\]/g,"").replace(/\[.*?\]\(.*?\)/g,"$1").slice(0,52);
 const tnow  = ()=>new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 const MES = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
@@ -573,21 +572,17 @@ function PlaneGhost({ phase, acc, accFg, glow, anchor, micAnchor, accBorder }){
       ? {left:(cx+150)+"px", top:cy+"px", transform:"translate(-50%,-50%) scale(1)"}
       : {left:"calc(50% + 150px)", bottom:"6px", transform:"translateX(-50%) scale(1)"});
   const pos = (phase==='in') ? (go?rightPos:centerPos) : (go?centerPos:rightPos);
-  let planeRot, planeOpa, micOpa;
+  let planeRot;
   if(phase==='in'){
-    planeRot = go?90:0;
-    planeOpa = late?0:1;
-    micOpa   = late?1:0;
+    planeRot = go?90:0;   // долетел вправо → повёрнут на 90° = «отправить»
   } else {
-    planeRot = go?0:-90; planeOpa = 1; micOpa = 0;
+    planeRot = go?0:-90;
   }
   return (
     <div className="planeGhost" style={{...pos,background:acc||"#EF6C00",color:accFg||"#fff",border:(accBorder&&accBorder!=="transparent")?("1px solid "+accBorder):"none",boxShadow:glow||((acc&&acc!=="#EF6C00")?"none":"0 1px 5px rgba(239,108,0,.3)")}}>
-      <span style={{position:"relative",display:"flex",width:24,height:24,alignItems:"center",justifyContent:"center"}}>
-        <span style={{position:"absolute",display:"flex",transition:"opacity .16s ease, transform .5s cubic-bezier(.4,0,.2,1)",
-          opacity:planeOpa, transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
-        <span style={{position:"absolute",display:"flex",transition:"opacity .16s ease",
-          opacity:micOpa, transform:"scale(.9)"}}>{IC.mic}</span>
+      <span style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>
+        <span style={{display:"flex",transition:"transform .5s cubic-bezier(.4,0,.2,1)",
+          transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
       </span>
     </div>
   );
@@ -2735,7 +2730,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v197</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v205</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2937,7 +2932,7 @@ export default function App() {
       )}
 
       {/* Pinned banner */}
-      {scr==="chat"&&pinned&&!(isTyping&&note.length>0)&&!selectMode&&multiSelect.length===0&&(
+      {scr==="chat"&&pinned&&!(isTyping&&note.length>0)&&(
         <PinnedBanner note={pinned} color={subColor}
           onJump={()=>jumpTo(pinned.id)}/>
       )}
@@ -3381,23 +3376,12 @@ export default function App() {
               )}
               <div style={{flex:1}}/>
               <button onClick={()=>setAttSh(true)} title="Прикрепить"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.clip}</button>
+                style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</button>
               <button onClick={closeComposer} title="Отменить"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginRight:4}}>{IC.close}</button>
-              {(note.trim()||patts.length>0||editId)
-                ? <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
-                    style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",
-                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none")}}><span style={{display:"flex",transform:"rotate(90deg)"}}>{IC.send}</span></button>
-                : <button title="Удерживайте для записи" tabIndex={-1}
-                    onPointerDown={e=>{ e.preventDefault(); }}
-                    onTouchStart={e=>{ e.preventDefault(); e.stopPropagation(); startRec(e); }}
-                    onTouchMove={e=>{ if(!recording)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
-                    onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); if(recording) stopRec(recCancelArm.current); setRecSlide(0); }}
-                    onMouseDown={e=>{ e.preventDefault(); startRec(e); }}
-                    onMouseUp={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
-                    style={{width:44,height:44,borderRadius:"50%",background:recording?"#E05252":ACC,border:"1px solid "+(recording?"transparent":ACC_BORDER),cursor:"pointer",
-                      color:recording?"#fff":ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none"),
-                      transform:recording?"scale(1.15)":"scale(1)",transition:"transform .15s ease, background .15s ease"}}>{IC.mic}</button>}
+                style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</button>
+              <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
+                    style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",marginLeft:3,
+                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none")}}><span style={{display:"flex",transform:"scale(.9) rotate(90deg)"}}>{IC.send}</span></button>
             </div>
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
@@ -3523,10 +3507,11 @@ export default function App() {
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
-            <div style={{minWidth:0,maxWidth:"calc(50% - 30px)",paddingLeft:4}}>
-              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{cursor:"pointer",fontFamily:"var(--font-title)"}}>{(()=>{const nm=subf?.name||"Сообщение"; const l1=nm.slice(0,13); const l2=nm.slice(13,28); const base={fontWeight:600,fontSize:14,color:"#F2EAE0",lineHeight:1.15,whiteSpace:"nowrap"}; const fade={WebkitMaskImage:"linear-gradient(90deg,#000 78%,transparent 100%)",maskImage:"linear-gradient(90deg,#000 78%,transparent 100%)"}; return (<>{React.createElement("div",{style:base},l1)}{l2?React.createElement("div",{style:{...base,...fade}},l2):null}</>);})()}</div>
-              {subf&&<div style={{fontSize:11,color:"#8A7A65",whiteSpace:"nowrap"}}>{subf.notes.length} сообщений</div>}
+            <div style={{minWidth:0,maxWidth:"calc(50% - 30px)",paddingLeft:4,overflow:"hidden"}}>
+              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{cursor:"pointer",fontFamily:"var(--font-title)"}}>{(()=>{const nm=subf?.name||"Сообщение"; const l1=nm.slice(0,13); const l2=nm.slice(13,28); const base={fontWeight:600,fontSize:14,color:"#F2EAE0",lineHeight:1.1,whiteSpace:"nowrap"}; const fade={WebkitMaskImage:"linear-gradient(90deg,#000 78%,transparent 100%)",maskImage:"linear-gradient(90deg,#000 78%,transparent 100%)"}; return (<>{React.createElement("div",{style:base},l1)}{l2?React.createElement("div",{style:{...base,...fade}},l2):null}</>);})()}</div>
+              {subf&&!((subf?.name||"").length>13)&&<div style={{fontSize:11,color:"#8A7A65",whiteSpace:"nowrap"}}>{subf.notes.length} сообщений</div>}
             </div>
+            <div style={{flex:1}}/>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button ref={el=>{ writeBtnRef.current=el; if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
               onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); composerWantFocus.current=true; if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { capturePlaneAnchor(); setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); setPlanePhase('idle'); }, 700); } }}
@@ -3560,10 +3545,11 @@ export default function App() {
                 onTouchMove={e=>{ if(!recording)return; const dx=e.touches[0].clientX-recStartX.current; const left=Math.max(0,-dx); setRecSlide(left); if(left>120){ recCancelArm.current=true; stopRec(true); setRecSlide(0); } }}
                 onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); if(recording) stopRec(recCancelArm.current); setRecSlide(0); }}
                 onMouseDown={e=>{ e.preventDefault(); composerOrigin.current={fid,sid}; startRec(e); }}
+                onMouseUp={e=>{ e.preventDefault(); if(recording) stopRec(false); }}
                 title="Записать голосовое"
-                style={{width:40,height:40,borderRadius:"50%",background:recording?"#E0533C":"none",border:"none",color:recording?"#fff":(iconAccent==="choco"?"#B0A498":iconAccent==="neon"?"#3A2E24":iconAccent==="choconeon"?"#EF6C00":"#EF6C00"),cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s,color .15s",boxShadow:recording?"0 0 0 5px rgba(224,83,60,.25)":"none",touchAction:"none"}}>
-                <span style={{display:"flex"}}>{IC.mic}</span>
-              </button>
+                style={{width:44,height:44,borderRadius:"50%",background:recording?"#E05252":ACC,border:"1px solid "+(recording?"transparent":ACC_BORDER),cursor:"pointer",
+                  color:recording?"#fff":ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none"),
+                  transform:recording?"scale(1.15)":"scale(1)",transition:"transform .15s ease, background .15s ease"}}>{IC.mic}</button>
             </div>
           </div>
         )}
