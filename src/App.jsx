@@ -2730,7 +2730,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v211</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v212</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2932,7 +2932,9 @@ export default function App() {
       )}
 
       {/* Pinned banner */}
-      {/* PinnedBanner перенесён внутрь чат-контейнера (sticky), см. ниже */}
+      {scr==="chat"&&pinned&&!(isTyping&&note.length>0)&&(
+        <PinnedBanner note={pinned} color={subColor} onJump={()=>jumpTo(pinned.id)}/>
+      )}
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
@@ -3142,11 +3144,6 @@ export default function App() {
         <div ref={scrollRef} onScroll={()=>{ updateActiveNote(); if(msgPop) setMsgPop(null); }} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={noScrAnim?"scr-chat-"+sid:"scr-chat-"+sid+"-"+navTick}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s",opacity:(booting&&navTick===0)?0:1}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
-          {pinned&&!(isTyping&&note.length>0)&&(
-            <div style={{position:"sticky",top:0,zIndex:8,margin:"-10px -10px 4px -4px"}}>
-              <PinnedBanner note={pinned} color={subColor} onJump={()=>jumpTo(pinned.id)}/>
-            </div>
-          )}
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
 
           {snotes.map(n=>{
