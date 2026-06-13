@@ -47,7 +47,7 @@ const IC = {
   copyT: (<svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"block"}}>
     <rect x="4" y="3" width="11" height="14" rx="2"/><path d="M17 7h3v12a2 2 0 0 1-2 2H9"/>
     <text x="9.5" y="12.5" fontSize="8" fontWeight="700" fill="currentColor" stroke="none" textAnchor="middle">Т</text></svg>),
-  copyMsg: <Icon d={["M4 14.5v-2A5.5 5.5 0 0 1 9.5 7H16","M12.5 3.5L17 7l-4.5 3.5"]} stroke={2} />,
+  copyMsg: <Icon d={["M4 16v-1.5A5.5 5.5 0 0 1 9.5 9H18","M14 5l4.5 4-4.5 4"]} stroke={2} />,
   // категории вложений
   gallery: <Icon d={["M3 5h18v14H3z","M3 16l5-5 4 4 3-3 6 6"]} stroke={2} />,
   video:   <Icon d={["M3 6h13v12H3z","M16 10l5-3v10l-5-3z"]} stroke={2} />,
@@ -721,7 +721,7 @@ function PinnedBanner({ note, color, onJump }) {
   return (
     <div onClick={onJump} style={{background:"rgba(42,32,23,.40)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",border:"1px solid var(--gline,#4A3A2A)",
       borderRadius:"0 0 16px 16px",boxShadow:"var(--gline-glow,none)",
-      padding:"0 12px",height:52,cursor:"pointer",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+      padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
       <span style={{display:"flex",color,transform:"scale(.8)"}}>{IC.pin}</span>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:11,color,fontWeight:600,marginBottom:1}}>Закреплено</div>
@@ -2730,7 +2730,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v210</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v211</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
