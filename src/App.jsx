@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 
 // ─── Иконки в стиле Telegram (тонкие линейные SVG) ───
 const _sv=(p,vb="0 0 24 24")=>({viewBox:vb,paths:p});
@@ -2735,7 +2735,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v191</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v197</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3523,9 +3523,9 @@ export default function App() {
             <button onClick={back} title="Назад"
               style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
-            <div style={{minWidth:0,flex:1,paddingLeft:4}}>
-              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{display:"inline-block",maxWidth:"100%",fontWeight:600,fontSize:15,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",cursor:"pointer",fontFamily:"var(--font-title)"}}>{(()=>{const nm=subf?.name||"Сообщение";return nm.length>13?nm.slice(0,13)+"…":nm;})()}</div>
-              {subf&&<div style={{fontSize:11,color:"#8A7A65"}}>{subf.notes.length} сообщений</div>}
+            <div style={{minWidth:0,maxWidth:"calc(50% - 30px)",paddingLeft:4}}>
+              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{cursor:"pointer",fontFamily:"var(--font-title)"}}>{(()=>{const nm=subf?.name||"Сообщение"; const l1=nm.slice(0,13); const l2=nm.slice(13,28); const base={fontWeight:600,fontSize:14,color:"#F2EAE0",lineHeight:1.15,whiteSpace:"nowrap"}; const fade={WebkitMaskImage:"linear-gradient(90deg,#000 78%,transparent 100%)",maskImage:"linear-gradient(90deg,#000 78%,transparent 100%)"}; return (<>{React.createElement("div",{style:base},l1)}{l2?React.createElement("div",{style:{...base,...fade}},l2):null}</>);})()}</div>
+              {subf&&<div style={{fontSize:11,color:"#8A7A65",whiteSpace:"nowrap"}}>{subf.notes.length} сообщений</div>}
             </div>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button ref={el=>{ writeBtnRef.current=el; if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
