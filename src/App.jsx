@@ -23,7 +23,7 @@ const IC = {
   plus:  <Icon d={["M12 5v14","M5 12h14"]} stroke={2.2} />,
   back:  <Icon d="M15 19 8 12l7-7" stroke={2.2} />,
   dots:  <Icon d={["M12 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 19.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={1} fill="currentColor" />,
-  edit:  <Icon d={["M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z","M13.5 6.5l3 3"]} stroke={2} />,
+  edit:  <Icon d={["M5 19h3.5L19 8.5a2 2 0 0 0-2.8-2.8L5.7 16.2 5 19Z","M14.5 7.5l2.8 2.8"]} stroke={2} />,
   trash: <Icon d={["M4 7h16","M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2","M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"]} stroke={2} />,
   save:  <Icon d={["M5 3h11l3 3v15H5z","M8 3v5h7","M8 21v-7h8v7"]} stroke={2} />,
   imp:   <Icon d={["M12 3v12","M7 10l5 5 5-5","M5 21h14"]} stroke={2} />,
@@ -47,7 +47,7 @@ const IC = {
   copyT: (<svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"block"}}>
     <rect x="4" y="3" width="11" height="14" rx="2"/><path d="M17 7h3v12a2 2 0 0 1-2 2H9"/>
     <text x="9.5" y="12.5" fontSize="8" fontWeight="700" fill="currentColor" stroke="none" textAnchor="middle">Т</text></svg>),
-  copyMsg: <Icon d={["M3 14v-2a6 6 0 0 1 6-6h8","M13 2l6 4-6 4"]} stroke={2} />,
+  copyMsg: <Icon d={["M4 14.5v-2A5.5 5.5 0 0 1 9.5 7H16","M12.5 3.5L17 7l-4.5 3.5"]} stroke={2} />,
   // категории вложений
   gallery: <Icon d={["M3 5h18v14H3z","M3 16l5-5 4 4 3-3 6 6"]} stroke={2} />,
   video:   <Icon d={["M3 6h13v12H3z","M16 10l5-3v10l-5-3z"]} stroke={2} />,
@@ -719,10 +719,10 @@ function AttBubble({ att, onOpen, stamp, selecting }) {
 function PinnedBanner({ note, color, onJump }) {
   if(!note) return null;
   return (
-    <div onClick={onJump} style={{background:"#2A2017",borderLeft:`3px solid ${color}`,
-      padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,
-      borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
-      <span style={{fontSize:14}}>📌</span>
+    <div onClick={onJump} style={{background:"rgba(42,32,23,.40)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",border:"1px solid var(--gline,#4A3A2A)",
+      borderRadius:"0 0 16px 16px",boxShadow:"var(--gline-glow,none)",
+      padding:"0 12px",height:52,cursor:"pointer",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+      <span style={{display:"flex",color,transform:"scale(.8)"}}>{IC.pin}</span>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:11,color,fontWeight:600,marginBottom:1}}>Закреплено</div>
         <div style={{fontSize:13,color:"#D8CCBE",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
@@ -1434,7 +1434,7 @@ export default function App() {
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
   const [iconAccent, setIconAccent] = useState(()=>{ try{ return localStorage.getItem("napp_iconAccent")||"orange"; }catch{ return "orange"; } });
   // Цвет серых граней: при «Шоколадном неоне» все грани тёплые оранжевые
-  useEffect(()=>{ try{ document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"); document.documentElement.style.setProperty("--gline2", iconAccent==="choconeon"?"rgba(239,108,0,.3)":"#2A2017"); }catch{} },[iconAccent]);
+  useEffect(()=>{ try{ document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"); document.documentElement.style.setProperty("--gline2", iconAccent==="choconeon"?"rgba(239,108,0,.3)":"#2A2017"); document.documentElement.style.setProperty("--gline-glow", iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"); }catch{} },[iconAccent]);
   function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
   const ACC = iconAccent==="choco" ? "#3A2E24" : iconAccent==="neon" ? "#2E4A6B" : iconAccent==="choconeon" ? "#3A2E24" : "#EF6C00";
   const ACC_FG = iconAccent==="choco" ? "#EF6C00" : iconAccent==="neon" ? "#3A2E24" : iconAccent==="choconeon" ? "#EF6C00" : "#fff";
@@ -2730,7 +2730,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v205</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v210</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2932,10 +2932,7 @@ export default function App() {
       )}
 
       {/* Pinned banner */}
-      {scr==="chat"&&pinned&&!(isTyping&&note.length>0)&&(
-        <PinnedBanner note={pinned} color={subColor}
-          onJump={()=>jumpTo(pinned.id)}/>
-      )}
+      {/* PinnedBanner перенесён внутрь чат-контейнера (sticky), см. ниже */}
 
       {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
@@ -3145,6 +3142,11 @@ export default function App() {
         <div ref={scrollRef} onScroll={()=>{ updateActiveNote(); if(msgPop) setMsgPop(null); }} className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={noScrAnim?"scr-chat-"+sid:"scr-chat-"+sid+"-"+navTick}
           style={{flex:1,overflowY:"auto",padding:"10px 10px 6px 4px",display:"flex",flexDirection:"column",gap:"0.4px",animationDuration:spd("scr",0.6)+"s",opacity:(booting&&navTick===0)?0:1}}
           onClick={(e)=>{ setNoteCtx(null); const el=e.target&&e.target.closest&&e.target.closest("[data-imgsrc]"); if(el && !(multiSelect.length>0||selectMode)){ const src=el.getAttribute("data-imgsrc"); if(src) setLightbox(src); } }}>
+          {pinned&&!(isTyping&&note.length>0)&&(
+            <div style={{position:"sticky",top:0,zIndex:8,margin:"-10px -10px 4px -4px"}}>
+              <PinnedBanner note={pinned} color={subColor} onJump={()=>jumpTo(pinned.id)}/>
+            </div>
+          )}
           {snotes.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:40,fontSize:14}}>Напишите первую заметку ↓</div>}
 
           {snotes.map(n=>{
@@ -3156,7 +3158,7 @@ export default function App() {
               ref={el=>{ bubbleEls.current[n.id]=el; if(n.pinned)pinRef.current=el; }}
               data-noteid={n.id} className={"nb"+((destroying===n.id&&!noDelAnim)?" destroying":"")}
               style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:0,pointerEvents:destroying===n.id?"none":"auto"}}>
-              {n.pinned&&<div style={{fontSize:11,color:subColor,marginBottom:2,paddingRight:2}}>📌 закреплено</div>}
+              {n.pinned&&<div style={{fontSize:11,color:subColor,marginBottom:2,paddingRight:2,display:"flex",alignItems:"center",gap:4}}><span style={{display:"flex",transform:"scale(.62)",margin:"-3px"}}>{IC.pin}</span>закреплено</div>}
 
               <div onClick={(e)=>{ if(e.target!==e.currentTarget) return;
                   const inSel = (multiSelect.length>0)||selectMode;
@@ -3434,36 +3436,36 @@ export default function App() {
         <div style={{background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#F2EAE0",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.close}</button>
           <span style={{flex:1,fontSize:14,fontWeight:600,whiteSpace:"nowrap"}}>{single?"1":multiSelect.length}</span>
           {/* Закрепить / Открепить */}
           {single&&(
             <button onClick={()=>{ if(selNote){pin(selNote.id);} closePanel(); }} title={selNote?.pinned?"Открепить":"Закрепить"}
               style={{width:38,height:38,borderRadius:"50%",flexShrink:0,
-                background:selNote?.pinned?"#3A2A1A":"#2E251C",border:"1px solid "+(selNote?.pinned?"#F5A623":"#4A3A22"),
+                background:selNote?.pinned?"#3A2A1A":"#2E251C",border:"1px solid "+(selNote?.pinned?"#F5A623":"var(--gline,#4A3A2A)"),boxShadow:selNote?.pinned?"none":"var(--gline-glow,none)",
                 color:selNote?.pinned?"#F5A623":"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
               {selNote?.pinned?IC.pinOff:IC.pin}</button>
           )}
           {/* Копировать текст — одиночное или несколько */}
           {single && selNote && selNote.text && (
           <button onClick={()=>{ if(selNote)copyText(selNote); closePanel(); }} title="Копировать текст"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
           )}
           {!single && (
           <button onClick={()=>{ const ids=new Set(multiSelect); if(selectMode) ids.add(selectMode); const arr=(sid==="__top__"&&folder?.isTheme)?(folder.notes||[]):(subf?.notes||[]); const txt=arr.filter(n=>ids.has(n.id)&&n.text).map(n=>n.text).join("\n\n"); if(txt){ try{ navigator.clipboard?.writeText(txt); }catch{} tst("Скопировано: "+arr.filter(n=>ids.has(n.id)&&n.text).length); } closePanel(); }} title="Копировать текст"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
           )}
           {/* Копировать сообщение */}
           <button onClick={()=>{ if(single){ if(selNote){ setSelectMode(null); copyMulti("cut",[selNote.id]); } } else { copyMulti("cut"); } setScr("main"); }} title="Переместить в раздел"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyMsg}</button>
           {/* Редактировать — только для одиночного */}
           {single&&(
             <button onClick={()=>{ if(selNote){ startEdit(selNote); } setMultiSelect([]); }} title="Редактировать"
-              style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A22)",color:"#EF6C00",
+              style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.edit}</button>
           )}
           {/* Удалить */}
