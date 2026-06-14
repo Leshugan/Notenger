@@ -1160,12 +1160,14 @@ export default function App() {
   const clItemRefs = useRef({});
   function finalizeChecklist(){ if(!checklist) return null; const items=checklist.filter(x=>x.text.trim()!==""); if(!items.length) return null; return items.map(x=>({...x})); }
   function lmDragStart(idx,e,items,setItems){
+    e.stopPropagation();
     const y0=e.touches[0].clientY; const st={idx,y0};
-    const move=ev=>{ const dy=ev.touches[0].clientY-st.y0; const step=Math.round(dy/42); const ni=Math.max(0,Math.min(items.length-1, st.idx+step));
+    const move=ev=>{ ev.preventDefault(); const dy=ev.touches[0].clientY-st.y0; const step=Math.round(dy/42); const ni=Math.max(0,Math.min(items.length-1, st.idx+step));
       if(ni!==st.idx){ setItems(arr=>{ const a=[...arr]; const [m]=a.splice(st.idx,1); a.splice(ni,0,m); return a; }); st.idx=ni; st.y0=ev.touches[0].clientY; } };
-    const up=()=>{ document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
-    document.addEventListener("touchmove",move,{passive:true});
+    const up=()=>{ document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
+    document.addEventListener("touchmove",move,{passive:false});
     document.addEventListener("touchend",up);
+    document.addEventListener("touchcancel",up);
   }
   function toggleClItem(idx){
     setChecklist(cl=>{
@@ -1187,14 +1189,16 @@ export default function App() {
   }
   const ROWH=34;
   function clDragStart(idx,e){
+    e.stopPropagation();
     const y0=e.touches[0].clientY; let cur=idx;
     setClDragIdx(idx); setClDragDY(0);
-    const move=ev=>{ const dy=ev.touches[0].clientY-y0; setClDragDY(dy);
+    const move=ev=>{ ev.preventDefault(); const dy=ev.touches[0].clientY-y0; setClDragDY(dy);
       const step=Math.round(dy/ROWH); const ni=Math.max(0,Math.min((checklist?.length||1)-1, idx+step));
       if(ni!==cur){ setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(cur,1); a.splice(ni,0,m); return a; }); cur=ni; setClDragIdx(ni); } };
-    const up=()=>{ setClDragIdx(-1); setClDragDY(0); document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
-    document.addEventListener("touchmove",move,{passive:true});
+    const up=()=>{ setClDragIdx(-1); setClDragDY(0); document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
+    document.addEventListener("touchmove",move,{passive:false});
     document.addEventListener("touchend",up);
+    document.addEventListener("touchcancel",up);
   }
   const [modal,     setModal]     = useState(null);
   const [dlg,       setDlg]       = useState(null);
@@ -2776,7 +2780,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v216</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v217</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
