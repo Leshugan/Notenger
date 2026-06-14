@@ -2758,14 +2758,14 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v214</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v215</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
 
       {listMode&&(()=>{
         const lm=listMode;
-        const lnote=(()=>{ const f=data.find(x=>x.id===lm.fid); if(!f)return null; if(f.isTheme) return (f.notes||[]).find(x=>x.id===lm.id); const sb=(f.subfolders||[]).find(x=>x.id===lm.sid); return sb&&(sb.notes||[]).find(x=>x.id===lm.id); })();
+        const lnote=(()=>{ const f=data.folders.find(x=>x.id===lm.fid); if(!f)return null; if(f.isTheme) return (f.notes||[]).find(x=>x.id===lm.id); const sb=(f.subfolders||[]).find(x=>x.id===lm.sid); return sb&&(sb.notes||[]).find(x=>x.id===lm.id); })();
         const items=lnote?.checklist||[];
         const setItems=fn=>updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,checklist:fn(n.checklist||[])}:n));
         const toggle=id=>setItems(arr=>{ const a=arr.map(x=>x.id===id?{...x,checked:!x.checked}:x); const un=a.filter(x=>!x.checked),ch=a.filter(x=>x.checked); return [...un,...ch]; });
@@ -3386,8 +3386,8 @@ export default function App() {
                 ))}
               </div>
             )}
-            {/* Текст: растёт снизу вверх (содержимое прижато к низу) */}
-            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
+            {/* Текст + список как одно сообщение */}
+            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:checklist?"flex-start":"flex-end",overflowY:"auto"}}>
             <textarea value={note} className="editor-ta"
               onChange={e=>{ const v=e.target.value; const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
@@ -3396,10 +3396,9 @@ export default function App() {
               onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
               ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } }}
-              placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
-              rows={checklist?2:undefined}
-              style={{flex:checklist?"0 0 auto":1,minHeight:checklist?60:undefined,width:"100%",background:"#1A1410",border:"none",outline:"none",
-                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",fontFamily:"var(--font-input)",
+              placeholder={editId?"Редактировать сообщение...":(checklist?"Заголовок (необязательно)":"Текст сообщения...")}
+              style={{flex:checklist?"0 0 auto":1,minHeight:checklist?44:undefined,width:"100%",background:"#1A1410",border:"none",outline:"none",
+                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:checklist?"12px 16px 0":"16px 16px",resize:"none",fontFamily:"var(--font-input)",
                 boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             {checklist && (
