@@ -1155,8 +1155,9 @@ export default function App() {
   const [capPos,    setCapPos]    = useState("top"); // позиция подписи для текущего сообщения с фото
   const [checklist, setChecklist] = useState(null); // [{id,text,checked}] — режим списка в композере, null = обычный текст
   const [listMode,  setListMode]  = useState(null);  // {fid,sid,id} — открытый на весь экран список
+  const [clDragIdx, setClDragIdx] = useState(-1);
+  const [clDragDY,  setClDragDY]  = useState(0);
   const clItemRefs = useRef({});
-  const clDrag = useRef(null);
   function finalizeChecklist(){ if(!checklist) return null; const items=checklist.filter(x=>x.text.trim()!==""); if(!items.length) return null; const un=items.filter(x=>!x.checked); const ch=items.filter(x=>x.checked); return [...un,...ch]; }
   function lmDragStart(idx,e,items,setItems){
     const y0=e.touches[0].clientY; const st={idx,y0};
@@ -1166,12 +1167,14 @@ export default function App() {
     document.addEventListener("touchmove",move,{passive:true});
     document.addEventListener("touchend",up);
   }
+  const ROWH=34;
   function clDragStart(idx,e){
-    const y0=e.touches[0].clientY;
-    clDrag.current={idx,y0};
-    const move=ev=>{ if(!clDrag.current)return; const dy=ev.touches[0].clientY-clDrag.current.y0; const step=Math.round(dy/40); const ni=Math.max(0,Math.min((checklist?.length||1)-1, clDrag.current.idx+step));
-      if(ni!==clDrag.current.idx){ setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(clDrag.current.idx,1); a.splice(ni,0,m); return a; }); clDrag.current.idx=ni; clDrag.current.y0=ev.touches[0].clientY; } };
-    const up=()=>{ clDrag.current=null; document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
+    const y0=e.touches[0].clientY; let cur=idx;
+    setClDragIdx(idx); setClDragDY(0);
+    const move=ev=>{ const dy=ev.touches[0].clientY-y0; setClDragDY(dy);
+      const step=Math.round(dy/ROWH); const ni=Math.max(0,Math.min((checklist?.length||1)-1, idx+step));
+      if(ni!==cur){ setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(cur,1); a.splice(ni,0,m); return a; }); cur=ni; setClDragIdx(ni); } };
+    const up=()=>{ setClDragIdx(-1); setClDragDY(0); document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
     document.addEventListener("touchmove",move,{passive:true});
     document.addEventListener("touchend",up);
   }
@@ -2252,7 +2255,7 @@ export default function App() {
     if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function saveEdit() {
-    if(!note.trim()&&patts.length===0) return;
+    if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
     const editedId=editId;
     updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),time:tnow(),ts:tstamp()}:n)));
     cancelEdit();
@@ -2265,9 +2268,9 @@ export default function App() {
     const o=composerOrigin.current||{fid,sid};
     const wasEdit = !!editId; const editedId = editId;
     if(editId){
-      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),time:tnow(),ts:tstamp()}:n)); }
+      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),time:tnow(),ts:tstamp()}:n)); }
     } else {
-      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist()}]); }
+      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist()}]); }
     }
     // очистка черновика
     const dKey = o.sid==="__top__" ? "__top__"+o.fid : o.sid;
@@ -2285,7 +2288,7 @@ export default function App() {
   }
   // ── Notes ──
   function send() {
-    if(!note.trim()&&patts.length===0) return;
+    if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
     if(editId) { saveEdit(); return; }
     updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist()}]));
     setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
@@ -2755,7 +2758,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v213</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v214</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3319,7 +3322,7 @@ export default function App() {
                   )}
                   {!(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))&&(
                   <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:4,marginTop:1}}>
-                    <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
+                    <span style={{fontSize:8.5,color:"#B0A498",userSelect:"none",WebkitUserSelect:"none",pointerEvents:"none"}}>{n.ts?fmtStamp(n.ts):n.time}</span>
                   </div>
                   )}
                 </div>
@@ -3385,22 +3388,39 @@ export default function App() {
             )}
             {/* Текст: растёт снизу вверх (содержимое прижато к низу) */}
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
-            {checklist ? (
-              <div style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
+            <textarea value={note} className="editor-ta"
+              onChange={e=>{ const v=e.target.value; const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } setNote(v); }}
+              onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
+              onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
+              onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
+              onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
+              onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
+              ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } }}
+              placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
+              rows={checklist?2:undefined}
+              style={{flex:checklist?"0 0 auto":1,minHeight:checklist?60:undefined,width:"100%",background:"#1A1410",border:"none",outline:"none",
+                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",fontFamily:"var(--font-input)",
+                boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
+                WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
+            {checklist && (
+              <div style={{padding:"4px 10px 12px"}}>
                 {checklist.map((it,idx)=>(
-                  <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0"}}>
-                    <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none"}}
-                      onTouchStart={e=>{ clDragStart(idx,e); }}>{IC.drag||IC.dots}</span>
+                  <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0",
+                    transform: clDragIdx===idx?`translateY(${clDragDY}px)`:"translateY(0)",
+                    transition: clDragIdx===idx?"none":"transform .18s ease", position:"relative", zIndex:clDragIdx===idx?5:1,
+                    background:clDragIdx===idx?"#241B12":"transparent",borderRadius:8}}>
+                    <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none",padding:"4px 2px"}}
+                      onTouchStart={e=>{ clDragStart(idx,e); }}>{IC.drag}</span>
                     <button onClick={()=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,checked:!x.checked}:x))}
-                      style={{width:22,height:22,flexShrink:0,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"var(--gline,#6A5A48)"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
+                      style={{width:22,height:22,flexShrink:0,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
                       {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</button>
                     <input value={it.text}
                       ref={el=>{ if(el) clItemRefs.current[it.id]=el; }}
                       onChange={e=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,text:e.target.value}:x))}
                       onKeyDown={e=>{
-                        if(e.key==="Enter"){ e.preventDefault(); const nid=uid("cl"); setChecklist(cl=>{ const a=[...cl]; a.splice(idx+1,0,{id:nid,text:"",checked:false}); return a; }); setTimeout(()=>{ const f=clItemRefs.current[nid]; if(f)f.focus(); },30); }
+                        if(e.key==="Enter"){ e.preventDefault(); const nid=uid("cl"); setChecklist(cl=>{ const a=[...cl]; a.splice(idx+1,0,{id:nid,text:"",checked:false}); return a; }); const foc=()=>{ const f=clItemRefs.current[nid]; if(f) f.focus(); else requestAnimationFrame(foc); }; requestAnimationFrame(foc); }
                         else if(e.key==="Backspace" && it.text===""){ e.preventDefault();
-                          if(checklist.length===1){ setChecklist(null); setNote(""); setTimeout(()=>{ try{fullTaRef.current&&fullTaRef.current.focus();}catch{} },30); }
+                          if(checklist.length===1){ setChecklist(null); setTimeout(()=>{ try{fullTaRef.current&&fullTaRef.current.focus();}catch{} },30); }
                           else { setChecklist(cl=>cl.filter((_,i)=>i!==idx)); const prev=checklist[idx-1]; if(prev) setTimeout(()=>{ const f=clItemRefs.current[prev.id]; if(f){f.focus(); const L=f.value.length; f.setSelectionRange(L,L);} },30); }
                         }
                       }}
@@ -3409,20 +3429,6 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            ) : (
-            <textarea value={note} className="editor-ta"
-              onChange={e=>{ const v=e.target.value; if(!checklist && (v==="--"||v==="—"||v==="——")){ setChecklist([{id:uid("cl"),text:"",checked:false}]); setNote(""); setTimeout(()=>{ const f=clItemRefs.current; const k=Object.keys(f)[0]; if(f[k])f[k].focus(); },30); return; } setNote(v); }}
-              onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
-              onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
-              onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
-              onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
-              onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
-              ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } }}
-              placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
-              style={{flex:1,width:"100%",background:"#1A1410",border:"none",outline:"none",
-                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",fontFamily:"var(--font-input)",
-                boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
-                WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             )}
             {!checklist && !note && (
               <div style={{textAlign:"center",fontSize:12,color:"#6A5A48",padding:"0 0 10px",pointerEvents:"none"}}>Двойное тире — для создания списка</div>
