@@ -1158,7 +1158,7 @@ export default function App() {
   const [clDragIdx, setClDragIdx] = useState(-1);
   const [clDragDY,  setClDragDY]  = useState(0);
   const clItemRefs = useRef({});
-  function finalizeChecklist(){ if(!checklist) return null; const items=checklist.filter(x=>x.text.trim()!==""); if(!items.length) return null; const un=items.filter(x=>!x.checked); const ch=items.filter(x=>x.checked); return [...un,...ch]; }
+  function finalizeChecklist(){ if(!checklist) return null; const items=checklist.filter(x=>x.text.trim()!==""); if(!items.length) return null; return items.map(x=>({...x})); }
   function lmDragStart(idx,e,items,setItems){
     const y0=e.touches[0].clientY; const st={idx,y0};
     const move=ev=>{ const dy=ev.touches[0].clientY-st.y0; const step=Math.round(dy/42); const ni=Math.max(0,Math.min(items.length-1, st.idx+step));
@@ -1166,6 +1166,24 @@ export default function App() {
     const up=()=>{ document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
     document.addEventListener("touchmove",move,{passive:true});
     document.addEventListener("touchend",up);
+  }
+  function toggleClItem(idx){
+    setChecklist(cl=>{
+      const a=cl.map(x=>({...x}));
+      const it=a[idx];
+      if(!it) return cl;
+      if(!it.checked){ // отметить: запомнить позицию, отправить вниз
+        it.checked=true; it.origIdx=idx;
+        a.splice(idx,1); a.push(it);
+        return a;
+      } else { // снять: вернуть на исходную позицию
+        it.checked=false;
+        a.splice(idx,1);
+        const back=Math.min(it.origIdx??idx, a.length);
+        a.splice(back,0,it); delete it.origIdx;
+        return a;
+      }
+    });
   }
   const ROWH=34;
   function clDragStart(idx,e){
@@ -2758,7 +2776,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v215</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v216</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2768,7 +2786,7 @@ export default function App() {
         const lnote=(()=>{ const f=data.folders.find(x=>x.id===lm.fid); if(!f)return null; if(f.isTheme) return (f.notes||[]).find(x=>x.id===lm.id); const sb=(f.subfolders||[]).find(x=>x.id===lm.sid); return sb&&(sb.notes||[]).find(x=>x.id===lm.id); })();
         const items=lnote?.checklist||[];
         const setItems=fn=>updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,checklist:fn(n.checklist||[])}:n));
-        const toggle=id=>setItems(arr=>{ const a=arr.map(x=>x.id===id?{...x,checked:!x.checked}:x); const un=a.filter(x=>!x.checked),ch=a.filter(x=>x.checked); return [...un,...ch]; });
+        const toggle=id=>setItems(arr=>{ const a=arr.map(x=>({...x})); const i=a.findIndex(x=>x.id===id); if(i<0)return arr; const it=a[i]; if(!it.checked){ it.checked=true; it.origIdx=i; a.splice(i,1); a.push(it); } else { it.checked=false; a.splice(i,1); const back=Math.min(it.origIdx??i,a.length); a.splice(back,0,it); delete it.origIdx; } return a; });
         const editTxt=(id,v)=>setItems(arr=>arr.map(x=>x.id===id?{...x,text:v}:x));
         return (
         <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:620,display:"flex",flexDirection:"column"}}>
@@ -2781,8 +2799,9 @@ export default function App() {
               <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1}}>
                 <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none"}}
                   onTouchStart={e=>{ lmDragStart(idx,e,items,setItems); }}>{IC.drag||IC.dots}</span>
-                <button onClick={()=>toggle(it.id)} style={{width:22,height:22,flexShrink:0,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
-                  {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</button>
+                <button onClick={()=>toggle(it.id)} style={{flexShrink:0,padding:"8px 6px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
                 <input value={it.text} onChange={e=>editTxt(it.id,e.target.value)}
                   style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"#F2EAE0",fontSize:16,fontFamily:"var(--font-msg)",textDecoration:it.checked?"line-through":"none",padding:"4px 0"}}/>
               </div>
@@ -3386,8 +3405,8 @@ export default function App() {
                 ))}
               </div>
             )}
-            {/* Текст + список как одно сообщение */}
-            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:checklist?"flex-start":"flex-end",overflowY:"auto"}}>
+            {/* Текст + список как одно сообщение, прижато вниз */}
+            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
             <textarea value={note} className="editor-ta"
               onChange={e=>{ const v=e.target.value; const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
@@ -3397,22 +3416,23 @@ export default function App() {
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
               ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } }}
               placeholder={editId?"Редактировать сообщение...":(checklist?"Заголовок (необязательно)":"Текст сообщения...")}
-              style={{flex:checklist?"0 0 auto":1,minHeight:checklist?44:undefined,width:"100%",background:"#1A1410",border:"none",outline:"none",
-                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:checklist?"12px 16px 0":"16px 16px",resize:"none",fontFamily:"var(--font-input)",
+              style={{flex:checklist?"0 0 auto":1,width:"100%",background:"#1A1410",border:"none",outline:"none",
+                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
                 boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             {checklist && (
-              <div style={{padding:"4px 10px 12px"}}>
+              <div style={{padding:"2px 8px 12px",flexShrink:0}}>
                 {checklist.map((it,idx)=>(
-                  <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0",
+                  <div key={it.id} style={{display:"flex",alignItems:"center",gap:6,padding:"1px 0",
                     transform: clDragIdx===idx?`translateY(${clDragDY}px)`:"translateY(0)",
                     transition: clDragIdx===idx?"none":"transform .18s ease", position:"relative", zIndex:clDragIdx===idx?5:1,
                     background:clDragIdx===idx?"#241B12":"transparent",borderRadius:8}}>
-                    <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none",padding:"4px 2px"}}
+                    <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none",padding:"8px 4px"}}
                       onTouchStart={e=>{ clDragStart(idx,e); }}>{IC.drag}</span>
-                    <button onClick={()=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,checked:!x.checked}:x))}
-                      style={{width:22,height:22,flexShrink:0,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
-                      {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</button>
+                    <button onClick={()=>toggleClItem(idx)}
+                      style={{flexShrink:0,padding:"8px 6px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
                     <input value={it.text}
                       ref={el=>{ if(el) clItemRefs.current[it.id]=el; }}
                       onChange={e=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,text:e.target.value}:x))}
@@ -3424,7 +3444,7 @@ export default function App() {
                         }
                       }}
                       placeholder="Пункт списка"
-                      style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"#F2EAE0",fontSize:16,fontFamily:"var(--font-input)",textDecoration:it.checked?"line-through":"none",padding:"4px 0"}}/>
+                      style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"#F2EAE0",fontSize:16,fontFamily:"var(--font-input)",textDecoration:it.checked?"line-through":"none",padding:"6px 0"}}/>
                   </div>
                 ))}
               </div>
