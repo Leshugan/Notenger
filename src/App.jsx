@@ -24,6 +24,7 @@ const IC = {
   back:  <Icon d="M15 19 8 12l7-7" stroke={2.2} />,
   dots:  <Icon d={["M12 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 19.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={1} fill="currentColor" />,
   edit:  <Icon d={["M5 19h3.5L19 8.5a2 2 0 0 0-2.8-2.8L5.7 16.2 5 19Z","M14.5 7.5l2.8 2.8"]} stroke={2} />,
+  drag:  <Icon d={["M8 6h.01M8 12h.01M8 18h.01M14 6h.01M14 12h.01M14 18h.01"]} stroke={2.5} />,
   trash: <Icon d={["M4 7h16","M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2","M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"]} stroke={2} />,
   save:  <Icon d={["M5 3h11l3 3v15H5z","M8 3v5h7","M8 21v-7h8v7"]} stroke={2} />,
   imp:   <Icon d={["M12 3v12","M7 10l5 5 5-5","M5 21h14"]} stroke={2} />,
@@ -1152,6 +1153,28 @@ export default function App() {
   const drafts = useRef(loadDrafts());
   const [patts,     setPatts]     = useState([]);
   const [capPos,    setCapPos]    = useState("top"); // позиция подписи для текущего сообщения с фото
+  const [checklist, setChecklist] = useState(null); // [{id,text,checked}] — режим списка в композере, null = обычный текст
+  const [listMode,  setListMode]  = useState(null);  // {fid,sid,id} — открытый на весь экран список
+  const clItemRefs = useRef({});
+  const clDrag = useRef(null);
+  function finalizeChecklist(){ if(!checklist) return null; const items=checklist.filter(x=>x.text.trim()!==""); if(!items.length) return null; const un=items.filter(x=>!x.checked); const ch=items.filter(x=>x.checked); return [...un,...ch]; }
+  function lmDragStart(idx,e,items,setItems){
+    const y0=e.touches[0].clientY; const st={idx,y0};
+    const move=ev=>{ const dy=ev.touches[0].clientY-st.y0; const step=Math.round(dy/42); const ni=Math.max(0,Math.min(items.length-1, st.idx+step));
+      if(ni!==st.idx){ setItems(arr=>{ const a=[...arr]; const [m]=a.splice(st.idx,1); a.splice(ni,0,m); return a; }); st.idx=ni; st.y0=ev.touches[0].clientY; } };
+    const up=()=>{ document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
+    document.addEventListener("touchmove",move,{passive:true});
+    document.addEventListener("touchend",up);
+  }
+  function clDragStart(idx,e){
+    const y0=e.touches[0].clientY;
+    clDrag.current={idx,y0};
+    const move=ev=>{ if(!clDrag.current)return; const dy=ev.touches[0].clientY-clDrag.current.y0; const step=Math.round(dy/40); const ni=Math.max(0,Math.min((checklist?.length||1)-1, clDrag.current.idx+step));
+      if(ni!==clDrag.current.idx){ setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(clDrag.current.idx,1); a.splice(ni,0,m); return a; }); clDrag.current.idx=ni; clDrag.current.y0=ev.touches[0].clientY; } };
+    const up=()=>{ clDrag.current=null; document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
+    document.addEventListener("touchmove",move,{passive:true});
+    document.addEventListener("touchend",up);
+  }
   const [modal,     setModal]     = useState(null);
   const [dlg,       setDlg]       = useState(null);
   // edit in main input field
@@ -1979,6 +2002,7 @@ export default function App() {
   }
   function handleHardwareBack(){
     if(recActiveRef.current){ stopRec(true); setRecSlide(0); return true; }
+    if(listMode){ setListMode(null); return true; }
     if(msgPop){ setMsgPop(null); return true; }
     if(noteCtx){ setNoteCtx(null); return true; }
     if(linkPopup){ setLinkPopup(null); return true; }
@@ -2204,6 +2228,7 @@ export default function App() {
     setNote(n.text||"");
     setPatts(n.attachments||[]);
     setCapPos(n.capPos||"top");
+    setChecklist(n.checklist&&n.checklist.length?n.checklist.map(x=>({...x})):null);
     setNoteCtx(null);
     setSelectMode(null);
     composerOrigin.current={fid,sid};
@@ -2212,7 +2237,7 @@ export default function App() {
     setComposerFull(true); setComposerPeek(false);
   }
   function cancelEdit() {
-    setEditId(null); setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
+    setEditId(null); setNote(""); setPatts([]); setChecklist(null); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
     if(taRef.current){ taRef.current.style.height="auto"; }
   }
   // Закрытие полноэкранного редактора с анимацией возврата микрофона/самолёта
@@ -2223,13 +2248,13 @@ export default function App() {
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
     const wasEdit=!!editId;
     if(editId) cancelEdit();
-    setNote(""); setPatts([]); setComposerFull(false); setComposerPeek(false);
+    setNote(""); setPatts([]); setChecklist(null); setComposerFull(false); setComposerPeek(false);
     if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0) return;
     const editedId=editId;
-    updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,time:tnow(),ts:tstamp()}:n)));
+    updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),time:tnow(),ts:tstamp()}:n)));
     cancelEdit();
     setTimeout(()=>{ const el=bubbleEls.current[editedId]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); },50);
   }
@@ -2240,14 +2265,14 @@ export default function App() {
     const o=composerOrigin.current||{fid,sid};
     const wasEdit = !!editId; const editedId = editId;
     if(editId){
-      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,time:tnow(),ts:tstamp()}:n)); }
+      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),time:tnow(),ts:tstamp()}:n)); }
     } else {
-      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos}]); }
+      if(note.trim()||patts.length){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist()}]); }
     }
     // очистка черновика
     const dKey = o.sid==="__top__" ? "__top__"+o.fid : o.sid;
     if(dKey){ delete drafts.current[dKey]; saveDrafts(drafts.current); }
-    setEditId(null); setNote(""); setPatts([]); setIsTyping(false);
+    setEditId(null); setNote(""); setPatts([]); setChecklist(null); setIsTyping(false);
     // возврат в исходную тему + анимация полёта кнопки обратно в позицию "написать"
     setComposerFull(false); setComposerPeek(false);
     setFid(o.fid); setSid(o.sid); setScr("chat");
@@ -2262,7 +2287,7 @@ export default function App() {
   function send() {
     if(!note.trim()&&patts.length===0) return;
     if(editId) { saveEdit(); return; }
-    updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos}]));
+    updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist()}]));
     setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
     if(taRef.current) taRef.current.style.height="auto";
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),50);
@@ -2730,10 +2755,39 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v212</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v213</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
+
+      {listMode&&(()=>{
+        const lm=listMode;
+        const lnote=(()=>{ const f=data.find(x=>x.id===lm.fid); if(!f)return null; if(f.isTheme) return (f.notes||[]).find(x=>x.id===lm.id); const sb=(f.subfolders||[]).find(x=>x.id===lm.sid); return sb&&(sb.notes||[]).find(x=>x.id===lm.id); })();
+        const items=lnote?.checklist||[];
+        const setItems=fn=>updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,checklist:fn(n.checklist||[])}:n));
+        const toggle=id=>setItems(arr=>{ const a=arr.map(x=>x.id===id?{...x,checked:!x.checked}:x); const un=a.filter(x=>!x.checked),ch=a.filter(x=>x.checked); return [...un,...ch]; });
+        const editTxt=(id,v)=>setItems(arr=>arr.map(x=>x.id===id?{...x,text:v}:x));
+        return (
+        <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:620,display:"flex",flexDirection:"column"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"0 12px",height:52,borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
+            <button onClick={()=>setListMode(null)} style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
+            <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Список</div>
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
+            {items.map((it,idx)=>(
+              <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1}}>
+                <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none"}}
+                  onTouchStart={e=>{ lmDragStart(idx,e,items,setItems); }}>{IC.drag||IC.dots}</span>
+                <button onClick={()=>toggle(it.id)} style={{width:22,height:22,flexShrink:0,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
+                  {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</button>
+                <input value={it.text} onChange={e=>editTxt(it.id,e.target.value)}
+                  style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"#F2EAE0",fontSize:16,fontFamily:"var(--font-msg)",textDecoration:it.checked?"line-through":"none",padding:"4px 0"}}/>
+              </div>
+            ))}
+          </div>
+        </div>
+        );
+      })()}
 
       {/* Глобальный поиск по сообщениям */}
       {globalSearch!==null&&(
@@ -3201,6 +3255,20 @@ export default function App() {
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
+                  {n.checklist&&n.checklist.length>0&&(
+                    <div style={{margin:"2px 0 4px"}}>
+                      {n.checklist.map(it=>(
+                        <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"2px 0",opacity:it.checked?.55:1}}>
+                          <span style={{width:20,height:20,flexShrink:0,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            {it.checked&&<span style={{display:"flex",transform:"scale(.65)",color:"#fff"}}>{IC.check}</span>}</span>
+                          <span style={{fontSize:15,color:it.checked?"#8A7A65":"#F2EAE0",textDecoration:it.checked?"line-through":"none",fontFamily:"var(--font-msg)",wordBreak:"break-word"}}>{it.text}</span>
+                        </div>
+                      ))}
+                      <button onClick={e=>{ e.stopPropagation(); setListMode({fid,sid,id:n.id}); }}
+                        style={{marginTop:6,display:"flex",alignItems:"center",gap:6,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",borderRadius:9,padding:"6px 10px",color:"#EF6C00",fontSize:12,cursor:"pointer"}}>
+                        <span style={{display:"flex",transform:"scale(.8)"}}>{IC.check}</span> Открыть список</button>
+                    </div>
+                  )}
                   {n.text&&(n.capPos||"top")==="top"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
@@ -3317,8 +3385,33 @@ export default function App() {
             )}
             {/* Текст: растёт снизу вверх (содержимое прижато к низу) */}
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
+            {checklist ? (
+              <div style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
+                {checklist.map((it,idx)=>(
+                  <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0"}}>
+                    <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none"}}
+                      onTouchStart={e=>{ clDragStart(idx,e); }}>{IC.drag||IC.dots}</span>
+                    <button onClick={()=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,checked:!x.checked}:x))}
+                      style={{width:22,height:22,flexShrink:0,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"var(--gline,#6A5A48)"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
+                      {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</button>
+                    <input value={it.text}
+                      ref={el=>{ if(el) clItemRefs.current[it.id]=el; }}
+                      onChange={e=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,text:e.target.value}:x))}
+                      onKeyDown={e=>{
+                        if(e.key==="Enter"){ e.preventDefault(); const nid=uid("cl"); setChecklist(cl=>{ const a=[...cl]; a.splice(idx+1,0,{id:nid,text:"",checked:false}); return a; }); setTimeout(()=>{ const f=clItemRefs.current[nid]; if(f)f.focus(); },30); }
+                        else if(e.key==="Backspace" && it.text===""){ e.preventDefault();
+                          if(checklist.length===1){ setChecklist(null); setNote(""); setTimeout(()=>{ try{fullTaRef.current&&fullTaRef.current.focus();}catch{} },30); }
+                          else { setChecklist(cl=>cl.filter((_,i)=>i!==idx)); const prev=checklist[idx-1]; if(prev) setTimeout(()=>{ const f=clItemRefs.current[prev.id]; if(f){f.focus(); const L=f.value.length; f.setSelectionRange(L,L);} },30); }
+                        }
+                      }}
+                      placeholder="Пункт списка"
+                      style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"#F2EAE0",fontSize:16,fontFamily:"var(--font-input)",textDecoration:it.checked?"line-through":"none",padding:"4px 0"}}/>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <textarea value={note} className="editor-ta"
-              onChange={e=>setNote(e.target.value)}
+              onChange={e=>{ const v=e.target.value; if(!checklist && (v==="--"||v==="—"||v==="——")){ setChecklist([{id:uid("cl"),text:"",checked:false}]); setNote(""); setTimeout(()=>{ const f=clItemRefs.current; const k=Object.keys(f)[0]; if(f[k])f[k].focus(); },30); return; } setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
@@ -3330,6 +3423,10 @@ export default function App() {
                 color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:"16px 16px",resize:"none",fontFamily:"var(--font-input)",
                 boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
+            )}
+            {!checklist && !note && (
+              <div style={{textAlign:"center",fontSize:12,color:"#6A5A48",padding:"0 0 10px",pointerEvents:"none"}}>Двойное тире — для создания списка</div>
+            )}
             </div>
             {/* Всплывающая панель ББ-кодов */}
             {fullFmt&&(
