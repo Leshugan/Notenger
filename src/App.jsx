@@ -1174,14 +1174,15 @@ export default function App() {
       const a=cl.map(x=>({...x}));
       const it=a[idx];
       if(!it) return cl;
-      if(!it.checked){ // отметить: запомнить позицию, отправить вниз
+      if(!it.checked){
         it.checked=true; it.origIdx=idx;
         a.splice(idx,1); a.push(it);
         return a;
-      } else { // снять: вернуть на исходную позицию
+      } else {
         it.checked=false;
         a.splice(idx,1);
-        const back=Math.min(it.origIdx??idx, a.length);
+        const unchecked=a.filter(x=>!x.checked).length;
+        const back=Math.min(it.origIdx??unchecked, unchecked);
         a.splice(back,0,it); delete it.origIdx;
         return a;
       }
@@ -1855,6 +1856,7 @@ export default function App() {
   const justEnteredSel = useRef(null); // id пузыря, чей хвостовой клик глушим
   const bubbleEls    = useRef({}); // note id -> element
   const scrollRef    = useRef(null); // chat scroll container
+  const openLock     = useRef(false);
   const imgTapGuard  = useRef(false);
   const inputAreaRef = useRef(null); // input area for height measure
   const scrollPos    = useRef({}); // sid -> scrollTop (запоминаем позицию)
@@ -1873,22 +1875,29 @@ export default function App() {
   useLayoutEffect(()=>{
     if(scr==="chat" && scrollRef.current){
       const sc=scrollRef.current;
-      const saved=scrollPos.current[sid];
-      sc.scrollTop = (saved!==undefined) ? saved : sc.scrollHeight;
+      const saved=scrollPos.current[fid+"|"+sid];
+      if(saved!==undefined){ sc.scrollTop = saved; }
+      else {
+        openLock.current=true;
+        sc.scrollTop = sc.scrollHeight;
+        requestAnimationFrame(()=>{ if(scrollRef.current) scrollRef.current.scrollTop=scrollRef.current.scrollHeight; });
+        setTimeout(()=>{ if(scrollRef.current) scrollRef.current.scrollTop=scrollRef.current.scrollHeight; },60);
+        setTimeout(()=>{ if(scrollRef.current) scrollRef.current.scrollTop=scrollRef.current.scrollHeight; },200);
+        setTimeout(()=>{ openLock.current=false; },280);
+      }
     }
   },[scr,sid]);
   useEffect(()=>{
     if(scr==="chat" && scrollRef.current){
       const sc=scrollRef.current; if(!sc) return;
-      const saved=scrollPos.current[sid];
-      sc.scrollTop = (saved!==undefined) ? saved : sc.scrollHeight;
-      updateActiveNote();
+      const saved=scrollPos.current[fid+"|"+sid];
+      if(saved!==undefined){ sc.scrollTop = saved; }
     }
   },[scr,sid]);
   useLayoutEffect(()=>{
     if(!booting && scr==="chat" && scrollRef.current){
       const sc=scrollRef.current;
-      const saved=scrollPos.current[sid];
+      const saved=scrollPos.current[fid+"|"+sid];
       sc.scrollTop = (saved!==undefined) ? saved : sc.scrollHeight;
     }
   },[booting]);
@@ -2648,7 +2657,7 @@ export default function App() {
 
 
   // (floating buttons removed — no scroll tracking needed)
-  function updateActiveNote(){ if(scr==='chat'&&scrollRef.current&&sid){ scrollPos.current[sid]=scrollRef.current.scrollTop; } }
+  function updateActiveNote(){ if(openLock.current) return; if(scr==='chat'&&scrollRef.current&&sid){ scrollPos.current[fid+"|"+sid]=scrollRef.current.scrollTop; } }
 
   // ── Auto-grow textarea ──
 
@@ -2780,7 +2789,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v217</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v236</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2790,7 +2799,7 @@ export default function App() {
         const lnote=(()=>{ const f=data.folders.find(x=>x.id===lm.fid); if(!f)return null; if(f.isTheme) return (f.notes||[]).find(x=>x.id===lm.id); const sb=(f.subfolders||[]).find(x=>x.id===lm.sid); return sb&&(sb.notes||[]).find(x=>x.id===lm.id); })();
         const items=lnote?.checklist||[];
         const setItems=fn=>updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,checklist:fn(n.checklist||[])}:n));
-        const toggle=id=>setItems(arr=>{ const a=arr.map(x=>({...x})); const i=a.findIndex(x=>x.id===id); if(i<0)return arr; const it=a[i]; if(!it.checked){ it.checked=true; it.origIdx=i; a.splice(i,1); a.push(it); } else { it.checked=false; a.splice(i,1); const back=Math.min(it.origIdx??i,a.length); a.splice(back,0,it); delete it.origIdx; } return a; });
+        const toggle=id=>setItems(arr=>{ const a=arr.map(x=>({...x})); const i=a.findIndex(x=>x.id===id); if(i<0)return arr; const it=a[i]; if(!it.checked){ it.checked=true; it.origIdx=i; a.splice(i,1); a.push(it); } else { it.checked=false; a.splice(i,1); const unchecked=a.filter(x=>!x.checked).length; const back=Math.min(it.origIdx??unchecked,unchecked); a.splice(back,0,it); delete it.origIdx; } return a; });
         const editTxt=(id,v)=>setItems(arr=>arr.map(x=>x.id===id?{...x,text:v}:x));
         return (
         <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:620,display:"flex",flexDirection:"column"}}>
@@ -3238,6 +3247,7 @@ export default function App() {
               {n.pinned&&<div style={{fontSize:11,color:subColor,marginBottom:2,paddingRight:2,display:"flex",alignItems:"center",gap:4}}><span style={{display:"flex",transform:"scale(.62)",margin:"-3px"}}>{IC.pin}</span>закреплено</div>}
 
               <div onClick={(e)=>{ if(e.target!==e.currentTarget) return;
+                  if(justEnteredSel.current===n.id){ return; }
                   const inSel = (multiSelect.length>0)||selectMode;
                   if(inSel){ toggleSel(n); }
                 }}
@@ -3281,6 +3291,13 @@ export default function App() {
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
                     border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
+                  {n.text&&n.checklist&&n.checklist.length>0&&(
+                    <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
+                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginBottom:4,fontWeight:700,
+                      userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
+                      <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
+                    </div>
+                  )}
                   {n.checklist&&n.checklist.length>0&&(
                     <div style={{margin:"2px 0 4px"}}>
                       {n.checklist.map(it=>(
@@ -3295,7 +3312,7 @@ export default function App() {
                         <span style={{display:"flex",transform:"scale(.8)"}}>{IC.check}</span> Открыть список</button>
                     </div>
                   )}
-                  {n.text&&(n.capPos||"top")==="top"&&(
+                  {n.text&&!(n.checklist&&n.checklist.length>0)&&(n.capPos||"top")==="top"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
@@ -3336,7 +3353,7 @@ export default function App() {
                       {others.map(a=><AttBubble key={a.id} att={a} onOpen={setLightbox} stamp={(n.text&&n.text.trim())?null:(n.ts?fmtStamp(n.ts):n.time)} selecting={inSel}/>)}
                     </>);
                   })()}
-                  {n.text&&n.capPos==="bottom"&&(
+                  {n.text&&!(n.checklist&&n.checklist.length>0)&&n.capPos==="bottom"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginTop:4,
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
@@ -3410,19 +3427,19 @@ export default function App() {
               </div>
             )}
             {/* Текст + список как одно сообщение, прижато вниз */}
-            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
+            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:checklist?"flex-start":"flex-end",overflowY:"auto"}}>
             <textarea value={note} className="editor-ta"
-              onChange={e=>{ const v=e.target.value; const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } setNote(v); }}
+              onChange={e=>{ let v=e.target.value; if(checklist){ const el=e.target; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } v=v.replace(/(^|\n)- /g,"$1• "); setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
-              ref={el=>{ fullTaRef.current=el; if(el && composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } }}
+              ref={el=>{ fullTaRef.current=el; if(el){ if(checklist){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } if(composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } } }}
               placeholder={editId?"Редактировать сообщение...":(checklist?"Заголовок (необязательно)":"Текст сообщения...")}
               style={{flex:checklist?"0 0 auto":1,width:"100%",background:"#1A1410",border:"none",outline:"none",
-                color:"#F2EAE0",fontSize:16,lineHeight:1.5,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
-                boxSizing:"border-box",overflowY:"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
+                color:"#F2EAE0",fontSize:16,lineHeight:1.5,fontWeight:checklist?700:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
+                boxSizing:"border-box",overflowY:checklist?"hidden":"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             {checklist && (
               <div style={{padding:"2px 8px 12px",flexShrink:0}}>
