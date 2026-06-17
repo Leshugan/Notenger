@@ -284,6 +284,19 @@ jobs:
                   }catch(Exception e){}
                 }
                 @JavascriptInterface
+                public void hideKeyboard(){
+                  try{
+                    runOnUiThread(() -> {
+                      try{
+                        android.view.View v = getCurrentFocus();
+                        if(v==null) v = bridge.getWebView();
+                        android.view.inputmethod.InputMethodManager imm=(android.view.inputmethod.InputMethodManager)getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+                        if(imm!=null && v!=null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                      }catch(Exception e){}
+                    });
+                  }catch(Exception e){}
+                }
+                @JavascriptInterface
                 public void saveFileDialog(String name, String mime, String b64){
                   try{
                     pendingSaveBytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
