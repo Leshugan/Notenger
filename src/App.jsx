@@ -25,6 +25,11 @@ const IC = {
   dots:  <Icon d={["M12 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 19.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={1} fill="currentColor" />,
   edit:  <Icon d={["M5 19h3.5L19 8.5a2 2 0 0 0-2.8-2.8L5.7 16.2 5 19Z","M14.5 7.5l2.8 2.8"]} stroke={2} />,
   drag:  <Icon d={["M8 6h.01M8 12h.01M8 18h.01M14 6h.01M14 12h.01M14 18h.01"]} stroke={2.5} />,
+  scissors: <Icon d={["M6 6a2.4 2.4 0 1 0 0 4.8A2.4 2.4 0 0 0 6 6ZM6 13.2a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8Z","M8.1 9.5 19 17M8.1 14.5 19 7"]} stroke={2} />,
+  selectAll: <Icon d={["M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3","M8.5 8.5h7v7h-7z"]} stroke={2} />,
+  paste: <Icon d={["M9 4h6v3H9z","M7 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-1"]} stroke={1.9} />,
+  paste: <Icon d={["M9 4h6v3H9z","M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"]} stroke={2} />,
+  copy2: <Icon d={["M9 9h10v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1Z","M5 15V5a1 1 0 0 1 1-1h9"]} stroke={2} />,
   palette: <Icon d={["M12 3a9 9 0 1 0 0 18c1 0 2-1 2-2s-1-1-1-2 1-1 2-1h1a4 4 0 0 0 4-4c0-4-4-7-8-7Z","M7.5 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM10.5 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM15 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={2} />,
   trash: <Icon d={["M4 7h16","M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2","M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"]} stroke={2} />,
   save:  <Icon d={["M5 3h11l3 3v15H5z","M8 3v5h7","M8 21v-7h8v7"]} stroke={2} />,
@@ -408,7 +413,7 @@ function Dlg({ open, msg, onYes, onNo, anchor }) {
       display:"flex",alignItems:anchor?"flex-start":"center",justifyContent:anchor?"flex-start":"center",
       zIndex:600,backdropFilter:anchor?"none":"blur(4px)",padding:anchor?0:"0 24px"}}>
       <div onClick={e=>e.stopPropagation()} style={boxStyle}>
-        <div style={{fontSize:14,color:"#F2EAE0",marginBottom:16,lineHeight:1.5}}>{msg}</div>
+        <div style={{fontSize:14,color:"var(--ink,#F2EAE0)",marginBottom:16,lineHeight:1.5}}>{msg}</div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={onNo}  style={{flex:1,background:"#2E251C",border:"none",borderRadius:10,padding:10,color:"#B0A498",fontSize:14,cursor:"pointer"}}>Отмена</button>
           <button onClick={onYes} style={{flex:1,background:"#E05252",border:"none",borderRadius:10,padding:10,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>Удалить</button>
@@ -478,7 +483,7 @@ function UndoToast({ onUndo, onDone }) {
               fill="#E05252" fontSize={11} fontWeight={700}>{sec}</text>
           </svg>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,color:"#F2EAE0",fontWeight:500}}>Заметка удалена</div>
+            <div style={{fontSize:14,color:"var(--ink,#F2EAE0)",fontWeight:500}}>Заметка удалена</div>
             <div style={{fontSize:11,color:"#B0A498",marginTop:1}}>Нажмите «Отменить» для восстановления</div>
           </div>
           <button onClick={onUndo} style={{background:"#EF6C00",border:"none",borderRadius:10,
@@ -503,10 +508,10 @@ function LinkDlg({ open, selected, onClose, onInsert }) {
         <div style={{fontWeight:700,fontSize:16,marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{display:"flex",color:"#EF6C00"}}>{IC.fLink}</span> Вставить ссылку</div>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:5}}>Текст</div>
         <input value={lbl} onChange={e=>setLbl(e.target.value)} placeholder="Текст ссылки"
-          style={{width:"100%",background:"#2A2017",border:"none",borderRadius:10,padding:"10px 12px",color:"#F2EAE0",fontSize:14,marginBottom:12,outline:"none"}}/>
+          style={{width:"100%",background:"#2A2017",border:"none",borderRadius:10,padding:"10px 12px",color:"var(--ink,#F2EAE0)",fontSize:14,marginBottom:12,outline:"none"}}/>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:5}}>URL</div>
         <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://"
-          style={{width:"100%",background:"#2A2017",border:"none",borderRadius:10,padding:"10px 12px",color:"#F2EAE0",fontSize:14,marginBottom:18,outline:"none"}}/>
+          style={{width:"100%",background:"#2A2017",border:"none",borderRadius:10,padding:"10px 12px",color:"var(--ink,#F2EAE0)",fontSize:14,marginBottom:18,outline:"none"}}/>
         <div style={{display:"flex",gap:10}}>
           <button onClick={onClose} style={{flex:1,background:"#2A2017",border:"none",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14}}>Отмена</button>
           <button onClick={()=>{if(url.trim()){onInsert(lbl.trim()||url.trim(),url.trim());onClose();}}}
@@ -544,7 +549,7 @@ function LinkPopup({ href, x, y, onClose }) {
         {icon:"↗",label:"Открыть ссылку",fn:()=>{window.open(href,"_blank");onClose();}},
       ].map((it,i)=>(
         <button key={i} onClick={it.fn} style={{width:"100%",background:"none",border:"none",
-          borderTop:"1px solid var(--gline,#4A3A2A)",padding:"11px 14px",color:"#F2EAE0",fontSize:14,
+          borderTop:"1px solid var(--gline,#4A3A2A)",padding:"11px 14px",color:"var(--ink,#F2EAE0)",fontSize:14,
           cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}
           >
           <span style={{fontSize:16,width:22,textAlign:"center"}}>{it.icon}</span>{it.label}
@@ -598,13 +603,13 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
     <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:600,display:"flex",flexDirection:"column"}}>
       {/* Шапка без стрелки */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
-        <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Предпросмотр</div>
+        <div style={{fontWeight:600,fontSize:16,color:"var(--ink,#F2EAE0)"}}>Предпросмотр</div>
       </div>
       {/* Содержимое — как пузырь сообщения */}
       <div style={{flex:1,overflowY:"auto",padding:"16px 12px",display:"flex",flexDirection:"column"}}>
         <div style={{display:"flex",justifyContent:"flex-end"}}>
           <div style={{background:"#2E251C",borderRadius:"16px 4px 16px 16px",padding:"10px 14px",maxWidth:"90%"}}>
-            {text&&<div style={{fontSize:15,lineHeight:1.6,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word"}}>
+            {text&&<div style={{fontSize:15,lineHeight:1.6,color:"var(--ink,#F2EAE0)",whiteSpace:"pre-wrap",wordBreak:"break-word"}}>
               <RichText text={text} color={color}/></div>}
             {atts?.map((a,i)=><AttBubble key={i} att={a}/>)}
             <div style={{fontSize:8.5,color:"#B0A498",textAlign:"right",marginTop:5}}>{tnow()} ✓✓</div>
@@ -712,7 +717,7 @@ function AttBubble({ att, onOpen, stamp, selecting }) {
       display:"flex",alignItems:"center",gap:8,maxWidth:230,cursor:"pointer"}}>
       <span style={{color:"#EF6C00",display:"flex"}}>{ficon(att.type)}</span>
       <div style={{minWidth:0}}>
-        <div style={{fontSize:13,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{att.name}</div>
+        <div style={{fontSize:13,color:"var(--ink,#F2EAE0)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{att.name}</div>
         {att.caption&&<div style={{fontSize:12,color:"#D8CCBE",marginTop:2}}>{att.caption}</div>}
         <div style={{fontSize:11,color:"#B0A498"}}>{fsize(att.size)}</div>
       </div>
@@ -851,7 +856,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
                   style={{background:"#2A2017",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",gap:10}}>
                   <span style={{color:"#EF6C00",display:"flex"}}>{ficon(a.type)}</span>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
+                    <div style={{fontSize:13,color:"var(--ink,#F2EAE0)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
                     <div style={{fontSize:11,color:"#B0A498"}}>{fsize(a.size)} · {a.noteTime}</div>
                   </div>
                 </div>
@@ -885,7 +890,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
             left:Math.max(8,Math.min(ctxMenu.x-100,window.innerWidth-210)),top:Math.max(8,ctxMenu.y-72),
             background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",overflow:"hidden",minWidth:200,animation:"fS .12s ease"}}>
             <button onClick={()=>{ const id=ctxMenu.item.noteId; setCtxMenu(null); onClose&&onClose(); onJumpTo&&onJumpTo(id); }}
-              style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:"#F2EAE0",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
+              style={{width:"100%",background:"none",border:"none",padding:"13px 16px",color:"var(--ink,#F2EAE0)",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10}}>
               <span style={{display:"flex",color:"#EF6C00"}}>{IC.arrRight}</span> Перейти к сообщению
             </button>
           </div>
@@ -914,7 +919,7 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
       <div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="Название"
         style={{width:"100%",background:"#2A2017",border:"none",borderRadius:12,
-          padding:"12px 14px",color:"#F2EAE0",fontSize:15,marginBottom:14,outline:"none"}}/>
+          padding:"12px 14px",color:"var(--ink,#F2EAE0)",fontSize:15,marginBottom:14,outline:"none"}}/>
       <div style={{marginBottom:12}}>
         <div style={{fontSize:12,color:"#B0A498",marginBottom:8}}>Иконка</div>
         {onBrowse&&(
@@ -1041,7 +1046,7 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
         <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Локальное автосохранение</div>
         <div onClick={()=>setAsOpen(true)}
           style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",border:"1px solid var(--gline,#4A3A2A)"}}>
-          <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
+          <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>{(AS_MODES.find(m=>m.val===asSettings.mode)||AS_MODES[0]).label}</span>
           <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
         </div>
       </div>
@@ -1053,12 +1058,12 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
               display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               {asSettings.mode===m.val&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
             </div>
-            <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+            <span style={{fontSize:14,color:"var(--ink,#F2EAE0)"}}>{m.label}</span>
           </div>
         ))}
       </Sheet>
       <div style={{height:1,background:"#2A2017",margin:"16px 0"}}/>
-      <div style={{fontSize:15,color:"#F2EAE0",fontWeight:600,marginBottom:10}}>Ручная копия</div>
+      <div style={{fontSize:15,color:"var(--ink,#F2EAE0)",fontWeight:600,marginBottom:10}}>Ручная копия</div>
       <div onClick={()=>setUsePwd(v=>!v)} style={{display:"flex",alignItems:"center",gap:10,
         background:"#2A2017",borderRadius:12,padding:"11px 14px",cursor:"pointer",marginBottom:10,border:"1px solid var(--gline,#4A3A2A)"}}>
         <div style={{width:20,height:20,borderRadius:6,
@@ -1066,16 +1071,16 @@ function ExportSheet({ open, onClose, data, asSettings, setAsSettings, noInputAn
           display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {usePwd&&<span style={{fontSize:12,color:"#fff"}}>✓</span>}
         </div>
-        <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Шифровать (AES-256)</span>
+        <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>Шифровать (AES-256)</span>
       </div>
       {usePwd&&<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="Пароль..."
         style={{width:"100%",background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:10,padding:"11px 14px",
-          color:"#F2EAE0",fontSize:14,marginBottom:10,outline:"none"}}/>}
+          color:"var(--ink,#F2EAE0)",fontSize:14,marginBottom:10,outline:"none"}}/>}
       {msg&&<div style={{fontSize:13,color:"#7EC87E",marginBottom:10}}>{msg}</div>}
       <div style={{display:"flex",gap:10}}>
         <button onClick={()=>onImportClick&&onImportClick()} disabled={busy}
           style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:13,
-            color:"#F2EAE0",cursor:"pointer",fontSize:14}}>
+            color:"var(--ink,#F2EAE0)",cursor:"pointer",fontSize:14}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.imp}</span>Импорт
         </button>
         <button onClick={()=>doSave(usePwd)} disabled={busy}
@@ -1162,14 +1167,48 @@ export default function App() {
   const [listMode,  setListMode]  = useState(null);  // {fid,sid,id} — открытый на весь экран список
   const [clDragIdx, setClDragIdx] = useState(-1);
   const [clDragDY,  setClDragDY]  = useState(0);
+  const [lmDragIdx, setLmDragIdx] = useState(-1);
+  const [lmDragDY,  setLmDragDY]  = useState(0);
+  const [clEditId,  setClEditId]  = useState(null); // id пункта, который сейчас редактируется (input не readOnly)
+  const [lmEditId,  setLmEditId]  = useState(null);
+  const [lmEditMode, setLmEditMode] = useState(false);
   const clItemRefs = useRef({});
   function finalizeChecklist(){ if(!checklist) return null; const items=checklist.filter(x=>x.text.trim()!==""); if(!items.length) return null; return items.map(x=>({...x})); }
+  const lmRowDrag = useRef(null);
+  function lmRowTouchStart(idx,e,items,setItems){
+    const t=e.touches[0];
+    const itId=items&&items[idx]?items[idx].id:null;
+    const d={idx,itId,startY:t.clientY,startX:t.clientX,active:false,moved:false,setItems};
+    d.timer=setTimeout(()=>{
+      if(!lmRowDrag.current||lmRowDrag.current!==d) return;
+      d.active=true; setLmEditId(null); setLmDragIdx(d.idx); setLmDragDY(0); try{buzz(10);}catch{}
+      const move=ev=>{ ev.preventDefault(); const tt=ev.touches[0]; setLmDragDY(tt.clientY-d.startY);
+        const rows=Array.from(document.querySelectorAll("[data-lmid]"));
+        let ni=d.idx;
+        for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(tt.clientY>=r.top && tt.clientY<=r.bottom){ ni=i; break; } }
+        if(ni!==d.idx){ const from=d.idx; flipReorder("[data-lmid]", ()=>d.setItems(arr=>{ const a=[...arr]; const [m]=a.splice(from,1); a.splice(ni,0,m); return a; })); d.idx=ni; setLmDragIdx(ni); d.startY=tt.clientY; setLmDragDY(0); } };
+      const up=()=>{ setLmDragIdx(-1); setLmDragDY(0); lmRowDrag.current=null; document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
+      document.addEventListener("touchmove",move,{passive:false});
+      document.addEventListener("touchend",up);
+      document.addEventListener("touchcancel",up);
+    },280);
+    lmRowDrag.current=d;
+  }
+  function lmRowTouchMove(e){
+    const d=lmRowDrag.current; if(!d||d.active) return;
+    const t=e.touches[0];
+    if(Math.abs(t.clientY-d.startY)>10||Math.abs(t.clientX-d.startX)>10){ d.moved=true; clearTimeout(d.timer); lmRowDrag.current=null; }
+  }
+  function lmRowTouchEnd(){ const d=lmRowDrag.current; if(!d) return; clearTimeout(d.timer); lmRowDrag.current=null; }
   function lmDragStart(idx,e,items,setItems){
     e.stopPropagation();
-    const y0=e.touches[0].clientY; const st={idx,y0};
-    const move=ev=>{ ev.preventDefault(); const dy=ev.touches[0].clientY-st.y0; const step=Math.round(dy/42); const ni=Math.max(0,Math.min(items.length-1, st.idx+step));
-      if(ni!==st.idx){ setItems(arr=>{ const a=[...arr]; const [m]=a.splice(st.idx,1); a.splice(ni,0,m); return a; }); st.idx=ni; st.y0=ev.touches[0].clientY; } };
-    const up=()=>{ document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
+    let y0=e.touches[0].clientY; let cur=idx;
+    setLmDragIdx(idx); setLmDragDY(0);
+    const move=ev=>{ ev.preventDefault(); const dy=ev.touches[0].clientY-y0; setLmDragDY(dy);
+      const self=document.querySelector(`[data-lmid][data-dragging="1"]`); const rh=self?self.getBoundingClientRect().height:44;
+      const step=Math.round(dy/Math.max(24,rh)); const ni=Math.max(0,Math.min(items.length-1, cur+step));
+      if(ni!==cur){ flipReorder("[data-lmid]", ()=>setItems(arr=>{ const a=[...arr]; const [m]=a.splice(cur,1); a.splice(ni,0,m); return a; })); cur=ni; setLmDragIdx(ni); y0=ev.touches[0].clientY; setLmDragDY(0); } };
+    const up=()=>{ setLmDragIdx(-1); setLmDragDY(0); document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
     document.addEventListener("touchmove",move,{passive:false});
     document.addEventListener("touchend",up);
     document.addEventListener("touchcancel",up);
@@ -1194,13 +1233,44 @@ export default function App() {
     });
   }
   const ROWH=34;
+  const clRowDrag = useRef(null);
+  function clRowTouchStart(idx,e){
+    const t=e.touches[0];
+    const itId=(checklist&&checklist[idx])?checklist[idx].id:null;
+    const d={idx,itId,startY:t.clientY,startX:t.clientX,active:false,moved:false};
+    d.timer=setTimeout(()=>{
+      if(!clRowDrag.current||clRowDrag.current!==d) return;
+      d.active=true; setClEditId(null); setClDragIdx(d.idx); setClDragDY(0); try{buzz(10);}catch{}
+      const move=ev=>{ ev.preventDefault(); const tt=ev.touches[0]; setClDragDY(tt.clientY-d.startY);
+        const rows=Array.from(document.querySelectorAll("[data-clid]"));
+        let ni=d.idx;
+        for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(tt.clientY>=r.top && tt.clientY<=r.bottom){ ni=i; break; } }
+        if(ni!==d.idx){ const from=d.idx; flipReorder("[data-clid]", ()=>setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(from,1); a.splice(ni,0,m); return a; })); d.idx=ni; setClDragIdx(ni); d.startY=tt.clientY; setClDragDY(0); } };
+      const up=()=>{ setClDragIdx(-1); setClDragDY(0); clRowDrag.current=null; document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
+      document.addEventListener("touchmove",move,{passive:false});
+      document.addEventListener("touchend",up);
+      document.addEventListener("touchcancel",up);
+    },280);
+    clRowDrag.current=d;
+  }
+  function clRowTouchMove(e){
+    const d=clRowDrag.current; if(!d||d.active) return;
+    const t=e.touches[0];
+    if(Math.abs(t.clientY-d.startY)>10||Math.abs(t.clientX-d.startX)>10){ d.moved=true; clearTimeout(d.timer); clRowDrag.current=null; }
+  }
+  function clRowTouchEnd(){
+    const d=clRowDrag.current; if(!d) return;
+    clearTimeout(d.timer);
+    clRowDrag.current=null;
+  }
   function clDragStart(idx,e){
     e.stopPropagation();
-    const y0=e.touches[0].clientY; let cur=idx;
+    let y0=e.touches[0].clientY; let cur=idx;
     setClDragIdx(idx); setClDragDY(0);
     const move=ev=>{ ev.preventDefault(); const dy=ev.touches[0].clientY-y0; setClDragDY(dy);
-      const step=Math.round(dy/ROWH); const ni=Math.max(0,Math.min((checklist?.length||1)-1, idx+step));
-      if(ni!==cur){ setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(cur,1); a.splice(ni,0,m); return a; }); cur=ni; setClDragIdx(ni); } };
+      const self=document.querySelector(`[data-clid][data-dragging="1"]`); const rh=self?self.getBoundingClientRect().height:ROWH;
+      const step=Math.round(dy/Math.max(20,rh)); const ni=Math.max(0,Math.min((checklist?.length||1)-1, cur+step));
+      if(ni!==cur){ flipReorder("[data-clid]", ()=>setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(cur,1); a.splice(ni,0,m); return a; })); cur=ni; setClDragIdx(ni); y0=ev.touches[0].clientY; setClDragDY(0); } };
     const up=()=>{ setClDragIdx(-1); setClDragDY(0); document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
     document.addEventListener("touchmove",move,{passive:false});
     document.addEventListener("touchend",up);
@@ -1228,6 +1298,7 @@ export default function App() {
   // context menu on note (long-press)
   const [noteCtx,   setNoteCtx]  = useState(null);
   const [msgPop,    setMsgPop]   = useState(null); // {id,x,y} popup копировать/редактировать при одиночном тапе
+  const [txtSel,    setTxtSel]   = useState(null); // {x,y,editable} панель копировать/вырезать/вставить при выделении текста
   const [imgSel,    setImgSel]   = useState([]); // выбранные отдельные картинки: "noteId|attId"
   function toggleImgSel(noteId, attId){ const key=noteId+"|"+attId; setImgSel(s=>s.includes(key)?s.filter(k=>k!==key):[...s,key]); }
   const tileLp = useRef(null); const tileMoved = useRef(false);
@@ -1436,6 +1507,10 @@ export default function App() {
   const [noDelAnim, setNoDelAnim] = useState(()=>{ try{return localStorage.getItem("napp_noDelAnim")==="1";}catch{return false;} });
   const [noScrAnim, setNoScrAnim] = useState(()=>{ try{return localStorage.getItem("napp_noScrAnim")==="1";}catch{return false;} });
   const [imgCompress, setImgCompress] = useState(()=>{ try{return localStorage.getItem("napp_imgCompress")==="1";}catch{return false;} });
+  const [customSelMenu, setCustomSelMenu] = useState(()=>{ try{return localStorage.getItem("napp_customSelMenu")==="1";}catch{return false;} });
+  const [softInk, setSoftInk] = useState(()=>{ try{return localStorage.getItem("napp_softInk")==="1";}catch{return false;} });
+  function toggleSoftInk(){ setSoftInk(v=>{ const nv=!v; try{localStorage.setItem("napp_softInk",nv?"1":"0");}catch{} return nv; }); }
+  function toggleCustomSelMenu(){ setCustomSelMenu(v=>{ const nv=!v; try{localStorage.setItem("napp_customSelMenu",nv?"1":"0");}catch{} try{ if(window.NotengerSelMenu&&window.NotengerSelMenu.setEnabled) window.NotengerSelMenu.setEnabled(nv); }catch{} return nv; }); }
   const [imgCompressPopup, setImgCompressPopup] = useState(false);
   function toggleImgCompress(){
     setImgCompress(v=>{ const nv=!v; try{localStorage.setItem("napp_imgCompress",nv?"1":"0");}catch{} if(nv) setImgCompressPopup(true); return nv; });
@@ -1566,7 +1641,7 @@ export default function App() {
   const DRIVE_FILE_NAME="notenger_backup.json";
   // Модули, которые можно синкать/сохранять выборочно
   const SYNC_MODULES=[
-    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion"]},
+    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion","napp_customSelMenu","napp_softInk"]},
     {key:"notes",   label:"Заметки", keys:[SK]},
     {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
   ];
@@ -1865,6 +1940,52 @@ export default function App() {
   const bubbleEls    = useRef({}); // note id -> element
   const scrollRef    = useRef(null); // chat scroll container
   const openLock     = useRef(false);
+  useEffect(()=>{ try{ if(window.NotengerSelMenu&&window.NotengerSelMenu.setEnabled) window.NotengerSelMenu.setEnabled(customSelMenu); }catch{} },[]);
+  useEffect(()=>{ try{ document.documentElement.style.setProperty("--ink", softInk?"#B8AC9C":"#F2EAE0"); }catch{} },[softInk]);
+  const popupJustClosed = useRef(0);
+  useEffect(()=>{
+    if(!customSelMenu) { setTxtSel(null); return; }
+    let raf=0;
+    const update=()=>{
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(()=>{
+        try{
+          const sel=window.getSelection&&window.getSelection();
+          const ae=document.activeElement;
+          const editable = ae && (ae.tagName==="TEXTAREA" || ae.tagName==="INPUT");
+          if(editable){
+            const hasSel = ae.selectionStart!=null && ae.selectionEnd!=null && ae.selectionEnd>ae.selectionStart;
+            if(!hasSel){ setTxtSel(null); return; }
+            const r=ae.getBoundingClientRect();
+            setTxtSel({ x:r.left+r.width/2, y:r.top-6, editable:true });
+            return;
+          }
+          if(sel && sel.rangeCount>0 && !sel.isCollapsed && String(sel).trim()!==""){
+            const rect=sel.getRangeAt(0).getBoundingClientRect();
+            if(rect&&rect.width>0){ setTxtSel({ x:rect.left+rect.width/2, y:rect.top-6, editable:false }); return; }
+          }
+          setTxtSel(null);
+        }catch{ setTxtSel(null); }
+      });
+    };
+    document.addEventListener("selectionchange",update);
+    const blockCtx=(e)=>{ e.preventDefault(); };
+    document.addEventListener("contextmenu",blockCtx);
+    return ()=>{ document.removeEventListener("selectionchange",update); document.removeEventListener("contextmenu",blockCtx); cancelAnimationFrame(raf); };
+  },[customSelMenu]);
+  function txtCopy(){ try{ const ae=document.activeElement; let t=""; if(ae&&(ae.tagName==="TEXTAREA"||ae.tagName==="INPUT")){ t=ae.value.slice(ae.selectionStart,ae.selectionEnd); } else { t=String(window.getSelection()); } if(t){ (navigator.clipboard&&navigator.clipboard.writeText)?navigator.clipboard.writeText(t):document.execCommand("copy"); } }catch{} setTxtSel(null); }
+  function txtCut(){ try{ const ae=document.activeElement; if(ae&&(ae.tagName==="TEXTAREA"||ae.tagName==="INPUT")){ const s=ae.selectionStart,e=ae.selectionEnd; const t=ae.value.slice(s,e); if(t){ (navigator.clipboard&&navigator.clipboard.writeText)&&navigator.clipboard.writeText(t); const nv=ae.value.slice(0,s)+ae.value.slice(e); if(ae===fullTaRef.current) setNote(nv); else { ae.value=nv; } requestAnimationFrame(()=>{ try{ae.focus(); ae.setSelectionRange(s,s);}catch{} }); } } }catch{} setTxtSel(null); }
+  async function txtPaste(){ try{ const ae=document.activeElement; if(ae&&(ae.tagName==="TEXTAREA"||ae.tagName==="INPUT")){ let clip=""; try{ clip=await navigator.clipboard.readText(); }catch{} if(clip){ const s=ae.selectionStart,e=ae.selectionEnd; const nv=ae.value.slice(0,s)+clip+ae.value.slice(e); if(ae===fullTaRef.current) setNote(nv); else ae.value=nv; const pos=s+clip.length; requestAnimationFrame(()=>{ try{ae.focus(); ae.setSelectionRange(pos,pos);}catch{} }); } } }catch{} setTxtSel(null); }
+  function txtSelectAll(){ try{ const ae=document.activeElement; if(ae&&(ae.tagName==="TEXTAREA"||ae.tagName==="INPUT")){ ae.setSelectionRange(0,ae.value.length); } else { const r=document.createRange(); const sel=window.getSelection(); /* выделить родителя текущего выделения */ const node=sel.anchorNode&&sel.anchorNode.parentElement; if(node){ r.selectNodeContents(node); sel.removeAllRanges(); sel.addRange(r);} } }catch{} }
+  useEffect(()=>{
+    if(!msgPop) return;
+    const close=(e)=>{ if(e.target&&e.target.closest&&e.target.closest("[data-msgpop]")) return; popupJustClosed.current=Date.now(); setMsgPop(null); };
+    const opts={passive:true,capture:true};
+    document.addEventListener("touchstart",close,opts);
+    document.addEventListener("wheel",close,opts);
+    document.addEventListener("scroll",close,opts);
+    return ()=>{ document.removeEventListener("touchstart",close,opts); document.removeEventListener("wheel",close,opts); document.removeEventListener("scroll",close,opts); };
+  },[msgPop]);
   const imgTapGuard  = useRef(false);
   const inputAreaRef = useRef(null); // input area for height measure
   const scrollPos    = useRef({}); // sid -> scrollTop (запоминаем позицию)
@@ -2046,7 +2167,7 @@ export default function App() {
   }
   function handleHardwareBack(){
     if(recActiveRef.current){ stopRec(true); setRecSlide(0); return true; }
-    if(listMode){ setListMode(null); return true; }
+    if(listMode){ setListMode(null); setLmEditMode(false); return true; }
     if(msgPop){ setMsgPop(null); return true; }
     if(noteCtx){ setNoteCtx(null); return true; }
     if(linkPopup){ setLinkPopup(null); return true; }
@@ -2174,7 +2295,28 @@ export default function App() {
       return {...f,subfolders:f.subfolders.slice().sort((a,b)=>order[a.id]-order[b.id])};
     })}));
   }
-  // FLIP: плавно анимируем строки, чьи позиции изменились после перестановки
+  // FLIP: захватываем позиции ДО перестановки, выполняем перестановку, затем анимируем
+  function flipReorder(selector, doReorder){
+    const nodes=Array.from(document.querySelectorAll(selector));
+    const first={}; nodes.forEach(n=>{ const id=n.getAttribute("data-fid")||n.getAttribute("data-sid")||n.getAttribute("data-clid")||n.getAttribute("data-lmid"); first[id]=n.getBoundingClientRect().top; });
+    doReorder();
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+      const nodes2=Array.from(document.querySelectorAll(selector));
+      nodes2.forEach(n=>{
+        const id=n.getAttribute("data-fid")||n.getAttribute("data-sid")||n.getAttribute("data-clid")||n.getAttribute("data-lmid");
+        if(first[id]==null) return;
+        if(n.getAttribute("data-dragging")==="1") return;
+        const dy=first[id]-n.getBoundingClientRect().top;
+        if(!dy) return;
+        if(n._flipping) return; // уже анимируется — не перезапускаем (убирает мерцание при частых свопах)
+        n._flipping=true;
+        n.style.setProperty("transition","none","important");
+        n.style.transform=`translateY(${dy}px)`;
+        void n.offsetHeight;
+        requestAnimationFrame(()=>{ n.style.setProperty("transition","transform .42s cubic-bezier(.22,1,.36,1)","important"); n.style.transform="translateY(0)"; setTimeout(()=>{ try{ n.style.removeProperty("transition"); n.style.transform=""; n._flipping=false; }catch{ n._flipping=false; } },440); });
+      });
+    }); });
+  }
   function flipRows(selector){
     const nodes=Array.from(document.querySelectorAll(selector));
     const first={}; nodes.forEach(n=>{ const id=n.getAttribute("data-fid")||n.getAttribute("data-sid"); first[id]=n.getBoundingClientRect().top; });
@@ -2188,7 +2330,8 @@ export default function App() {
         if(n.getAttribute("data-dragging")==="1") return; // перетаскиваемую не трогаем
         n.style.transition="none";
         n.style.transform=`translateY(${dy}px)`;
-        requestAnimationFrame(()=>{ n.style.transition="transform .42s cubic-bezier(.25,.8,.3,1)"; n.style.transform=""; });
+        void n.offsetHeight; // форс reflow — иначе переход не проигрывается
+        requestAnimationFrame(()=>{ n.style.transition="transform .55s cubic-bezier(.45,0,.2,1)"; n.style.transform=""; });
       });
     });
   }
@@ -2215,7 +2358,7 @@ export default function App() {
         const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
         if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
       }
-      if(target){ flipRows("[data-fid]"); reorderPinFolder(dt.id,target); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
+      if(target){ flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
     }
   }
   function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -2239,7 +2382,7 @@ export default function App() {
         const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
         if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
       }
-      if(target){ flipRows("[data-sid]"); reorderPinSub(dt.id,target); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
+      if(target){ flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
     }
   }
   function subDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -2293,7 +2436,7 @@ export default function App() {
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
     const wasEdit=!!editId;
     if(editId) cancelEdit();
-    setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setComposerFull(false); setComposerPeek(false);
+    setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setComposerFull(false); setComposerPeek(false); setTxtSel(null);
     if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function saveEdit() {
@@ -2718,7 +2861,7 @@ export default function App() {
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
         "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s","--input-dur":spd("input",0.38)+"s",
-        color:"#F2EAE0",overflow:"hidden",position:"relative"}}
+        color:"var(--ink,#F2EAE0)",overflow:"hidden",position:"relative"}}
       data-ver-badge
       onTouchStart={e=>{ const t=e.touches[0]; window.__ntgrEdge = (t.clientX > window.innerWidth-34) ? {x:t.clientX,y:t.clientY} : null; }}
       onTouchEnd={e=>{ const st=window.__ntgrEdge; window.__ntgrEdge=null; if(!st) return; const t=e.changedTouches[0]; const dx=t.clientX-st.x, dy=t.clientY-st.y;
@@ -2735,7 +2878,7 @@ export default function App() {
           if(!composerFull){ composerOrigin.current=o; setComposerFull(true); }
           setComposerPeek(false);
         } }}
-      onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);}}
+      onClick={()=>{setNoteCtx(null);setHdrMenu(null);setFolderMenu(null);setSubMenu(null);setLinkPopup(null);setSettingsMenu(false);setPlusMenu(false);setMsgPop(null);}}
     >
       {/* Глобальная панель пересылки — снизу, над полем ввода */}
       {moveBuffer&&(
@@ -2801,7 +2944,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v248</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v265</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2816,25 +2959,34 @@ export default function App() {
         return (
         <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:620,display:"flex",flexDirection:"column"}}>
           <div style={{display:"flex",alignItems:"center",gap:8,padding:"0 12px",height:52,borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
-            <button onClick={()=>setListMode(null)} style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
-            <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Список</div>
+            <button onClick={()=>{setListMode(null);setLmEditMode(false);}} style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,#F2EAE0)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
+            <div style={{fontWeight:600,fontSize:16,color:"var(--ink,#F2EAE0)"}}>Список</div>
           </div>
           <div style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
             <input value={lnote?.clTitle||""} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
               placeholder="Заголовок (необязательно)"
-              style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"#F2EAE0",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px"}}/>
+              style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px"}}/>
             {items.map((it,idx)=>(
-              <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1}}>
-                <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none"}}
-                  onTouchStart={e=>{ lmDragStart(idx,e,items,setItems); }}>{IC.drag||IC.dots}</span>
-                <button onClick={()=>toggle(it.id)} style={{flexShrink:0,padding:"8px 6px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div key={it.id} data-lmid={it.id} data-dragging={lmDragIdx===idx?"1":"0"}
+                onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }} onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1,touchAction:lmDragIdx===idx?"none":"auto",
+                transform: lmDragIdx===idx?`translateY(${lmDragDY}px) scale(1.03)`:"none",
+                transition: lmDragIdx===idx?"box-shadow .18s ease":"transform .42s cubic-bezier(.16,1,.3,1)",
+                position:"relative", zIndex:lmDragIdx===idx?30:1,
+                background:lmDragIdx===idx?"#241B12":"transparent",borderRadius:8,
+                boxShadow:lmDragIdx===idx?"0 14px 32px rgba(0,0,0,.6)":"none"}}>
+                <button onClick={()=>toggle(it.id)} style={{flexShrink:0,padding:"8px 6px 8px 4px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
-                <input value={it.text} onChange={e=>editTxt(it.id,e.target.value)}
+                <input value={it.text} readOnly={!lmEditMode} onChange={e=>editTxt(it.id,e.target.value)}
                   style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"#F2EAE0",fontSize:16,fontFamily:"var(--font-msg)",textDecoration:it.checked?"line-through":"none",padding:"4px 0"}}/>
               </div>
             ))}
           </div>
+          <button onClick={()=>setLmEditMode(v=>!v)} title={lmEditMode?"Готово":"Редактировать"}
+            style={{position:"absolute",right:18,bottom:24,width:54,height:54,borderRadius:"50%",background:"#EF6C00",border:"none",
+              color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 20px rgba(0,0,0,.5)"}}>
+            <span style={{display:"flex"}}>{lmEditMode?IC.check:IC.edit}</span></button>
         </div>
         );
       })()}
@@ -2850,7 +3002,7 @@ export default function App() {
               <div key={i} onClick={()=>openThemeAt(r.folderId,r.subId,r.note.id)}
                 style={{padding:"10px 16px",borderBottom:"1px solid var(--gline2,#2A2017)",cursor:"pointer"}}>
                 <div style={{fontSize:12,color:"#EF6C00",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.themeName}</div>
-                <div style={{fontSize:14,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{strip(r.note.text)}</div>
+                <div style={{fontSize:14,color:"var(--ink,#F2EAE0)",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{strip(r.note.text)}</div>
                 <div style={{fontSize:10,color:"#6A5A48",marginTop:3}}>{r.note.ts?fmtStamp(r.note.ts):r.note.time}</div>
               </div>
             ))}
@@ -2860,7 +3012,7 @@ export default function App() {
             <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
-                style={{background:"none",border:"none",color:"#F2EAE0",fontSize:14,flex:1}}/>
+                style={{background:"none",border:"none",color:"var(--ink,#F2EAE0)",fontSize:14,flex:1}}/>
               <button onClick={()=>setGlobalSearch(null)} style={{background:"none",border:"none",color:"#B0A498",cursor:"pointer",fontSize:16}}>✕</button>
             </div>
           </div>
@@ -2897,7 +3049,7 @@ export default function App() {
 
       {/* Toast */}
       {toast&&<div style={{position:"fixed",bottom:84,left:"50%",transform:"translateX(-50%)",
-        background:"#2A2017",color:"#F2EAE0",borderRadius:12,padding:"10px 18px",fontSize:14,
+        background:"#2A2017",color:"var(--ink,#F2EAE0)",borderRadius:12,padding:"10px 18px",fontSize:14,
         zIndex:650,whiteSpace:"nowrap",animation:"tIn .2s ease",boxShadow:"0 4px 20px rgba(0,0,0,.4)"}}>
         {toast}</div>}
 
@@ -2905,6 +3057,24 @@ export default function App() {
 
       {linkPopup&&<LinkPopup href={linkPopup.href} x={linkPopup.x} y={linkPopup.y} onClose={()=>setLinkPopup(null)}/>}
 
+      {txtSel&&customSelMenu&&(()=>{
+        const W=txtSel.editable?176:120, pad=8;
+        let left=Math.min(Math.max(pad, txtSel.x - W/2), window.innerWidth - W - pad);
+        let top=txtSel.y - 46; if(top<pad) top=txtSel.y + 22;
+        const Btn=(ic,fn,t)=>(<button onMouseDown={e=>e.preventDefault()} onClick={fn} title={t}
+          style={{width:40,height:32,borderRadius:8,background:"#2E251C",border:"none",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <span style={{display:"flex",transform:"scale(.8)"}}>{ic}</span></button>);
+        return (
+        <div style={{position:"fixed",inset:0,zIndex:485,pointerEvents:"none"}}>
+          <div onMouseDown={e=>e.preventDefault()} style={{position:"absolute",left,top,pointerEvents:"auto",display:"flex",gap:4,background:"#33281C",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:5,boxShadow:"0 8px 28px rgba(0,0,0,.55)",animation:"fS .12s ease"}}>
+            {Btn(IC.copy2||IC.copy, txtCopy, "Копировать")}
+            {txtSel.editable && Btn(IC.scissors, txtCut, "Вырезать")}
+            {txtSel.editable && Btn(IC.paste, txtPaste, "Вставить")}
+            {Btn(IC.selectAll, txtSelectAll, "Выделить всё")}
+          </div>
+        </div>
+        );
+      })()}
       {msgPop&&(()=>{
         const note=(subf?.notes||[]).find(x=>x.id===msgPop.id) || (folder?.isTheme?(folder.notes||[]):[]).find(x=>x.id===msgPop.id);
         if(!note) return null;
@@ -2912,14 +3082,14 @@ export default function App() {
         let left=Math.min(Math.max(pad, msgPop.x - W/2), window.innerWidth - W - pad);
         let top=msgPop.y - H - 10; if(top<pad) top=msgPop.y + 14;
         return (
-        <div onClick={(e)=>{e.stopPropagation(); setMsgPop(null);}} style={{position:"fixed",inset:0,zIndex:480}}>
-          <div onClick={e=>e.stopPropagation()}
-            style={{position:"absolute",left,top,display:"flex",gap:4,background:"#33281C",border:"1px solid var(--gline,#4A3A2A)",
+        <div style={{position:"fixed",inset:0,zIndex:480,pointerEvents:"none"}}>
+          <div data-msgpop onClick={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()}
+            style={{position:"absolute",left,top,pointerEvents:"auto",display:"flex",gap:4,background:"#33281C",border:"1px solid var(--gline,#4A3A2A)",
               borderRadius:12,padding:5,boxShadow:"0 8px 28px rgba(0,0,0,.55)",animation:"fS .12s ease"}}>
-            {note.text&&<button onClick={()=>{ copyText(note); setMsgPop(null); }} title="Копировать"
+            {note.text&&<button onClick={()=>{ copyText(note); setMsgPop(null); }} onTouchEnd={(e)=>{ e.preventDefault(); e.stopPropagation(); copyText(note); setMsgPop(null); }} title="Копировать"
               style={{width:44,height:34,borderRadius:8,background:"#2E251C",border:"none",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <span style={{display:"flex",transform:"scale(.85)"}}>{IC.copy||IC.text}</span></button>}
-            <button onClick={()=>{ setMsgPop(null); startEdit(note); }} title="Редактировать"
+            <button onClick={()=>{ setMsgPop(null); startEdit(note); }} onTouchEnd={(e)=>{ e.preventDefault(); e.stopPropagation(); setMsgPop(null); startEdit(note); }} title="Редактировать"
               style={{width:44,height:34,borderRadius:8,background:"#2E251C",border:"none",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <span style={{display:"flex",transform:"scale(.85)"}}>{IC.edit}</span></button>
           </div>
@@ -2934,7 +3104,7 @@ export default function App() {
           {scr!=="main"
             ?<button onClick={back} title="Назад"
                style={{width:38,height:38,borderRadius:"50%",background:"#2A2017",border:"none",
-                 color:"#F2EAE0",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",
+                 color:"var(--ink,#F2EAE0)",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",
                  justifyContent:"center",lineHeight:1,flexShrink:0}}>{IC.back}</button>
             :null}
 
@@ -3055,7 +3225,7 @@ export default function App() {
                   background:dragActive===f.id?"#33271B":"#2A2017",
                   border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
                   transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
-                  transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":"transform .25s cubic-bezier(.2,.8,.2,1), background .15s ease",
+                  transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
                   boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:f.isTheme?22:12,
                   zIndex:dragActive===f.id?30:"auto"}}>
@@ -3141,7 +3311,7 @@ export default function App() {
                   background:dragActive===s.id?"#33271B":"#2A2017",
                   border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
                   transform:dragActive===s.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
-                  transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .22s cubic-bezier(.25,1,.5,1), background .15s ease",
+                  transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
                   boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:22,
                   zIndex:dragActive===s.id?30:"auto"}}>
@@ -3182,7 +3352,7 @@ export default function App() {
           <div style={{background:"#1A1410",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
             <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
-              placeholder="Поиск темы..." style={{background:"none",border:"none",color:"#F2EAE0",fontSize:14,flex:1}}/>
+              placeholder="Поиск темы..." style={{background:"none",border:"none",color:"var(--ink,#F2EAE0)",fontSize:14,flex:1}}/>
             <button onClick={()=>setSubSearch("")} style={{background:"none",border:"none",color:"#B0A498",cursor:"pointer",fontSize:16}}>✕</button>
           </div>
         </div>
@@ -3192,10 +3362,10 @@ export default function App() {
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
           background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <button onClick={back} title="Назад"
-            style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
+            style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,#F2EAE0)",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
           <div onClick={e=>{e.stopPropagation();setModal("renF");}} style={{minWidth:0,flex:1,cursor:"pointer",paddingLeft:4}}>
-            <div style={{fontWeight:600,fontSize:15,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{folder.name}</div>
+            <div style={{fontWeight:600,fontSize:15,color:"var(--ink,#F2EAE0)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{folder.name}</div>
             <div style={{fontSize:11,color:"#8A7A65"}}>{folder.subfolders.length} тем</div>
           </div>
           <button onClick={()=>setSubSearch(" ")} title="Поиск темы"
@@ -3290,6 +3460,7 @@ export default function App() {
                     if(!(n.text && n.text.trim())){ return; }
                     // одиночный тап вне выделения → popup копировать/редактировать в точке клика
                     e.stopPropagation();
+                    if(popupJustClosed.current && Date.now()-popupJustClosed.current<350){ popupJustClosed.current=0; return; }
                     if(msgPop && msgPop.id===n.id){ setMsgPop(null); return; }
                     setMsgPop({ id:n.id, x:e.clientX||0, y:(e.clientY||0)-54 });
                   }}
@@ -3308,13 +3479,13 @@ export default function App() {
                   {editId===n.id&&<div style={{fontSize:10.5,color:"#EF6C00",fontWeight:600,marginBottom:3,opacity:1}}>Редактируется вами…</div>}
                   {n.text&&n.checklist&&n.checklist.length>0&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
-                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginBottom:4,fontWeight:400,
+                      style={{fontSize:15,lineHeight:1.4,color:"var(--ink,#F2EAE0)",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginBottom:4,fontWeight:400,
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
                   )}
                   {n.clTitle&&n.checklist&&n.checklist.length>0&&(
-                    <div style={{fontSize:16,fontWeight:700,color:"#F2EAE0",marginBottom:4,wordBreak:"break-word",fontFamily:"var(--font-msg)"}}>{n.clTitle}</div>
+                    <div style={{fontSize:16,fontWeight:700,color:"var(--ink,#F2EAE0)",marginBottom:4,wordBreak:"break-word",fontFamily:"var(--font-msg)"}}>{n.clTitle}</div>
                   )}
                   {n.checklist&&n.checklist.length>0&&(
                     <div style={{margin:"2px 0 4px"}}>
@@ -3332,7 +3503,7 @@ export default function App() {
                   )}
                   {n.text&&!(n.checklist&&n.checklist.length>0)&&(n.capPos||"top")==="top"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
-                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
+                      style={{fontSize:15,lineHeight:1.4,color:"var(--ink,#F2EAE0)",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
@@ -3373,7 +3544,7 @@ export default function App() {
                   })()}
                   {n.text&&!(n.checklist&&n.checklist.length>0)&&n.capPos==="bottom"&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
-                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginTop:4,
+                      style={{fontSize:15,lineHeight:1.4,color:"var(--ink,#F2EAE0)",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginTop:4,
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
@@ -3418,13 +3589,13 @@ export default function App() {
             onTouchStart={e=>{ const t=e.touches[0]; swipeRef.current={x:t.clientX,y:t.clientY}; }}
             onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); const pl=prevLoc.current; if(pl){ prevLoc.current=null; setScr(pl.scr); setFid(pl.fid); setSid(pl.sid); } } swipeRef.current=null; }}
             style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:400,display:"flex",flexDirection:"column",
-              transform: composerPeek?"translateX(100%)":"translateX(0)",
+              transform: composerPeek?"translateX(101%)":"translateX(0)",
               transition: noInputAnim ? "none" : ("transform "+spd("input",0.5)+"s cubic-bezier(.32,.72,0,1)"),
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
             {/* Верхняя строка: заголовок темы */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:52,padding:"0 12px",borderBottom:"1px solid var(--gline,#4A3A2A)",flexShrink:0,boxShadow:"var(--gline-glow,none)"}}>
-              <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{editId?"Редактирование":(subf?.name||"Сообщение")}</div>
+            <div style={{display:"flex",justifyContent:"center",flexShrink:0,padding:"2px 0 0"}}>
+              <div style={{background:"#241B12",border:"1px solid var(--gline2,#2A2017)",borderTop:"none",borderRadius:"0 0 11px 11px",padding:"3px 14px 4px",fontSize:10.5,fontWeight:500,color:"#EF6C00",letterSpacing:.2}}>{editId?"Редактирование":(subf?.name||"Сообщение")}</div>
             </div>
             {/* Прикреплённые файлы в наборе */}
             {patts.length>0&&(
@@ -3447,8 +3618,8 @@ export default function App() {
             {/* Текст + список как одно сообщение, прижато вниз */}
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:checklist?"flex-start":"flex-end",overflowY:"auto"}}>
             <textarea value={note} className="editor-ta"
-              onKeyDown={e=>{ if(e.key==="Enter" && !checklist){ const el=e.target; const pos=el.selectionStart; const before=el.value.slice(0,pos); const lineStart=before.lastIndexOf("\n")+1; const curLine=before.slice(lineStart); if(/^•\s/.test(curLine)){ if(curLine.trim()==="•"){ e.preventDefault(); const ns=el.value.slice(0,lineStart)+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=lineStart;}catch{} }); return; } e.preventDefault(); const ins="\n• "; const ns=el.value.slice(0,pos)+ins+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=pos+ins.length;}catch{} }); } } }}
-              onChange={e=>{ let v=e.target.value; if(checklist){ const el=e.target; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } v=v.replace(/(^|\n)- /g,"$1• "); setNote(v); }}
+              onKeyDown={e=>{ if(e.key==="Enter" && !checklist){ const el=e.target; const pos=el.selectionStart; const before=el.value.slice(0,pos); const lineStart=before.lastIndexOf("\n")+1; const curLine=before.slice(lineStart); if(/^•\s/.test(curLine)){ if(curLine.trim()==="•"){ e.preventDefault(); const ns=el.value.slice(0,lineStart)+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=lineStart; el.scrollTop=el.scrollHeight;}catch{} }); return; } e.preventDefault(); const ins="\n• "; const ns=el.value.slice(0,pos)+ins+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=pos+ins.length; el.blur(); el.focus(); el.setSelectionRange(pos+ins.length,pos+ins.length); el.scrollTop=el.scrollHeight;}catch{} }); } } }}
+              onChange={e=>{ let v=e.target.value; if(checklist){ const el=e.target; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); setClEditId(nid); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } v=v.replace(/(^|\n)- /g,"$1• "); setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
@@ -3457,31 +3628,34 @@ export default function App() {
               ref={el=>{ fullTaRef.current=el; if(el){ if(checklist){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } if(composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } } }}
               placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
               style={{flex:checklist?"0 0 auto":1,width:"100%",background:"#1A1410",border:"none",outline:"none",
-                color:"#F2EAE0",fontSize:16,lineHeight:1.5,fontWeight:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
+                color:"var(--ink,#F2EAE0)",fontSize:16,lineHeight:1.5,fontWeight:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
                 boxSizing:"border-box",overflowY:checklist?"hidden":"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             {checklist && (
               <input value={clTitle} onChange={e=>setClTitle(e.target.value)} placeholder="Заголовок (необязательно)"
-                style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"#F2EAE0",fontSize:17,fontWeight:700,fontFamily:"var(--font-input)",padding:"6px 16px 4px"}}/>
+                style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:17,fontWeight:700,fontFamily:"var(--font-input)",padding:"6px 16px 4px"}}/>
             )}
             {checklist && (
               <div style={{padding:"2px 8px 12px",flexShrink:0}}>
                 {checklist.map((it,idx)=>(
-                  <div key={it.id} style={{display:"flex",alignItems:"center",gap:6,padding:"1px 0",
-                    transform: clDragIdx===idx?`translateY(${clDragDY}px)`:"translateY(0)",
-                    transition: clDragIdx===idx?"none":"transform .18s ease", position:"relative", zIndex:clDragIdx===idx?5:1,
-                    background:clDragIdx===idx?"#241B12":"transparent",borderRadius:8}}>
-                    <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none",padding:"8px 4px"}}
-                      onTouchStart={e=>{ clDragStart(idx,e); }}>{IC.drag}</span>
+                  <div key={it.id} data-clid={it.id} data-dragging={clDragIdx===idx?"1":"0"}
+                    onTouchStart={e=>{ clRowTouchStart(idx,e); }} onTouchMove={clRowTouchMove} onTouchEnd={clRowTouchEnd}
+                    style={{display:"flex",alignItems:"center",gap:6,padding:"1px 0",touchAction:clDragIdx===idx?"none":"auto",
+                    transform: clDragIdx===idx?`translateY(${clDragDY}px) scale(1.04)`:"none",
+                    transition: clDragIdx===idx?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
+                    position:"relative", zIndex:clDragIdx===idx?30:1,
+                    background:clDragIdx===idx?"#33271B":"transparent",borderRadius:8,
+                    boxShadow:clDragIdx===idx?"0 14px 32px rgba(0,0,0,.6)":"none"}}>
                     <button onClick={()=>toggleClItem(idx)}
-                      style={{flexShrink:0,padding:"8px 6px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      style={{flexShrink:0,padding:"8px 6px 8px 4px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
-                    <input value={it.text}
+                    <input value={it.text} readOnly={clEditId!==it.id}
                       ref={el=>{ if(el) clItemRefs.current[it.id]=el; }}
+                      onBlur={()=>{ if(clEditId===it.id) setClEditId(null); }}
                       onChange={e=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,text:e.target.value}:x))}
                       onKeyDown={e=>{
-                        if(e.key==="Enter"){ e.preventDefault(); const nid=uid("cl"); setChecklist(cl=>{ const a=[...cl]; a.splice(idx+1,0,{id:nid,text:"",checked:false}); return a; }); const foc=()=>{ const f=clItemRefs.current[nid]; if(f) f.focus(); else requestAnimationFrame(foc); }; requestAnimationFrame(foc); }
+                        if(e.key==="Enter"){ e.preventDefault(); const nid=uid("cl"); setChecklist(cl=>{ const a=[...cl]; a.splice(idx+1,0,{id:nid,text:"",checked:false}); return a; }); setClEditId(nid); const foc=()=>{ const f=clItemRefs.current[nid]; if(f) f.focus(); else requestAnimationFrame(foc); }; requestAnimationFrame(foc); }
                         else if(e.key==="Backspace" && it.text===""){ e.preventDefault();
                           if(checklist.length===1){ setChecklist(null); setTimeout(()=>{ try{fullTaRef.current&&fullTaRef.current.focus();}catch{} },30); }
                           else { setChecklist(cl=>cl.filter((_,i)=>i!==idx)); const prev=checklist[idx-1]; if(prev) setTimeout(()=>{ const f=clItemRefs.current[prev.id]; if(f){f.focus(); const L=f.value.length; f.setSelectionRange(L,L);} },30); }
@@ -3510,27 +3684,27 @@ export default function App() {
                   {ic:<Icon size={18} d={["M7 7h4v5a4 4 0 0 1-4 4","M14 7h4v5a4 4 0 0 1-4 4"]} stroke={2} />, b:"[q]",a:"[/q]",x:"цитата",t:"Цитата"},
                   {ic:<Icon size={18} d={["M9 15l6-6","M10 7l1-1a3.5 3.5 0 0 1 5 5l-1 1","M14 17l-1 1a3.5 3.5 0 0 1-5-5l1-1"]} stroke={2} />, link:true,x:"ссылка",t:"Ссылка"},
                 ].map((it,i)=>(
-                  <button key={i} title={it.t||""} onMouseDown={e=>e.preventDefault()}
+                  <button key={i} title={it.t||""} onPointerDown={e=>e.preventDefault()}
                     onClick={()=>{ const el=fullTaRef.current; if(!el)return; let s=el.selectionStart,e2=el.selectionEnd; if(s===e2 && lastSel.current && lastSel.current.s!==lastSel.current.e){ s=lastSel.current.s; e2=lastSel.current.e; } const sel=note.slice(s,e2)||it.x;
                       if(it.link){ const ins="["+sel+"](https://)"; setNote(note.slice(0,s)+ins+note.slice(e2)); lastSel.current=null; setFullFmt(false); setTimeout(()=>{ el.focus(); const urlPos=s+sel.length+3+("https://").length; el.setSelectionRange(urlPos,urlPos); },0); return; }
                       setNote(note.slice(0,s)+it.b+sel+it.a+note.slice(e2)); lastSel.current=null; setFullFmt(false); setTimeout(()=>{ el.focus(); const p=s+it.b.length+sel.length+it.a.length; el.setSelectionRange(p,p); },0); }}
-                    style={{background:"#2E251C",border:"none",borderRadius:8,width:38,height:38,cursor:"pointer",color:"#F2EAE0",display:"flex",alignItems:"center",justifyContent:"center"}}>{it.ic}</button>
+                    style={{background:"#2E251C",border:"none",borderRadius:8,width:38,height:38,cursor:"pointer",color:"var(--ink,#F2EAE0)",display:"flex",alignItems:"center",justifyContent:"center"}}>{it.ic}</button>
                 ))}
               </div>
             )}
             {/* Нижняя панель инструментов */}
             <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
-              <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
+              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</button>
-              <button onMouseDown={e=>e.preventDefault()} onClick={undoNote} title="Отменить"
+              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={undoNote} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
-              <button onMouseDown={e=>e.preventDefault()} onClick={redoNote} title="Вернуть"
+              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={redoNote} title="Вернуть"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
-              <button onMouseDown={e=>e.preventDefault()} onClick={()=>setPrevSh(true)} title="Предпросмотр"
+              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
               {patts.some(a=>a.dataUrl&&a.type?.startsWith("image/")) && (
-                <button onMouseDown={e=>e.preventDefault()} onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
+                <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
                   style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     {capPos==="top"
@@ -3540,9 +3714,9 @@ export default function App() {
                 </button>
               )}
               <div style={{flex:1}}/>
-              <button onMouseDown={e=>e.preventDefault()} onClick={()=>setAttSh(true)} title="Прикрепить"
+              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setAttSh(true)} title="Прикрепить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</button>
-              <button onClick={closeComposer} title="Отменить"
+              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={closeComposer} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</button>
               <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
                     style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",marginLeft:3,
@@ -3566,7 +3740,7 @@ export default function App() {
             {recording && composerFull && (
               <div style={{position:"absolute",left:0,right:0,bottom:0,padding:"0 12px",background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
-                <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
+                <span style={{fontSize:15,color:"var(--ink,#F2EAE0)",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
                 <span style={{flex:1,fontSize:13,textAlign:"center",color:recSlide>60?"#E05252":"#8A7A65",transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`}}>{recSlide>60?"Отпустите для отмены":"← смахните влево для отмены"}</span>
               </div>
             )}
@@ -3599,7 +3773,7 @@ export default function App() {
         <div style={{background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#F2EAE0",
+            style={{width:42,height:42,borderRadius:"50%",flexShrink:0,background:"none",border:"none",color:"var(--ink,#F2EAE0)",marginRight:2,
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.close}</button>
           <span style={{flex:1,fontSize:14,fontWeight:600,whiteSpace:"nowrap"}}>{single?"1":multiSelect.length}</span>
           {/* Закрепить / Открепить */}
@@ -3642,7 +3816,7 @@ export default function App() {
         <div style={{background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
           <button onClick={()=>setImgSel([])} title="Отмена"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"#F2EAE0",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.close}</button>
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"none",color:"var(--ink,#F2EAE0)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.close}</button>
           <span style={{flex:1,fontSize:14,fontWeight:600}}>{imgSel.length} фото</span>
           <button onClick={()=>{
               const sel=new Set(imgSel);
@@ -3661,7 +3835,7 @@ export default function App() {
               <span style={{color:"#B0A498",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
                 placeholder="Поиск в теме..."
-                style={{background:"none",border:"none",color:"#F2EAE0",fontSize:14,flex:1}}/>
+                style={{background:"none",border:"none",color:"var(--ink,#F2EAE0)",fontSize:14,flex:1}}/>
               <button onClick={()=>setChatSearch("")} style={{background:"none",border:"none",color:"#B0A498",cursor:"pointer",fontSize:16}}>✕</button>
             </div>
           </div>
@@ -3670,10 +3844,10 @@ export default function App() {
           <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
             background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
             <button onClick={back} title="Назад"
-              style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"#F2EAE0",
+              style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,#F2EAE0)",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
             <div style={{minWidth:0,maxWidth:"calc(50% - 30px)",paddingLeft:4,overflow:"hidden"}}>
-              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{cursor:"pointer",fontFamily:"var(--font-title)"}}>{(()=>{const nm=subf?.name||"Сообщение"; const l1=nm.slice(0,13); const l2=nm.slice(13,28); const base={fontWeight:600,fontSize:14,color:"#F2EAE0",lineHeight:1.1,whiteSpace:"nowrap"}; const fade={WebkitMaskImage:"linear-gradient(90deg,#000 78%,transparent 100%)",maskImage:"linear-gradient(90deg,#000 78%,transparent 100%)"}; return (<>{React.createElement("div",{style:base},l1)}{l2?React.createElement("div",{style:{...base,...fade}},l2):null}</>);})()}</div>
+              <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{cursor:"pointer",fontFamily:"var(--font-title)"}}>{(()=>{const nm=subf?.name||"Сообщение"; const l1=nm.slice(0,13); const l2=nm.slice(13,28); const base={fontWeight:600,fontSize:14,color:"var(--ink,#F2EAE0)",lineHeight:1.1,whiteSpace:"nowrap"}; const fade={WebkitMaskImage:"linear-gradient(90deg,#000 78%,transparent 100%)",maskImage:"linear-gradient(90deg,#000 78%,transparent 100%)"}; return (<>{React.createElement("div",{style:base},l1)}{l2?React.createElement("div",{style:{...base,...fade}},l2):null}</>);})()}</div>
               {subf&&!((subf?.name||"").length>13)&&<div style={{fontSize:11,color:"#8A7A65",whiteSpace:"nowrap"}}>{subf.notes.length} сообщений</div>}
             </div>
             <div style={{flex:1}}/>
@@ -3696,7 +3870,7 @@ export default function App() {
               <div style={{position:"absolute",inset:0,background:"#2A2017",borderRadius:"16px 16px 0 0",
                 display:"flex",alignItems:"center",gap:12,padding:"0 16px",zIndex:6,pointerEvents:"none"}}>
                 <span style={{width:12,height:12,borderRadius:"50%",background:"#E05252",flexShrink:0,animation:"recPulse 1s infinite"}}/>
-                <span style={{fontSize:15,color:"#F2EAE0",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(recSec)}</span>
+                <span style={{fontSize:15,color:"var(--ink,#F2EAE0)",fontVariantNumeric:"tabular-nums",minWidth:44}}>{fmtRec(recSec)}</span>
                 <span style={{flex:1,fontSize:13,color:"#B0A498",textAlign:"center",transform:`translateX(${-recSlide}px)`,opacity:Math.max(0,1-recSlide/90)}}>← смахните влево для отмены</span>
               </div>
             )}
@@ -3759,7 +3933,7 @@ export default function App() {
                     padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
                   <span style={{color:"#F5A623",display:"flex",flexShrink:0}}>{IC.pin}</span>
                   <span style={{flex:1,minWidth:0}}>
-                    <span style={{display:"block",color:"#F2EAE0",fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    <span style={{display:"block",color:"var(--ink,#F2EAE0)",fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {n.text?strip(n.text):(n.attachments?.length?"Вложение":"—")}
                     </span>
                     <span style={{display:"block",color:"#8A7A65",fontSize:9.5,marginTop:2}}>{n.ts?fmtStamp(n.ts):n.time}</span>
@@ -3775,7 +3949,7 @@ export default function App() {
         <div style={{fontSize:13,color:"#B0A498",marginBottom:10}}>{capDlg?.name}</div>
         <textarea value={capTx} onChange={e=>setCapTx(e.target.value)} placeholder="Добавить подпись..." rows={3}
           style={{width:"100%",background:"#2A2017",border:"none",borderRadius:12,padding:12,
-            color:"#F2EAE0",fontSize:14,resize:"none",marginBottom:14,outline:"none"}}/>
+            color:"var(--ink,#F2EAE0)",fontSize:14,resize:"none",marginBottom:14,outline:"none"}}/>
         <div style={{display:"flex",gap:10}}>
           <button onClick={()=>setCapDlg(null)} style={{flex:1,background:"#2A2017",border:"none",borderRadius:12,padding:12,color:"#B0A498",cursor:"pointer",fontSize:14}}>Пропустить</button>
           <button onClick={saveCaption} style={{flex:1,background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Сохранить</button>
@@ -3862,7 +4036,7 @@ export default function App() {
             <div onClick={()=>{ setDriveSh(true); }}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
               <svg width="18" height="18" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
-              <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
+              <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)",fontWeight:700}}>Google Диск</span>
               <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="syncing"?"синхронизация…":syncStatus==="ok"?"подключён":"настроить"}</span>
               <span onClick={e=>{ e.stopPropagation(); setDriveSh(true); }} style={{display:"flex",color:"#8A7A65",padding:4}}>{IC.arrRight}</span>
             </div>
@@ -3887,7 +4061,7 @@ export default function App() {
             <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",marginBottom:10}}>
               <div style={{width:9,height:9,borderRadius:"50%",background:"#5BBF5B",flexShrink:0}}/>
               <span style={{flex:1,fontSize:13,color:"#D8CCBE"}}>Синхронизировано{syncLastTime?", "+new Date(syncLastTime).toLocaleString("ru-RU",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}):""}</span>
-              <button onClick={()=>runSync("auto",false)} title="Синхронизировать сейчас"
+              <button onClick={()=>{ if(syncStatus==="signedout"){ return; } runSync("auto",false); }} title="Синхронизировать сейчас"
                 style={{width:36,height:36,borderRadius:"50%",background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",color:"#EF6C00",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <span style={{display:"flex",transform:"scale(.8)",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none"}}>{IC.ouro}</span>
               </button>
@@ -3895,21 +4069,21 @@ export default function App() {
 
             {/* Когда сохранять — отдельное меню */}
             <div onClick={()=>setCloudWhenSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:8}}>
-              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Когда сохранять</span>
+              <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>Когда сохранять</span>
               <span style={{fontSize:13,color:"#B0A498"}}>{(CLOUD_MODES.find(m=>m.val===(syncCfg.auto?(syncCfg.cloudMode||"change"):"off"))||CLOUD_MODES[0]).label}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Что сохранять — отдельное меню */}
             <div onClick={()=>setCloudWhatSh(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:8}}>
-              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>Что сохранять</span>
+              <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>Что сохранять</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
 
             {/* Место на диске — отдельное меню */}
             <div onClick={()=>{ setCloudStorSh(true); refreshStorageInfo(); }}
               style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:8}}>
-              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>На Диске занято</span>
+              <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>На Диске занято</span>
               <span style={{fontSize:13,color:"#EF6C00",fontWeight:600}}>{storageBusy?"…":(storageInfo?humanBytes(storageInfo.total):"")}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
@@ -3921,10 +4095,10 @@ export default function App() {
               </button>
             ) : (
               <div style={{marginTop:4,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)"}}>
-                <div style={{fontSize:14,color:"#F2EAE0",marginBottom:10}}>Выйти из аккаунта Google?</div>
+                <div style={{fontSize:14,color:"var(--ink,#F2EAE0)",marginBottom:10}}>Выйти из аккаунта Google?</div>
                 <div style={{display:"flex",gap:10}}>
                   <button onClick={cloudSignOut} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Да</button>
-                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Нет</button>
+                  <button onClick={()=>setSignOutAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:9,padding:10,color:"var(--ink,#F2EAE0)",cursor:"pointer",fontSize:14}}>Нет</button>
                 </div>
               </div>
             )}
@@ -3937,7 +4111,7 @@ export default function App() {
           <div key={m.val} style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",marginBottom:6}}>
             <div onClick={()=>{ saveSyncCfg({...syncCfg, auto:m.val!=="off", cloudMode:m.val}); }} style={{display:"flex",alignItems:"center",gap:10,flex:1,cursor:"pointer"}}>
               <div style={{width:18,height:18,borderRadius:"50%",border:"2px solid "+(sel?"#EF6C00":"#5A4C40"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}</div>
-              <span style={{fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+              <span style={{fontSize:14,color:"var(--ink,#F2EAE0)"}}>{m.label}</span>
             </div>
             {timed && sel && (
               <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
@@ -3956,7 +4130,7 @@ export default function App() {
         {SYNC_MODULES.map(m=>(
           <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
             style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:6}}>
-            <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+            <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
             </div>
@@ -3966,7 +4140,7 @@ export default function App() {
         {MEDIA_MODULES.map(m=>{ const on=(syncCfg.media&&syncCfg.media[m.key]), avail=(syncCfg.modules&&syncCfg.modules.notes); return (
           <div key={m.key} onClick={()=>{ if(!avail) return; saveSyncCfg({...syncCfg,media:{...syncCfg.media,[m.key]:!on}}); }}
             style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
-            <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+            <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
             </div>
@@ -3983,7 +4157,7 @@ export default function App() {
         {!storageBusy && storageInfo && storageInfo.parts.map((p,i)=>{ const pct=storageInfo.total>0?Math.round(p.bytes/storageInfo.total*100):0; return (
           <div key={i} style={{padding:"10px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",marginBottom:6}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-              <span style={{fontSize:13,color:"#F2EAE0"}}>{p.label}</span>
+              <span style={{fontSize:13,color:"var(--ink,#F2EAE0)"}}>{p.label}</span>
               <span style={{fontSize:12,color:"#B0A498"}}>{humanBytes(p.bytes)}</span>
             </div>
             <div style={{height:5,borderRadius:3,background:"#1A1410",overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"#EF6C00",borderRadius:3}}/></div>
@@ -3994,11 +4168,11 @@ export default function App() {
         )}
         {clearAsk && (
           <div style={{marginTop:8,padding:"12px 14px",background:"#2E251C",borderRadius:10,border:"1px solid #E05252"}}>
-            <div style={{fontSize:14,color:"#F2EAE0",marginBottom:4,fontWeight:600}}>Удалить все данные с Диска?</div>
+            <div style={{fontSize:14,color:"var(--ink,#F2EAE0)",marginBottom:4,fontWeight:600}}>Удалить все данные с Диска?</div>
             <div style={{fontSize:12,color:"#B0A498",marginBottom:10,lineHeight:1.5}}>Резервная копия в облаке будет полностью удалена. Локальные заметки на устройстве останутся.</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={clearCloudData} style={{flex:1,background:"#E05252",border:"none",borderRadius:9,padding:10,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Удалить</button>
-              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:9,padding:10,color:"#F2EAE0",cursor:"pointer",fontSize:14}}>Отмена</button>
+              <button onClick={()=>setClearAsk(false)} style={{flex:1,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:9,padding:10,color:"var(--ink,#F2EAE0)",cursor:"pointer",fontSize:14}}>Отмена</button>
             </div>
           </div>
         )}
@@ -4006,24 +4180,31 @@ export default function App() {
 
             <Sheet open={miscSh} onClose={()=>setMiscSh(false)} title="Прочее">
               <div onClick={toggleHideVersion} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
-                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Скрыть номер версии</span>
+                <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Скрыть номер версии</span>
                 <div style={{width:46,height:26,borderRadius:13,background:hideVersion?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:2,left:hideVersion?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
                 </div>
               </div>
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 14px"}}>Скрывает метку «beta v…» в углу экрана.</div>
               <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
-                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
+                <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Сжимать изображения</span>
                 <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
                 </div>
               </div>
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Новые добавляемые изображения будут автоматически уменьшаться в размере. Уже добавленные не затрагиваются.</div>
+              <div onClick={toggleCustomSelMenu} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
+                <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Своё меню выделения текста</span>
+                <div style={{width:46,height:26,borderRadius:13,background:customSelMenu?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
+                  <div style={{position:"absolute",top:2,left:customSelMenu?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                </div>
+              </div>
+              <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Заменяет системное меню (Копировать / Вставить и т.д.) на компактное со значками. Применяется после перезапуска приложения.</div>
             </Sheet>
             {imgCompressPopup && (
               <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
                 <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid var(--gline,#4A3A2A)",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
-                  <div style={{fontSize:16,color:"#F2EAE0",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
+                  <div style={{fontSize:16,color:"var(--ink,#F2EAE0)",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
                   <div style={{fontSize:14,color:"#D8CCBE",lineHeight:1.55,marginBottom:16}}>Качество, заметное человеческому глазу, не пострадает. Изображения станут заметно легче и будут быстрее синхронизироваться.</div>
                   <button onClick={()=>setImgCompressPopup(false)} style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Понятно</button>
                 </div>
@@ -4032,15 +4213,15 @@ export default function App() {
             <Sheet open={uiSh} noAnim={uiNoAnim.current} onClose={()=>setUiSh(false)} title="Интерфейс">
         <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.sparkle}</span>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Анимации</span>
+          <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Анимации</span>
         </div>
         <div onClick={()=>{setUiSh(false);setFontSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.text}</span>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Шрифты</span>
+          <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Шрифты</span>
         </div>
         <div onClick={()=>{setUiSh(false);setAccentSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.palette||IC.sparkle}</span>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Цвет иконок</span>
+          <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Цвет иконок</span>
         </div>
       </Sheet>
       <Sheet open={accentSh} onClose={()=>{setAccentSh(false);openUiReturn();}} title="Цвет иконок">
@@ -4074,7 +4255,7 @@ export default function App() {
           const enabled=!it.off;
           return (
             <div key={it.key} onClick={it.toggle} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",marginBottom:10,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
-              <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>{it.label}</span>
+              <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>{it.label}</span>
               <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
                 <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
               </div>
@@ -4090,7 +4271,7 @@ export default function App() {
         {/* Главный тумблер */}
         <div onClick={()=>{ const c={...syncCfg,enabled:!syncCfg.enabled}; saveSyncCfg(c); if(c.enabled) setTimeout(()=>runSync("pull",true),100); }}
           style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Синхронизация с Google Диском</span>
+          <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Синхронизация с Google Диском</span>
           <div style={{width:46,height:26,borderRadius:13,background:syncCfg.enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:2,left:syncCfg.enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
           </div>
@@ -4114,22 +4295,22 @@ export default function App() {
           {/* Баннер если выкинуло */}
           {syncStatus==="signedout" && (
             <div onClick={()=>runSync("pull",true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#3A2218",border:"1px solid #E05252",borderRadius:10,margin:"8px 0",cursor:"pointer"}}>
-              <span style={{flex:1,fontSize:13,color:"#F2EAE0"}}>Заметки не синхронизируются с облаком. Нажмите, чтобы войти.</span>
+              <span style={{flex:1,fontSize:13,color:"var(--ink,#F2EAE0)"}}>Заметки не синхронизируются с облаком. Нажмите, чтобы войти.</span>
             </div>
           )}
 
           {/* Авто-режим */}
           <div onClick={()=>saveSyncCfg({...syncCfg,auto:!syncCfg.auto})}
             style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
-            <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Автоматически</span>
+            <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Автоматически</span>
             <div style={{width:46,height:26,borderRadius:13,background:syncCfg.auto?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{position:"absolute",top:2,left:syncCfg.auto?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
             </div>
           </div>
 
           {/* Кнопка ручного синка */}
-          <button onClick={()=>runSync("auto",false)} disabled={syncStatus==="syncing"}
-            style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,margin:"8px 0",opacity:syncStatus==="syncing"?.6:1}}>
+          <button onClick={()=>{ if(syncStatus==="signedout"){ return; } runSync("auto",false); }} disabled={syncStatus==="syncing"||syncStatus==="signedout"}
+            style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:13,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,margin:"8px 0",opacity:(syncStatus==="syncing"||syncStatus==="signedout")?.6:1}}>
             {syncStatus==="syncing"?"Синхронизация…":"Синхронизировать сейчас"}
           </button>
 
@@ -4138,7 +4319,7 @@ export default function App() {
           {SYNC_MODULES.map(m=>(
             <div key={m.key} onClick={()=>saveSyncCfg({...syncCfg,modules:{...syncCfg.modules,[m.key]:!(syncCfg.modules&&syncCfg.modules[m.key])}})}
               style={{display:"flex",alignItems:"center",gap:12,padding:"11px 4px",cursor:"pointer"}}>
-              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{m.label}</span>
+              <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>{m.label}</span>
               <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
                 border:"2px solid "+((syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#5A4C40"),
                 background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"transparent",
@@ -4151,16 +4332,23 @@ export default function App() {
       </Sheet>)}
 
       <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);openUiReturn();}} title="Шрифты">
+        <div onClick={toggleSoftInk} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:14}}>
+          <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Приглушённый шрифт</span>
+          <div style={{width:46,height:26,borderRadius:13,background:softInk?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
+            <div style={{position:"absolute",top:2,left:softInk?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:"#8A7A65",padding:"0 4px 14px"}}>Делает текст мягче — не ярко-белым, а приглушённым, приятнее для глаз.</div>
         <div style={{display:"flex",gap:10,marginBottom:16}}>
           <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
             style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",background:"#2E251C",border:"1px solid var(--gline,#5A4C40)",borderRadius:22,cursor:"pointer"}}>
             <span style={{display:"flex",color:"#EF6C00"}}><Icon d={["M12 4v12","M7 11l5 5 5-5","M5 20h14"]} stroke={2} size={17}/></span>
-            <span style={{fontSize:14,color:"#F2EAE0"}}>Загрузить</span>
+            <span style={{fontSize:14,color:"var(--ink,#F2EAE0)"}}>Загрузить</span>
           </button>
           <button onClick={()=>setFontDelSh(true)}
             style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",background:"#2E251C",border:"1px solid #5A3A2A",borderRadius:22,cursor:"pointer"}}>
             <span style={{display:"flex",color:"#E05252"}}>{IC.trash}</span>
-            <span style={{fontSize:14,color:"#F2EAE0"}}>Удалить</span>
+            <span style={{fontSize:14,color:"var(--ink,#F2EAE0)"}}>Удалить</span>
           </button>
         </div>
         {FONT_TARGETS.map(t=>{
@@ -4169,7 +4357,7 @@ export default function App() {
           return (
             <div key={t.key} onClick={(e)=>{ const r=e.currentTarget.getBoundingClientRect(); setFontOpen({key:t.key,x:r.left,y:r.top,w:r.width}); }}
               style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px",background:"#2A2017",borderRadius:10,cursor:"pointer",marginBottom:8}}>
-              <span style={{flex:1,fontSize:14,color:"#F2EAE0"}}>{t.label}</span>
+              <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>{t.label}</span>
               <span style={{fontSize:13,color:"#B0A498",fontFamily:curFont.css}}>{curFont.name}</span>
               <span style={{display:"flex",color:"#8A7A65"}}>{IC.arrRight}</span>
             </div>
@@ -4182,7 +4370,7 @@ export default function App() {
         {allFonts.filter(f=>f.id!=="sys").map(f=>(
           <div key={f.id} onClick={()=>setDlg({msg:`Удалить шрифт «${f.name}»?`,yes:()=>removeFont(f.id)})}
             style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,marginBottom:8,cursor:"pointer"}}>
-            <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontFamily:f.css,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
+            <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)",fontFamily:f.css,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
             <span style={{display:"flex",color:"#E05252",transform:"scale(.85)"}}>{IC.trash}</span>
           </div>
         ))}
@@ -4204,7 +4392,7 @@ export default function App() {
                     display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     {curId===f.id&&<div style={{width:8,height:8,borderRadius:"50%",background:"#EF6C00"}}/>}
                   </div>
-                  <span style={{fontSize:15,color:"#F2EAE0",fontFamily:f.css}}>{f.name}</span>
+                  <span style={{fontSize:15,color:"var(--ink,#F2EAE0)",fontFamily:f.css}}>{f.name}</span>
                 </div>
               );
             })}
