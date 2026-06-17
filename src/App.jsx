@@ -2188,7 +2188,7 @@ export default function App() {
         if(n.getAttribute("data-dragging")==="1") return; // перетаскиваемую не трогаем
         n.style.transition="none";
         n.style.transform=`translateY(${dy}px)`;
-        requestAnimationFrame(()=>{ n.style.transition="transform .32s cubic-bezier(.22,.61,.36,1)"; n.style.transform=""; });
+        requestAnimationFrame(()=>{ n.style.transition="transform .42s cubic-bezier(.25,.8,.3,1)"; n.style.transform=""; });
       });
     });
   }
@@ -2527,6 +2527,7 @@ export default function App() {
 
   function bubbleLpStart(n, e) {
     if(editId) return;
+    if(msgPop) setMsgPop(null);
     const isTouch = e.type==="touchstart";
     if(isTouch) touchUsed.current=true;
     else if(touchUsed.current) return; // игнор синтетической мыши после touch
@@ -2800,7 +2801,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v247</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v248</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3299,11 +3300,12 @@ export default function App() {
                   onMouseMove={(selectMode||multiActive)?undefined:bubbleLpMove}
                   onMouseUp={(selectMode||multiActive)?undefined:(e=>bubbleLpEnd(n,e))}
                   onContextMenu={e=>{ e.preventDefault(); }}
-                  style={{background:highlightId===n.id?"#52401F":editId===n.id?"#33281C":isMulti?"#3A2A14":selActive?"#33281C":"#2A2017",
+                  style={{background:highlightId===n.id?"#52401F":editId===n.id?"#2A2017":isMulti?"#3A2A14":selActive?"#33281C":"#2A2017",
                     borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))?"3px":"6px 14px 4px",
-                    maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",
-                    border:(highlightId===n.id)?"1px solid #F5A623":(editId===n.id||selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
+                    maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",opacity:editId===n.id?.5:1,
+                    border:(highlightId===n.id)?"1px solid #F5A623":(selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
                     transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
+                  {editId===n.id&&<div style={{fontSize:10.5,color:"#EF6C00",fontWeight:600,marginBottom:3,opacity:1}}>Редактируется вами…</div>}
                   {n.text&&n.checklist&&n.checklist.length>0&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
                       style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginBottom:4,fontWeight:400,
@@ -3421,7 +3423,7 @@ export default function App() {
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
             {/* Верхняя строка: заголовок темы */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:52,padding:"0 12px",borderBottom:"1px solid var(--gline,#4A3A2A)",flexShrink:0,boxShadow:"var(--gline-glow,none)"}}>
               <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{editId?"Редактирование":(subf?.name||"Сообщение")}</div>
             </div>
             {/* Прикреплённые файлы в наборе */}
@@ -3521,14 +3523,14 @@ export default function App() {
               <button onMouseDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</button>
-              <button onClick={undoNote} title="Отменить"
+              <button onMouseDown={e=>e.preventDefault()} onClick={undoNote} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
-              <button onClick={redoNote} title="Вернуть"
+              <button onMouseDown={e=>e.preventDefault()} onClick={redoNote} title="Вернуть"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
-              <button onClick={()=>setPrevSh(true)} title="Предпросмотр"
+              <button onMouseDown={e=>e.preventDefault()} onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
               {patts.some(a=>a.dataUrl&&a.type?.startsWith("image/")) && (
-                <button onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
+                <button onMouseDown={e=>e.preventDefault()} onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
                   style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     {capPos==="top"
@@ -3538,7 +3540,7 @@ export default function App() {
                 </button>
               )}
               <div style={{flex:1}}/>
-              <button onClick={()=>setAttSh(true)} title="Прикрепить"
+              <button onMouseDown={e=>e.preventDefault()} onClick={()=>setAttSh(true)} title="Прикрепить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</button>
               <button onClick={closeComposer} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</button>
