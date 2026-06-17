@@ -429,6 +429,8 @@ function DropMenu({ items, onClose, style:extraStyle={} }) {
     return()=>{ clearTimeout(t); document.removeEventListener("mousedown",h); };
   },[onClose]);
   return (
+    <>
+    <div onClick={(e)=>{e.stopPropagation(); onClose();}} onTouchStart={(e)=>{ if(e.target===e.currentTarget){ e.stopPropagation(); }}} style={{position:"fixed",inset:0,zIndex:1190}}/>
     <div ref={ref} style={{background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
       overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid var(--gline,#4A3A2A)",...extraStyle}}>
       {items.map((item,i)=>item.sep
@@ -443,6 +445,7 @@ function DropMenu({ items, onClose, style:extraStyle={} }) {
         </button>
       )}
     </div>
+    </>
   );
 }
 
@@ -2797,7 +2800,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v244</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v247</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2908,8 +2911,8 @@ export default function App() {
         let left=Math.min(Math.max(pad, msgPop.x - W/2), window.innerWidth - W - pad);
         let top=msgPop.y - H - 10; if(top<pad) top=msgPop.y + 14;
         return (
-        <div onClick={()=>setMsgPop(null)} onTouchStart={()=>setMsgPop(null)} style={{position:"fixed",inset:0,zIndex:480}}>
-          <div onClick={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()}
+        <div onClick={(e)=>{e.stopPropagation(); setMsgPop(null);}} style={{position:"fixed",inset:0,zIndex:480}}>
+          <div onClick={e=>e.stopPropagation()}
             style={{position:"absolute",left,top,display:"flex",gap:4,background:"#33281C",border:"1px solid var(--gline,#4A3A2A)",
               borderRadius:12,padding:5,boxShadow:"0 8px 28px rgba(0,0,0,.55)",animation:"fS .12s ease"}}>
             {note.text&&<button onClick={()=>{ copyText(note); setMsgPop(null); }} title="Копировать"
@@ -3286,7 +3289,8 @@ export default function App() {
                     if(!(n.text && n.text.trim())){ return; }
                     // одиночный тап вне выделения → popup копировать/редактировать в точке клика
                     e.stopPropagation();
-                    setMsgPop({ id:n.id, x:e.clientX||0, y:e.clientY||0 });
+                    if(msgPop && msgPop.id===n.id){ setMsgPop(null); return; }
+                    setMsgPop({ id:n.id, x:e.clientX||0, y:(e.clientY||0)-54 });
                   }}
                   onTouchStart={multiActive?undefined:(e=>{ if(selActive){ clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ setTextArmed(true); buzz(10); },350); } else bubbleLpStart(n,e); })}
                   onTouchMove={multiActive?undefined:(e=>{ bubbleLpMove(e); })}
@@ -3441,6 +3445,7 @@ export default function App() {
             {/* Текст + список как одно сообщение, прижато вниз */}
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:checklist?"flex-start":"flex-end",overflowY:"auto"}}>
             <textarea value={note} className="editor-ta"
+              onKeyDown={e=>{ if(e.key==="Enter" && !checklist){ const el=e.target; const pos=el.selectionStart; const before=el.value.slice(0,pos); const lineStart=before.lastIndexOf("\n")+1; const curLine=before.slice(lineStart); if(/^•\s/.test(curLine)){ if(curLine.trim()==="•"){ e.preventDefault(); const ns=el.value.slice(0,lineStart)+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=lineStart;}catch{} }); return; } e.preventDefault(); const ins="\n• "; const ns=el.value.slice(0,pos)+ins+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=pos+ins.length;}catch{} }); } } }}
               onChange={e=>{ let v=e.target.value; if(checklist){ const el=e.target; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } v=v.replace(/(^|\n)- /g,"$1• "); setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
@@ -3852,12 +3857,12 @@ export default function App() {
         syncSection={(
           <>
             <div style={{fontSize:13,color:"#B0A498",marginBottom:8,fontWeight:600}}>Облачная синхронизация</div>
-            <div onClick={()=>{ if(syncCfg.enabled && syncStatus!=="signedout"){ runSync("auto",false); } else { setDriveSh(true); } }}
+            <div onClick={()=>{ setDriveSh(true); }}
               style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
               <svg width="18" height="18" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.6 7.1-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.7-2.9-.7-4.7s.3-3.3.7-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.3-5.7c-2 1.4-4.7 2.3-7.7 2.3-6.6 0-11.8-4.2-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
               <span style={{flex:1,fontSize:15,color:"#F2EAE0",fontWeight:700}}>Google Диск</span>
               <span style={{fontSize:12,color:syncStatus==="ok"?"#5BBF5B":"#8A7A65"}}>{syncStatus==="syncing"?"синхронизация…":syncStatus==="ok"?"подключён":"настроить"}</span>
-              <span onClick={e=>{ e.stopPropagation(); setDriveSh(true); }} style={{display:"flex",color:"#8A7A65",animation:syncStatus==="syncing"?"spin 1s linear infinite":"none",padding:4}}>{syncStatus==="syncing"?IC.sync||IC.arrRight:IC.arrRight}</span>
+              <span onClick={e=>{ e.stopPropagation(); setDriveSh(true); }} style={{display:"flex",color:"#8A7A65",padding:4}}>{IC.arrRight}</span>
             </div>
             <div style={{height:1,background:"#2A2017",margin:"16px 0"}}/>
           </>
