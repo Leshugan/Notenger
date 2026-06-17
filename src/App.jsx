@@ -2944,7 +2944,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v265</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v266</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2963,9 +2963,9 @@ export default function App() {
             <div style={{fontWeight:600,fontSize:16,color:"var(--ink,#F2EAE0)"}}>Список</div>
           </div>
           <div style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
-            <input value={lnote?.clTitle||""} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
+            <input value={lnote?.clTitle||""} readOnly={!lmEditMode} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
               placeholder="Заголовок (необязательно)"
-              style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px"}}/>
+              style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
             {items.map((it,idx)=>(
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragIdx===idx?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }} onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd}
@@ -2979,7 +2979,7 @@ export default function App() {
                   <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
                 <input value={it.text} readOnly={!lmEditMode} onChange={e=>editTxt(it.id,e.target.value)}
-                  style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"#F2EAE0",fontSize:16,fontFamily:"var(--font-msg)",textDecoration:it.checked?"line-through":"none",padding:"4px 0"}}/>
+                  style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"var(--ink,#F2EAE0)",fontSize:16,fontFamily:"var(--font-msg)",textDecoration:it.checked?"line-through":"none",padding:"4px 0",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
               </div>
             ))}
           </div>
@@ -3694,17 +3694,17 @@ export default function App() {
             )}
             {/* Нижняя панель инструментов */}
             <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
-              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
+              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</button>
-              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={undoNote} title="Отменить"
+              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={undoNote} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
-              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={redoNote} title="Вернуть"
+              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={redoNote} title="Вернуть"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
-              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setPrevSh(true)} title="Предпросмотр"
+              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
               {patts.some(a=>a.dataUrl&&a.type?.startsWith("image/")) && (
-                <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
+                <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
                   style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     {capPos==="top"
@@ -3714,9 +3714,9 @@ export default function App() {
                 </button>
               )}
               <div style={{flex:1}}/>
-              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={()=>setAttSh(true)} title="Прикрепить"
+              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setAttSh(true)} title="Прикрепить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</button>
-              <button onPointerDown={e=>{e.preventDefault(); try{window.AndroidRec&&window.AndroidRec.hideKeyboard&&window.AndroidRec.hideKeyboard();}catch{}}} tabIndex={-1} onClick={closeComposer} title="Отменить"
+              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={closeComposer} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</button>
               <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
                     style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",marginLeft:3,
