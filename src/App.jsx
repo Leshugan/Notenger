@@ -1165,41 +1165,39 @@ export default function App() {
   const [checklist, setChecklist] = useState(null); // [{id,text,checked}] — режим списка в композере, null = обычный текст
   const [clTitle,   setClTitle]   = useState("");   // отдельный заголовок списка
   const [listMode,  setListMode]  = useState(null);  // {fid,sid,id} — открытый на весь экран список
-  const [clDragIdx, setClDragIdx] = useState(-1);
-  const [clDragDY,  setClDragDY]  = useState(0);
-  const [lmDragIdx, setLmDragIdx] = useState(-1);
-  const [lmDragDY,  setLmDragDY]  = useState(0);
+  const [clDragId, setClDragId] = useState(null);
+  const [clDragOff, setClDragOff] = useState(0);
+  const [lmDragId, setLmDragId] = useState(null);
+  const [lmDragOff, setLmDragOff] = useState(0);
   const [clEditId,  setClEditId]  = useState(null); // id пункта, который сейчас редактируется (input не readOnly)
   const [lmEditId,  setLmEditId]  = useState(null);
   const [lmEditMode, setLmEditMode] = useState(false);
   const clItemRefs = useRef({});
   function finalizeChecklist(){ if(!checklist) return null; const items=checklist.filter(x=>x.text.trim()!==""); if(!items.length) return null; return items.map(x=>({...x})); }
-  const lmRowDrag = useRef(null);
+  const lmDragRef = useRef(null);
   function lmRowTouchStart(idx,e,items,setItems){
-    const t=e.touches[0];
-    const itId=items&&items[idx]?items[idx].id:null;
-    const d={idx,itId,startY:t.clientY,startX:t.clientX,active:false,moved:false,setItems};
-    d.timer=setTimeout(()=>{
-      if(!lmRowDrag.current||lmRowDrag.current!==d) return;
-      d.active=true; setLmEditId(null); setLmDragIdx(d.idx); setLmDragDY(0); try{buzz(10);}catch{}
-      const move=ev=>{ ev.preventDefault(); const tt=ev.touches[0]; setLmDragDY(tt.clientY-d.startY);
-        const rows=Array.from(document.querySelectorAll("[data-lmid]"));
-        let ni=d.idx;
-        for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(tt.clientY>=r.top && tt.clientY<=r.bottom){ ni=i; break; } }
-        if(ni!==d.idx){ const from=d.idx; flipReorder("[data-lmid]", ()=>d.setItems(arr=>{ const a=[...arr]; const [m]=a.splice(from,1); a.splice(ni,0,m); return a; })); d.idx=ni; setLmDragIdx(ni); d.startY=tt.clientY; setLmDragDY(0); } };
-      const up=()=>{ setLmDragIdx(-1); setLmDragDY(0); lmRowDrag.current=null; document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
-      document.addEventListener("touchmove",move,{passive:false});
-      document.addEventListener("touchend",up);
-      document.addEventListener("touchcancel",up);
-    },280);
-    lmRowDrag.current=d;
+    const id=items&&items[idx]?items[idx].id:null; if(!id)return;
+    const y0=e.touches[0].clientY, x0=e.touches[0].clientX;
+    lmDragRef.current={id,active:false,moved:false,y0,x0,lastSwap:0,setItems,t:setTimeout(()=>{ if(lmDragRef.current&&!lmDragRef.current.moved){ lmDragRef.current.active=true; setLmDragId(id); setLmDragOff(0); try{buzz(12);}catch{} } },400)};
   }
   function lmRowTouchMove(e){
-    const d=lmRowDrag.current; if(!d||d.active) return;
+    const dt=lmDragRef.current; if(!dt) return;
+    if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
+    e.preventDefault();
     const t=e.touches[0];
-    if(Math.abs(t.clientY-d.startY)>10||Math.abs(t.clientX-d.startX)>10){ d.moved=true; clearTimeout(d.timer); lmRowDrag.current=null; }
+    setLmDragOff(t.clientY-dt.y0);
+    const now=Date.now();
+    if(now-dt.lastSwap>140){
+      const self=document.querySelector(`[data-lmid="${dt.id}"]`);
+      if(!self) return;
+      const sr=self.getBoundingClientRect();
+      const rows=Array.from(document.querySelectorAll("[data-lmid]"));
+      let target=null;
+      for(const r of rows){ const id=r.getAttribute("data-lmid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top); if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; } }
+      if(target){ flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; dt.y0=t.clientY; setLmDragOff(0); }
+    }
   }
-  function lmRowTouchEnd(){ const d=lmRowDrag.current; if(!d) return; clearTimeout(d.timer); lmRowDrag.current=null; }
+  function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt&&dt.t)clearTimeout(dt.t); lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
   function lmDragStart(idx,e,items,setItems){
     e.stopPropagation();
     let y0=e.touches[0].clientY; let cur=idx;
@@ -1233,36 +1231,30 @@ export default function App() {
     });
   }
   const ROWH=34;
-  const clRowDrag = useRef(null);
+  const clDragRef = useRef(null);
   function clRowTouchStart(idx,e){
-    const t=e.touches[0];
-    const itId=(checklist&&checklist[idx])?checklist[idx].id:null;
-    const d={idx,itId,startY:t.clientY,startX:t.clientX,active:false,moved:false};
-    d.timer=setTimeout(()=>{
-      if(!clRowDrag.current||clRowDrag.current!==d) return;
-      d.active=true; setClEditId(null); setClDragIdx(d.idx); setClDragDY(0); try{buzz(10);}catch{}
-      const move=ev=>{ ev.preventDefault(); const tt=ev.touches[0]; setClDragDY(tt.clientY-d.startY);
-        const rows=Array.from(document.querySelectorAll("[data-clid]"));
-        let ni=d.idx;
-        for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(tt.clientY>=r.top && tt.clientY<=r.bottom){ ni=i; break; } }
-        if(ni!==d.idx){ const from=d.idx; flipReorder("[data-clid]", ()=>setChecklist(cl=>{ const a=[...cl]; const [m]=a.splice(from,1); a.splice(ni,0,m); return a; })); d.idx=ni; setClDragIdx(ni); d.startY=tt.clientY; setClDragDY(0); } };
-      const up=()=>{ setClDragIdx(-1); setClDragDY(0); clRowDrag.current=null; document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); document.removeEventListener("touchcancel",up); };
-      document.addEventListener("touchmove",move,{passive:false});
-      document.addEventListener("touchend",up);
-      document.addEventListener("touchcancel",up);
-    },280);
-    clRowDrag.current=d;
+    const id=(checklist&&checklist[idx])?checklist[idx].id:null; if(!id)return;
+    const y0=e.touches[0].clientY, x0=e.touches[0].clientX;
+    clDragRef.current={id,active:false,moved:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(clDragRef.current&&!clDragRef.current.moved){ clDragRef.current.active=true; setClDragId(id); setClDragOff(0); try{buzz(12);}catch{} } },400)};
   }
   function clRowTouchMove(e){
-    const d=clRowDrag.current; if(!d||d.active) return;
+    const dt=clDragRef.current; if(!dt) return;
+    if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
+    e.preventDefault();
     const t=e.touches[0];
-    if(Math.abs(t.clientY-d.startY)>10||Math.abs(t.clientX-d.startX)>10){ d.moved=true; clearTimeout(d.timer); clRowDrag.current=null; }
+    setClDragOff(t.clientY-dt.y0);
+    const now=Date.now();
+    if(now-dt.lastSwap>140){
+      const self=document.querySelector(`[data-clid="${dt.id}"]`);
+      if(!self) return;
+      const sr=self.getBoundingClientRect();
+      const rows=Array.from(document.querySelectorAll("[data-clid]"));
+      let target=null;
+      for(const r of rows){ const id=r.getAttribute("data-clid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top); if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; } }
+      if(target){ flipReorder("[data-clid]", ()=>setChecklist(cl=>{ const a=[...cl]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return cl; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; dt.y0=t.clientY; setClDragOff(0); }
+    }
   }
-  function clRowTouchEnd(){
-    const d=clRowDrag.current; if(!d) return;
-    clearTimeout(d.timer);
-    clRowDrag.current=null;
-  }
+  function clRowTouchEnd(){ const dt=clDragRef.current; if(dt&&dt.t)clearTimeout(dt.t); clDragRef.current=null; setClDragId(null); setClDragOff(0); }
   function clDragStart(idx,e){
     e.stopPropagation();
     let y0=e.touches[0].clientY; let cur=idx;
@@ -2944,7 +2936,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v266</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v267</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2967,14 +2959,14 @@ export default function App() {
               placeholder="Заголовок (необязательно)"
               style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
             {items.map((it,idx)=>(
-              <div key={it.id} data-lmid={it.id} data-dragging={lmDragIdx===idx?"1":"0"}
+              <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }} onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1,touchAction:lmDragIdx===idx?"none":"auto",
-                transform: lmDragIdx===idx?`translateY(${lmDragDY}px) scale(1.03)`:"none",
-                transition: lmDragIdx===idx?"box-shadow .18s ease":"transform .42s cubic-bezier(.16,1,.3,1)",
-                position:"relative", zIndex:lmDragIdx===idx?30:1,
-                background:lmDragIdx===idx?"#241B12":"transparent",borderRadius:8,
-                boxShadow:lmDragIdx===idx?"0 14px 32px rgba(0,0,0,.6)":"none"}}>
+                style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
+                transform: lmDragId===it.id?`translateY(${lmDragOff}px) scale(1.03)`:"none",
+                transition: lmDragId===it.id?"box-shadow .18s ease":"transform .42s cubic-bezier(.16,1,.3,1)",
+                position:"relative", zIndex:lmDragId===it.id?30:1,
+                background:lmDragId===it.id?"#241B12":"transparent",borderRadius:8,
+                boxShadow:lmDragId===it.id?"0 14px 32px rgba(0,0,0,.6)":"none"}}>
                 <button onClick={()=>toggle(it.id)} style={{flexShrink:0,padding:"8px 6px 8px 4px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
@@ -3638,14 +3630,14 @@ export default function App() {
             {checklist && (
               <div style={{padding:"2px 8px 12px",flexShrink:0}}>
                 {checklist.map((it,idx)=>(
-                  <div key={it.id} data-clid={it.id} data-dragging={clDragIdx===idx?"1":"0"}
+                  <div key={it.id} data-clid={it.id} data-dragging={clDragId===it.id?"1":"0"}
                     onTouchStart={e=>{ clRowTouchStart(idx,e); }} onTouchMove={clRowTouchMove} onTouchEnd={clRowTouchEnd}
-                    style={{display:"flex",alignItems:"center",gap:6,padding:"1px 0",touchAction:clDragIdx===idx?"none":"auto",
-                    transform: clDragIdx===idx?`translateY(${clDragDY}px) scale(1.04)`:"none",
-                    transition: clDragIdx===idx?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
-                    position:"relative", zIndex:clDragIdx===idx?30:1,
-                    background:clDragIdx===idx?"#33271B":"transparent",borderRadius:8,
-                    boxShadow:clDragIdx===idx?"0 14px 32px rgba(0,0,0,.6)":"none"}}>
+                    style={{display:"flex",alignItems:"center",gap:6,padding:"1px 0",touchAction:clDragId===it.id?"none":"auto",
+                    transform: clDragId===it.id?`translateY(${clDragOff}px) scale(1.04)`:"none",
+                    transition: clDragId===it.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
+                    position:"relative", zIndex:clDragId===it.id?30:1,
+                    background:clDragId===it.id?"#33271B":"transparent",borderRadius:8,
+                    boxShadow:clDragId===it.id?"0 14px 32px rgba(0,0,0,.6)":"none"}}>
                     <button onClick={()=>toggleClItem(idx)}
                       style={{flexShrink:0,padding:"8px 6px 8px 4px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -3693,7 +3685,7 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+            <div onTouchStart={e=>{ if(e.target.closest&&e.target.closest("button")) e.preventDefault(); }} style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
               <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</button>
