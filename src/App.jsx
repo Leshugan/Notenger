@@ -25,6 +25,7 @@ const IC = {
   dots:  <Icon d={["M12 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z","M12 19.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={1} fill="currentColor" />,
   edit:  <Icon d={["M5 19h3.5L19 8.5a2 2 0 0 0-2.8-2.8L5.7 16.2 5 19Z","M14.5 7.5l2.8 2.8"]} stroke={2} />,
   drag:  <Icon d={["M8 6h.01M8 12h.01M8 18h.01M14 6h.01M14 12h.01M14 18h.01"]} stroke={2.5} />,
+  palette: <Icon d={["M12 3a9 9 0 1 0 0 18c1 0 2-1 2-2s-1-1-1-2 1-1 2-1h1a4 4 0 0 0 4-4c0-4-4-7-8-7Z","M7.5 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM10.5 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM15 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={2} />,
   trash: <Icon d={["M4 7h16","M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2","M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"]} stroke={2} />,
   save:  <Icon d={["M5 3h11l3 3v15H5z","M8 3v5h7","M8 21v-7h8v7"]} stroke={2} />,
   imp:   <Icon d={["M12 3v12","M7 10l5 5 5-5","M5 21h14"]} stroke={2} />,
@@ -60,18 +61,18 @@ const IC = {
   archive: <Icon d={["M4 4h16v5H4z","M5 9v11h14V9","M10 13h4"]} stroke={2} />,
   file:    <Icon d={["M6 3h8l4 4v14H6z","M14 3v4h4"]} stroke={2} />,
   // иконки папок (TG-стиль)
-  fFolder: <Icon d="M3 7h6l2 2h10v10H3z" stroke={2} />,
+  fFolder: <Icon d="M3 6h6l2 2h10v10H3z" stroke={2} />,
   fWork:   <Icon d={["M4 8h16v11H4z","M9 8V6h6v2"]} stroke={2} />,
   fHome:   <Icon d={["M4 11l8-7 8 7","M6 10v9h12v-9"]} stroke={2} />,
   fBook:   <Icon d={["M5 4h13v16H5z","M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"]} stroke={2} />,
-  fGame:   <Icon d={["M7 10h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8Z","M9 14h2M8 13v2"]} stroke={2} />,
+  fGame:   <Icon d={["M6 9h12a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3 3 3 0 0 1-2.4-1.2l-.6-.8H9l-.6.8A3 3 0 0 1 6 16a3 3 0 0 1-3-3v-1a3 3 0 0 1 3-3Z","M8 12v2M7 13h2M15.5 12.5h.01M17 14h.01"]} stroke={1.8} />,
   fGamepad:<Icon d={["M8 8h8a5 5 0 0 1 5 5 4 4 0 0 1-7 2.6l-.6-.6h-2.8l-.6.6A4 4 0 0 1 3 13a5 5 0 0 1 5-5Z","M7 11.5v2.5M5.8 12.7h2.4","M15.5 11.5h.01M17.3 13h.01"]} stroke={1.7} />,
   fMusic:  <Icon d={["M9 18V6l10-2v12","M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z","M19 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"]} stroke={2} />,
   fPlane:  <Icon d="M2 12l20-8-8 20-2-8-10-4Z" stroke={2} />,
   fHeart:  <Icon d="M12 20s-7-4.5-9.5-9A4.5 4.5 0 0 1 12 6a4.5 4.5 0 0 1 9.5 5c-2.5 4.5-9.5 9-9.5 9Z" stroke={2} />,
   fStar:   <Icon d="M12 3l2.6 5.6 6 .7-4.4 4 1.2 6L12 16.8 6.6 19.3l1.2-6L3.4 9.3l6-.7L12 3Z" stroke={2} />,
   fFire:   <Icon d="M12 3c1 4-3 5-3 9a3 3 0 0 0 6 0c0-2-1-3-1-3 2 1 3 3 3 5a5 5 0 0 1-10 0c0-5 5-7 5-11Z" stroke={2} />,
-  fLeaf:   <Icon d={["M5 19C5 9 12 5 20 5c0 10-7 14-15 14Z","M9 15c3-3 6-4 8-5"]} stroke={2} />,
+  fLeaf:   <Icon d={["M5 20c-1-9 5-15 15-15 1 9-5 15-15 15Z","M5 20C8 15 12 11 17 9"]} stroke={2} />,
   fArt:    <Icon d={["M12 3a9 9 0 1 0 0 18c1 0 2-1 2-2s-1-1-1-2 1-1 2-1h1a4 4 0 0 0 4-4c0-4-4-7-8-7Z","M7.5 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={2} />,
   fNote:   <Icon d={["M6 3h12v18H6z","M9 8h6M9 12h6M9 16h4"]} stroke={2} />,
   fIdea:   <Icon d={["M9 18h6","M10 21h4","M12 3a6 6 0 0 0-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 0 0-4-10Z"]} stroke={2} />,
@@ -86,7 +87,7 @@ const IC = {
   fChats:  <Icon d={["M3 4h13v9H8l-3 3V4Z","M8 8h11v8l-3-3H10"]} stroke={2} />,
   fUser:   <Icon d={["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M4 21c0-4 4-6 8-6s8 2 8 6"]} stroke={2} />,
   fUsers:  <Icon d={["M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z","M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5","M16 4.5a3.5 3.5 0 0 1 0 7","M17 14.5c2.5.4 5 2 5 5.5"]} stroke={2} />,
-  fSettings:<Icon d={["M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z","M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L16 3H8l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 3 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L8 21h8l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z"]} stroke={1.6} />,
+  fSettings:<Icon d={["M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z","M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05L4.93 4.93"]} stroke={2} />,
   fBell:   <Icon d={["M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Z","M10 20a2 2 0 0 0 4 0"]} stroke={2} />,
   fMail:   <Icon d={["M3 6h18v12H3z","M3 7l9 6 9-6"]} stroke={2} />,
   fPhone:  <Icon d="M6 3l3 1 1 4-2 2a11 11 0 0 0 5 5l2-2 4 1 1 3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2Z" stroke={2} />,
@@ -110,13 +111,13 @@ const IC = {
   fChart:  <Icon d={["M4 20V4","M4 20h16","M8 16v-4M12 16V8M16 16v-7"]} stroke={2} />,
   fCheck:  <Icon d={["M5 13l4 4L19 7"]} stroke={2.4} />,
   fTrash:  <Icon d={["M5 7h14","M9 7V4h6v3","M7 7l1 13h8l1-13"]} stroke={2} />,
-  fEdit:   <Icon d={["M4 20h4L18 10l-4-4L4 16v4Z","M14 6l4 4"]} stroke={2} />,
+  fEdit:   <Icon d={["M5 19h3.5L19 8.5a2 2 0 0 0-2.8-2.8L5.7 16.2 5 19Z","M14.5 7.5l2.8 2.8"]} stroke={2} />,
   fSearch: <Icon d={["M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z","M21 21l-4-4"]} stroke={2} />,
   fEye:    <Icon d={["M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z","M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"]} stroke={2} />,
   fCoffee: <Icon d={["M4 8h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Z","M17 9h2a2 2 0 0 1 0 5h-2","M7 3v2M11 3v2"]} stroke={2} />,
   fCode:   <Icon d={["M9 8l-4 4 4 4","M15 8l4 4-4 4","M13 6l-2 12"]} stroke={2} />,
   fCar:    <Icon d={["M3 13l2-5h12l2 5","M3 13h18v5H3z","M7 18v2M17 18v2","M6 16h1M17 16h1"]} stroke={1.8} />,
-  fPlanet: <Icon d={["M12 19a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z","M4 16c5 3 13 1 16-4M20 8C15 5 7 7 4 12"]} stroke={1.8} />,
+  fPlanet: <Icon d={["M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z","M5.5 14.5C3 16 1.6 17.6 2.2 18.8c.8 1.6 6 .6 11.6-2.2C19.4 13.8 23.4 10 22.6 8.4c-.5-1-2.6-.8-5.4.2"]} stroke={1.8} />,
   fTag:    <Icon d={["M4 4h8l8 8-8 8-8-8V4Z","M8 8a1 1 0 1 0 0-.01"]} stroke={2} />,
   fMoon:   <Icon d="M20 14a8 8 0 1 1-9-11 7 7 0 0 0 9 11Z" stroke={2} />,
   fSun:    <Icon d={["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z","M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]} stroke={1.8} />,
@@ -301,8 +302,8 @@ function saveAS(s)  { try { localStorage.setItem(AS_KEY,JSON.stringify(s)); } ca
 // HELPERS
 // ═══════════════════════════════════════════════
 const COLORS = ["#EF6C00","#F5A623","#FF8A3D","#D2691E","#C75B39","#8D6E63","#A1887F","#BCAAA4"];
-const ICONS_F = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
-const ICONS_S = ["fFolder","fWork","fHome","fBook","fGame","fGamepad","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fArt","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_F = ["fFolder","fWork","fHome","fBook","fGamepad","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
+const ICONS_S = ["fFolder","fWork","fHome","fBook","fGamepad","fMusic","fPlane","fHeart","fStar","fFire","fLeaf","fNote","fIdea","fCart","fGym","fPin","fBookmark","fLock","fTarget","fFlask","fChat","fChats","fUser","fUsers","fSettings","fBell","fMail","fPhone","fCamera","fImage","fVideo","fMic","fFile","fLink","fCalendar","fClock","fPinLoc","fWallet","fGift","fFlag","fShield","fGlobe","fBolt","fCloud","fKey","fChart","fCheck","fTrash","fEdit","fSearch","fEye","fCoffee","fCode","fCar","fPlanet","fTag","fMoon","fSun","fDroplet"];
 const strip = t=>(t||"").replace(/\[\/?(b|i|s|spoiler|code|q)\]/g,"").replace(/\[.*?\]\(.*?\)/g,"$1").slice(0,52);
 const tnow  = ()=>new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 const MES = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
@@ -371,13 +372,13 @@ function Av({ icon, img, color, size=44, onClick, acc }) {
   </div>;
 }
 
-function Sheet({ open, onClose, title="", children }) {
+function Sheet({ open, onClose, title="", children, noAnim }) {
   if(!open) return null;
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:300,backdropFilter:"blur(3px)"}}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",
-        borderRadius:"20px 20px 0 0",padding:"20px 20px 36px",animation:"sUp .22s ease",
+        borderRadius:"20px 20px 0 0",padding:"20px 20px 36px",animation:noAnim?"none":"sUp .22s ease",
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
         {children}
@@ -1154,6 +1155,7 @@ export default function App() {
   const [patts,     setPatts]     = useState([]);
   const [capPos,    setCapPos]    = useState("top"); // позиция подписи для текущего сообщения с фото
   const [checklist, setChecklist] = useState(null); // [{id,text,checked}] — режим списка в композере, null = обычный текст
+  const [clTitle,   setClTitle]   = useState("");   // отдельный заголовок списка
   const [listMode,  setListMode]  = useState(null);  // {fid,sid,id} — открытый на весь экран список
   const [clDragIdx, setClDragIdx] = useState(-1);
   const [clDragDY,  setClDragDY]  = useState(0);
@@ -1478,6 +1480,9 @@ export default function App() {
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
   const [uiSh, setUiSh] = useState(false); // меню «Интерфейс»
+  const uiNoAnim = useRef(false);
+  const openUiReturn = ()=>{ uiNoAnim.current=true; setUiSh(true); };
+  const [accentSh, setAccentSh] = useState(false); // шторка «Цвет иконок»
   const [miscSh, setMiscSh] = useState(false); // меню «Прочее»
   const [hideVersion, setHideVersion] = useState(()=>{ try{ return localStorage.getItem("napp_hideVersion")==="1"; }catch{ return false; } });
   function toggleHideVersion(){ setHideVersion(v=>{ const nv=!v; try{ localStorage.setItem("napp_hideVersion",nv?"1":"0"); }catch{} return nv; }); }
@@ -1783,7 +1788,7 @@ export default function App() {
     syncRunning.current=true; setSyncStatus("syncing");
     try{
       const token=await getAccessToken(interactive);
-      if(!token){ setSyncStatus("signedout"); syncRunning.current=false; if(!interactive) tst("Нет доступа к аккаунту — войдите в Google"); return; }
+      if(!token){ setSyncStatus(interactive?"signedout":(syncCfg.enabled?"ok":"signedout")); syncRunning.current=false; return; }
       const remote=await driveFindFile(token);
       if(remote && (mode==="pull" || mode==="auto")){
         const obj=await driveDownload(token,remote.id);
@@ -1948,6 +1953,7 @@ export default function App() {
 
   // ── Nav ──
   function openF(f) {
+    if(settingsMenu||plusMenu||hdrMenu||folderMenu||subMenu||noteCtx){ closeAllMenus(); setNoteCtx(null); return; }
     if(composerFull){ // живой редактор справа — не трогаем черновик, только навигация
       if(f.isTheme){ setFid(f.id); setSid("__top__"); setScr("chat"); }
       else { setFid(f.id); setScr("sub"); setSubSearch(""); }
@@ -1960,6 +1966,7 @@ export default function App() {
     setFid(f.id); setScr("sub"); setSubSearch("");
   }
   function openS(s) {
+    if(settingsMenu||plusMenu||hdrMenu||folderMenu||subMenu||noteCtx){ closeAllMenus(); setNoteCtx(null); return; }
     if(composerFull){ setSid(s.id); setScr("chat"); return; } // живой редактор — только навигация
     setSid(s.id); setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]); setIsTyping(false);
     setNote(drafts.current[s.id] || "");
@@ -2056,10 +2063,10 @@ export default function App() {
     if(driveSh){ setDriveSh(false); return true; }
     if(fontDelSh){ setFontDelSh(false); return true; }
     if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); setUiSh(true); return true; }
-    if(animSh){ setAnimSh(false); setUiSh(true); return true; }
-    if(imgSh){ setImgSh(false); return true; }
-    if(uiSh){ setUiSh(false); return true; }
+    if(animSh){ setAnimSh(false); openUiReturn(); return true; }
     if(miscSh){ setMiscSh(false); return true; }
+    if(accentSh){ setAccentSh(false); openUiReturn(); return true; }
+    if(uiSh){ setUiSh(false); return true; }
     if(dlg){ setDlg(null); return true; }
     if(modal){ setModal(null); return true; }
     if(pinnedOpen){ setPinnedOpen(false); return true; }
@@ -2263,6 +2270,7 @@ export default function App() {
     setPatts(n.attachments||[]);
     setCapPos(n.capPos||"top");
     setChecklist(n.checklist&&n.checklist.length?n.checklist.map(x=>({...x})):null);
+    setClTitle(n.clTitle||"");
     setNoteCtx(null);
     setSelectMode(null);
     composerOrigin.current={fid,sid};
@@ -2271,7 +2279,7 @@ export default function App() {
     setComposerFull(true); setComposerPeek(false);
   }
   function cancelEdit() {
-    setEditId(null); setNote(""); setPatts([]); setChecklist(null); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
+    setEditId(null); setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
     if(taRef.current){ taRef.current.style.height="auto"; }
   }
   // Закрытие полноэкранного редактора с анимацией возврата микрофона/самолёта
@@ -2282,13 +2290,13 @@ export default function App() {
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
     const wasEdit=!!editId;
     if(editId) cancelEdit();
-    setNote(""); setPatts([]); setChecklist(null); setComposerFull(false); setComposerPeek(false);
+    setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setComposerFull(false); setComposerPeek(false);
     if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
     const editedId=editId;
-    updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),time:tnow(),ts:tstamp()}:n)));
+    updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined,time:tnow(),ts:tstamp()}:n)));
     cancelEdit();
     setTimeout(()=>{ const el=bubbleEls.current[editedId]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); },50);
   }
@@ -2299,14 +2307,14 @@ export default function App() {
     const o=composerOrigin.current||{fid,sid};
     const wasEdit = !!editId; const editedId = editId;
     if(editId){
-      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),time:tnow(),ts:tstamp()}:n)); }
+      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined,time:tnow(),ts:tstamp()}:n)); }
     } else {
-      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist()}]); }
+      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined}]); }
     }
     // очистка черновика
     const dKey = o.sid==="__top__" ? "__top__"+o.fid : o.sid;
     if(dKey){ delete drafts.current[dKey]; saveDrafts(drafts.current); }
-    setEditId(null); setNote(""); setPatts([]); setChecklist(null); setIsTyping(false);
+    setEditId(null); setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setIsTyping(false);
     // возврат в исходную тему + анимация полёта кнопки обратно в позицию "написать"
     setComposerFull(false); setComposerPeek(false);
     setFid(o.fid); setSid(o.sid); setScr("chat");
@@ -2321,7 +2329,7 @@ export default function App() {
   function send() {
     if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
     if(editId) { saveEdit(); return; }
-    updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist()}]));
+    updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined}]));
     setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
     if(taRef.current) taRef.current.style.height="auto";
     setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),50);
@@ -2789,7 +2797,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v236</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v244</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2808,6 +2816,9 @@ export default function App() {
             <div style={{fontWeight:600,fontSize:16,color:"#F2EAE0"}}>Список</div>
           </div>
           <div style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
+            <input value={lnote?.clTitle||""} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
+              placeholder="Заголовок (необязательно)"
+              style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"#F2EAE0",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px"}}/>
             {items.map((it,idx)=>(
               <div key={it.id} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1}}>
                 <span style={{display:"flex",color:"#6A5A48",cursor:"grab",flexShrink:0,touchAction:"none"}}
@@ -2933,8 +2944,7 @@ export default function App() {
                 style={{position:"absolute",top:"calc(100% + 8px)",left:0}}
                 items={[
                   {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
-                  {ic:IC.sparkle,label:"Интерфейс",fn:()=>setUiSh(true)},
-                {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
+                  {ic:IC.sparkle,label:"Интерфейс",fn:()=>{ uiNoAnim.current=false; setUiSh(true); }},
                 {ic:IC.dots,label:"Прочее",fn:()=>setMiscSh(true)},
                 ]}/>}
             </div>
@@ -3091,8 +3101,7 @@ export default function App() {
               style={{position:"absolute",bottom:"calc(100% + 8px)",left:0}}
               items={[
                 {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
-                {ic:IC.sparkle,label:"Интерфейс",fn:()=>setUiSh(true)},
-                {ic:IC.gallery,label:"Сжатие изображений",fn:()=>setImgSh(true)},
+                {ic:IC.sparkle,label:"Интерфейс",fn:()=>{ uiNoAnim.current=false; setUiSh(true); }},
                 {ic:IC.dots,label:"Прочее",fn:()=>setMiscSh(true)},
               ]}/>}
           </div>
@@ -3293,10 +3302,13 @@ export default function App() {
                     transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
                   {n.text&&n.checklist&&n.checklist.length>0&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
-                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginBottom:4,fontWeight:700,
+                      style={{fontSize:15,lineHeight:1.4,color:"#F2EAE0",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"var(--font-msg)",marginBottom:4,fontWeight:400,
                       userSelect:((selActive&&textArmed)||multiActive)?"text":"none",WebkitUserSelect:((selActive&&textArmed)||multiActive)?"text":"none"}}>
                       <RichText text={n.text} color={subColor} onLinkMenu={handleLinkMenu} highlight={chatSearch}/>
                     </div>
+                  )}
+                  {n.clTitle&&n.checklist&&n.checklist.length>0&&(
+                    <div style={{fontSize:16,fontWeight:700,color:"#F2EAE0",marginBottom:4,wordBreak:"break-word",fontFamily:"var(--font-msg)"}}>{n.clTitle}</div>
                   )}
                   {n.checklist&&n.checklist.length>0&&(
                     <div style={{margin:"2px 0 4px"}}>
@@ -3436,11 +3448,15 @@ export default function App() {
               onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
               ref={el=>{ fullTaRef.current=el; if(el){ if(checklist){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } if(composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } } }}
-              placeholder={editId?"Редактировать сообщение...":(checklist?"Заголовок (необязательно)":"Текст сообщения...")}
+              placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
               style={{flex:checklist?"0 0 auto":1,width:"100%",background:"#1A1410",border:"none",outline:"none",
-                color:"#F2EAE0",fontSize:16,lineHeight:1.5,fontWeight:checklist?700:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
+                color:"#F2EAE0",fontSize:16,lineHeight:1.5,fontWeight:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
                 boxSizing:"border-box",overflowY:checklist?"hidden":"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"#EF6C00",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
+            {checklist && (
+              <input value={clTitle} onChange={e=>setClTitle(e.target.value)} placeholder="Заголовок (необязательно)"
+                style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"#F2EAE0",fontSize:17,fontWeight:700,fontFamily:"var(--font-input)",padding:"6px 16px 4px"}}/>
+            )}
             {checklist && (
               <div style={{padding:"2px 8px 12px",flexShrink:0}}>
                 {checklist.map((it,idx)=>(
@@ -3981,26 +3997,6 @@ export default function App() {
         )}
       </Sheet>
 
-      <Sheet open={imgSh} onClose={()=>setImgSh(false)} title="Сжатие изображений">
-        <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
-          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
-          <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-            <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-          </div>
-        </div>
-        <div style={{fontSize:12,color:"#8A7A65",padding:"10px 4px",lineHeight:1.5}}>
-          Новые добавляемые изображения будут автоматически уменьшаться в размере. Уже добавленные не затрагиваются.
-        </div>
-      </Sheet>
-      {imgCompressPopup && (
-        <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid var(--gline,#4A3A2A)",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
-            <div style={{fontSize:16,color:"#F2EAE0",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
-            <div style={{fontSize:14,color:"#D8CCBE",lineHeight:1.55,marginBottom:16}}>Качество, заметное человеческому глазу, не пострадает. Изображения станут заметно легче и будут быстрее синхронизироваться.</div>
-            <button onClick={()=>setImgCompressPopup(false)} style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Понятно</button>
-          </div>
-        </div>
-      )}
             <Sheet open={miscSh} onClose={()=>setMiscSh(false)} title="Прочее">
               <div onClick={toggleHideVersion} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
                 <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Скрыть номер версии</span>
@@ -4008,9 +4004,25 @@ export default function App() {
                   <div style={{position:"absolute",top:2,left:hideVersion?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
                 </div>
               </div>
-              <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Скрывает метку «beta v…» в углу экрана.</div>
+              <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 14px"}}>Скрывает метку «beta v…» в углу экрана.</div>
+              <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
+                <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Сжимать изображения</span>
+                <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
+                  <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                </div>
+              </div>
+              <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Новые добавляемые изображения будут автоматически уменьшаться в размере. Уже добавленные не затрагиваются.</div>
             </Sheet>
-            <Sheet open={uiSh} onClose={()=>setUiSh(false)} title="Интерфейс">
+            {imgCompressPopup && (
+              <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+                <div onClick={e=>e.stopPropagation()} style={{background:"#2A2017",borderRadius:16,border:"1px solid var(--gline,#4A3A2A)",padding:"20px 18px",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.6)"}}>
+                  <div style={{fontSize:16,color:"#F2EAE0",fontWeight:700,marginBottom:10}}>Сжатие включено</div>
+                  <div style={{fontSize:14,color:"#D8CCBE",lineHeight:1.55,marginBottom:16}}>Качество, заметное человеческому глазу, не пострадает. Изображения станут заметно легче и будут быстрее синхронизироваться.</div>
+                  <button onClick={()=>setImgCompressPopup(false)} style={{width:"100%",background:"#EF6C00",border:"none",borderRadius:12,padding:12,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14}}>Понятно</button>
+                </div>
+              </div>
+            )}
+            <Sheet open={uiSh} noAnim={uiNoAnim.current} onClose={()=>setUiSh(false)} title="Интерфейс">
         <div onClick={()=>{setUiSh(false);setAnimSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.sparkle}</span>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Анимации</span>
@@ -4019,9 +4031,13 @@ export default function App() {
           <span style={{display:"flex",color:"#EF6C00"}}>{IC.text}</span>
           <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Шрифты</span>
         </div>
-        <div style={{background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10}}>
-          <div style={{fontSize:15,color:"#F2EAE0",marginBottom:12}}>Цвет иконок</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        <div onClick={()=>{setUiSh(false);setAccentSh(true);}} style={{display:"flex",alignItems:"center",gap:12,background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}>
+          <span style={{display:"flex",color:"#EF6C00"}}>{IC.palette||IC.sparkle}</span>
+          <span style={{flex:1,fontSize:15,color:"#F2EAE0"}}>Цвет иконок</span>
+        </div>
+      </Sheet>
+      <Sheet open={accentSh} onClose={()=>{setAccentSh(false);openUiReturn();}} title="Цвет иконок">
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {[{k:"orange",label:"Оранжевая",bg:"#EF6C00",fg:"#fff",bd:"transparent",glow:null},{k:"choco",label:"Шоколадная",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A",glow:null},{k:"choconeon",label:"Шоколадный неон",bg:"#3A2E24",fg:"#EF6C00",bd:"#4A3A2A",glow:"0 0 14px rgba(239,108,0,.75)"}].map(o=>(
               <div key={o.k} onClick={()=>setAccent(o.k)} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderRadius:10,cursor:"pointer",
                 background:iconAccent===o.k?"#33271B":"transparent",border:"1px solid "+(iconAccent===o.k?"#EF6C00":"#3A2E24")}}>
@@ -4040,10 +4056,9 @@ export default function App() {
                 {iconAccent===o.k && <span style={{display:"flex",color:"#EF6C00"}}>{IC.check}</span>}
               </div>
             ))}
-          </div>
-          </div>
+        </div>
       </Sheet>
-      <Sheet open={animSh} onClose={()=>setAnimSh(false)} title="Анимации">
+      <Sheet open={animSh} onClose={()=>{setAnimSh(false);openUiReturn();}} title="Анимации">
         {[
           {key:"scr",label:"Переходы между экранами",off:noScrAnim,toggle:toggleScrAnim},
           {key:"input",label:"Поле ввода",off:noInputAnim,toggle:toggleInputAnim},
@@ -4128,7 +4143,7 @@ export default function App() {
         </>)}
       </Sheet>)}
 
-      <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);}} title="Шрифты">
+      <Sheet open={fontSh} onClose={()=>{setFontSh(false);setFontOpen(null);openUiReturn();}} title="Шрифты">
         <div style={{display:"flex",gap:10,marginBottom:16}}>
           <button onClick={()=>fontFileRef.current&&fontFileRef.current.click()}
             style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",background:"#2E251C",border:"1px solid var(--gline,#5A4C40)",borderRadius:22,cursor:"pointer"}}>
