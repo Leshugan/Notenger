@@ -1313,6 +1313,15 @@ export default function App() {
   const [lightbox, setLightbox] = useState(null); // dataUrl открытого изображения
   const lightboxFromBrowser = useRef(false);
   const fullTaRef = useRef(null);
+  // Блокируем повторный показ клавиатуры при тапе по тулбару: на миг делаем поле readOnly
+  // (readOnly-поле не может вызвать IME), фокус и выделение сохраняются.
+  function suppressKb(){
+    try{
+      const el=fullTaRef.current; if(!el) return;
+      el.setAttribute("readonly","readonly");
+      setTimeout(()=>{ try{ el.removeAttribute("readonly"); }catch{} }, 350);
+    }catch{}
+  }
   const composerWantFocus = useRef(false);
   const taSwipe = useRef(null);
   const clipText = useRef("");
@@ -2936,7 +2945,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v267</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v271</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2954,13 +2963,13 @@ export default function App() {
             <button onClick={()=>{setListMode(null);setLmEditMode(false);}} style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,#F2EAE0)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
             <div style={{fontWeight:600,fontSize:16,color:"var(--ink,#F2EAE0)"}}>Список</div>
           </div>
-          <div style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
+          <div onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd} style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
             <input value={lnote?.clTitle||""} readOnly={!lmEditMode} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
               placeholder="Заголовок (необязательно)"
               style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
             {items.map((it,idx)=>(
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
-                onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }} onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd}
+                onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
                 transform: lmDragId===it.id?`translateY(${lmDragOff}px) scale(1.03)`:"none",
                 transition: lmDragId===it.id?"box-shadow .18s ease":"transform .42s cubic-bezier(.16,1,.3,1)",
@@ -3585,10 +3594,7 @@ export default function App() {
               transition: noInputAnim ? "none" : ("transform "+spd("input",0.5)+"s cubic-bezier(.32,.72,0,1)"),
               pointerEvents:composerPeek?"none":"auto",
               boxShadow:"0 -12px 30px rgba(0,0,0,.5)"}}>
-            {/* Верхняя строка: заголовок темы */}
-            <div style={{display:"flex",justifyContent:"center",flexShrink:0,padding:"2px 0 0"}}>
-              <div style={{background:"#241B12",border:"1px solid var(--gline2,#2A2017)",borderTop:"none",borderRadius:"0 0 11px 11px",padding:"3px 14px 4px",fontSize:10.5,fontWeight:500,color:"#EF6C00",letterSpacing:.2}}>{editId?"Редактирование":(subf?.name||"Сообщение")}</div>
-            </div>
+            {/* Козырёк с названием темы убран */}
             {/* Прикреплённые файлы в наборе */}
             {patts.length>0&&(
               <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"10px 12px",borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
@@ -3628,10 +3634,10 @@ export default function App() {
                 style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:17,fontWeight:700,fontFamily:"var(--font-input)",padding:"6px 16px 4px"}}/>
             )}
             {checklist && (
-              <div style={{padding:"2px 8px 12px",flexShrink:0}}>
+              <div onTouchMove={clRowTouchMove} onTouchEnd={clRowTouchEnd} style={{padding:"2px 8px 12px",flexShrink:0}}>
                 {checklist.map((it,idx)=>(
                   <div key={it.id} data-clid={it.id} data-dragging={clDragId===it.id?"1":"0"}
-                    onTouchStart={e=>{ clRowTouchStart(idx,e); }} onTouchMove={clRowTouchMove} onTouchEnd={clRowTouchEnd}
+                    onTouchStart={e=>{ clRowTouchStart(idx,e); }}
                     style={{display:"flex",alignItems:"center",gap:6,padding:"1px 0",touchAction:clDragId===it.id?"none":"auto",
                     transform: clDragId===it.id?`translateY(${clDragOff}px) scale(1.04)`:"none",
                     transition: clDragId===it.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
@@ -3685,34 +3691,34 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div onTouchStart={e=>{ if(e.target.closest&&e.target.closest("button")) e.preventDefault(); }} style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
-              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
-                style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",border:"none",cursor:"pointer",
-                  color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</button>
-              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={undoNote} title="Отменить"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></button>
-              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={redoNote} title="Вернуть"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></button>
-              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setPrevSh(true)} title="Предпросмотр"
-                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</button>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+              <div role="button" onPointerDown={()=>suppressKb()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
+                style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",cursor:"pointer",
+                  color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</div>
+              <div role="button" onPointerDown={()=>suppressKb()} onClick={undoNote} title="Отменить"
+                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></div>
+              <div role="button" onPointerDown={()=>suppressKb()} onClick={redoNote} title="Вернуть"
+                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></div>
+              <div role="button" onPointerDown={()=>suppressKb()} onClick={()=>setPrevSh(true)} title="Предпросмотр"
+                style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</div>
               {patts.some(a=>a.dataUrl&&a.type?.startsWith("image/")) && (
-                <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
-                  style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",border:"none",cursor:"pointer",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <div role="button" onPointerDown={()=>suppressKb()} onClick={()=>setCapPos(p=>p==="top"?"bottom":"top")} title={capPos==="top"?"Подпись сверху (нажмите — будет снизу)":"Подпись снизу (нажмите — будет сверху)"}
+                  style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",cursor:"pointer",color:"#EF6C00",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     {capPos==="top"
                       ? <><rect x="4" y="4" width="16" height="3.2" rx="1" fill="currentColor"/><rect x="4" y="9" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><circle cx="9" cy="13.5" r="1.4" fill="currentColor"/><path d="M7 18l3-3 3 2.5 2-1.8 2 2.3" stroke="currentColor" strokeWidth="1.6" fill="none"/></>
                       : <><rect x="4" y="4" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><circle cx="9" cy="8.5" r="1.4" fill="currentColor"/><path d="M7 13l3-3 3 2.5 2-1.8 2 2.3" stroke="currentColor" strokeWidth="1.6" fill="none"/><rect x="4" y="16.8" width="16" height="3.2" rx="1" fill="currentColor"/></>}
                   </svg>
-                </button>
+                </div>
               )}
               <div style={{flex:1}}/>
-              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={()=>setAttSh(true)} title="Прикрепить"
-                style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</button>
-              <button onPointerDown={e=>e.preventDefault()} onMouseDown={e=>e.preventDefault()} tabIndex={-1} onClick={closeComposer} title="Отменить"
-                style={{width:38,height:38,borderRadius:"50%",background:"none",border:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</button>
-              <button onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
+              <div role="button" onPointerDown={()=>suppressKb()} onClick={()=>setAttSh(true)} title="Прикрепить"
+                style={{width:38,height:38,borderRadius:"50%",background:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</div>
+              <div role="button" onClick={closeComposer} title="Отменить"
+                style={{width:38,height:38,borderRadius:"50%",background:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</div>
+              <div role="button" onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
                     style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",marginLeft:3,
-                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none")}}><span style={{display:"flex",transform:"scale(.9) rotate(90deg)"}}>{IC.send}</span></button>
+                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 2px 10px rgba(239,108,0,.4)":"none")}}><span style={{display:"flex",transform:"scale(.9) rotate(90deg)"}}>{IC.send}</span></div>
             </div>
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
