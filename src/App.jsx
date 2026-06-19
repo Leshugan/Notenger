@@ -30,7 +30,7 @@ const IC = {
   paste: <Icon d={["M9 4h6v3H9z","M7 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-1"]} stroke={1.9} />,
   paste: <Icon d={["M9 4h6v3H9z","M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"]} stroke={2} />,
   copy2: <Icon d={["M9 9h10v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1Z","M5 15V5a1 1 0 0 1 1-1h9"]} stroke={2} />,
-  palette: <Icon d={["M12 3a9 9 0 1 0 0 18c1 0 2-1 2-2s-1-1-1-2 1-1 2-1h1a4 4 0 0 0 4-4c0-4-4-7-8-7Z","M7.5 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM10.5 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM15 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"]} stroke={2} />,
+  palette: <Icon d={["M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z","M3 9h18","M7 13h6","M7 16h9"]} stroke={1.7} />,
   trash: <Icon d={["M4 7h16","M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2","M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"]} stroke={2} />,
   save:  <Icon d={["M5 3h11l3 3v15H5z","M8 3v5h7","M8 21v-7h8v7"]} stroke={2} />,
   imp:   <Icon d={["M12 3v12","M7 10l5 5 5-5","M5 21h14"]} stroke={2} />,
@@ -42,6 +42,8 @@ const IC = {
   redo:   <Icon d={["M15 7l5 5-5 5","M20 12H9a5 5 0 0 0 0 10h3"]} stroke={2} />,
   expand: <Icon d={["M4 10V4h6","M20 14v6h-6","M4 4l7 7","M20 20l-7-7"]} stroke={2} />,
   sparkle:<Icon d={["M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"]} stroke={1.6} />,
+  vibrate:<Icon d={["M8 5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V5Z","M4 9v6","M20 9v6"]} stroke={1.8} />,
+  sliders:<Icon d={["M4 6h10","M18 6h2","M4 12h4","M12 12h8","M4 18h12","M18 18h2"]} stroke={1.8} />,
   arrRight:<Icon d={["M5 12h14","M13 6l6 6-6 6"]} stroke={2} />,
   arrLeft: <Icon d={["M19 12H5","M11 6l-6 6 6 6"]} stroke={2} />,
   copy:  <Icon d={["M9 9h10v12H9z","M5 15V3h10"]} stroke={2} />,
@@ -383,7 +385,7 @@ function Sheet({ open, onClose, title="", children, noAnim }) {
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:300,backdropFilter:"blur(3px)"}}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",
-        borderRadius:"20px 20px 0 0",padding:"20px 20px 36px",animation:noAnim?"none":"sUp .22s ease",
+        borderRadius:"20px 20px 0 0",padding:"20px 20px 36px",animation:noAnim?"none":"sUp .34s cubic-bezier(.2,.9,.3,1)",
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
         {children}
@@ -437,7 +439,7 @@ function DropMenu({ items, onClose, style:extraStyle={} }) {
     <>
     <div onClick={(e)=>{e.stopPropagation(); onClose();}} onTouchStart={(e)=>{ if(e.target===e.currentTarget){ e.stopPropagation(); }}} style={{position:"fixed",inset:0,zIndex:1190}}/>
     <div ref={ref} style={{background:"#2A2017",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.6)",
-      overflow:"hidden",width:"max-content",zIndex:1200,animation:"fS .15s ease",border:"1px solid var(--gline,#4A3A2A)",...extraStyle}}>
+      overflow:"hidden",width:"max-content",zIndex:1200,animation:"dropGrow .2s cubic-bezier(.2,.9,.3,1.2)",transformOrigin:(extraStyle&&extraStyle.bottom!=null)?"bottom right":"top right",border:"1px solid var(--gline,#4A3A2A)",...extraStyle}}>
       {items.map((item,i)=>item.sep
         ?<div key={i} style={{height:1,background:"var(--gline,#4A3A2A)",margin:"2px 0"}}/>
         :<button key={i} className="dmi" onClick={()=>{ if(!armed.current) return; item.fn();onClose();}}
@@ -726,15 +728,24 @@ function AttBubble({ att, onOpen, stamp, selecting }) {
 }
 
 // ─── Pinned banner ────────────────────────────────────────────
-function PinnedBanner({ note, color, onJump }) {
+// Живой двухслойный переход экранов (iOS push/pop), без клонов.
+// Держит предыдущий контент смонтированным во время анимации и двигает оба слоя.
+function PinnedBanner({ note, color, onJump, count=1, index=0 }) {
   if(!note) return null;
   return (
-    <div onClick={onJump} style={{background:"rgba(42,32,23,.40)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",border:"1px solid var(--gline,#4A3A2A)",
-      borderRadius:"0 0 16px 16px",boxShadow:"var(--gline-glow,none)",
+    <div onClick={onJump} style={{background:"#241B12",border:"1px solid var(--gline,#4A3A2A)",
+      borderRadius:"0 0 16px 16px",boxShadow:"var(--gline-glow,none)",animation:"pinDown .3s cubic-bezier(.2,.9,.3,1)",
       padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+      {count>1 && (
+        <div style={{display:"flex",flexDirection:"column",gap:2,alignSelf:"stretch",justifyContent:"center",paddingRight:2}}>
+          {Array.from({length:Math.min(count,4)}).map((_,i)=>(
+            <div key={i} style={{width:2.5,height:count<=4?14:9,borderRadius:2,background:i===(index%Math.min(count,4))?color:"#5A4A38"}}/>
+          ))}
+        </div>
+      )}
       <span style={{display:"flex",color,transform:"scale(.8)"}}>{IC.pin}</span>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:11,color,fontWeight:600,marginBottom:1}}>Закреплено</div>
+        <div style={{fontSize:11,color,fontWeight:600,marginBottom:1}}>{count>1?`Закреплённые · ${index+1}/${count}`:"Закреплено"}</div>
         <div style={{fontSize:13,color:"#D8CCBE",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
           {strip(note.text)||"Вложение"}
         </div>
@@ -771,7 +782,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:400,backdropFilter:"blur(3px)"}}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",
-        borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",animation:"sUp .22s ease"}}>
+        borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",animation:"sUp .34s cubic-bezier(.2,.9,.3,1)"}}>
         {/* Шапка темы + действия с иконкой */}
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 14px 10px",flexShrink:0}}>
           <Av icon={subf.icon} img={subf.iconImg} color={subf.color||color} size={40} acc={accent}/>
@@ -1143,8 +1154,10 @@ export default function App() {
   })();
   const [scr,       setScr]       = useState(_initLaunch?_initLaunch.scr:"main");
   const [navTick,   setNavTick]   = useState(0);
+  const [staggerOn, setStaggerOn] = useState(false);
   const firstRender = useRef(true);
   const delTimers = useRef({});
+  const multiDelTimer = useRef(null);
   const writeHoldTimer = useRef(null);
   const writeHoldFired = useRef(false);
   const writeStartX = useRef(null);
@@ -1153,8 +1166,53 @@ export default function App() {
   useEffect(()=>{ firstRender.current=false; },[]);
   const [fid,       setFid]       = useState(_initLaunch?_initLaunch.fid:null);
   const [sid,       setSid]       = useState(_initLaunch?_initLaunch.sid:null);
+  useEffect(()=>{ setStaggerOn(true); const t=setTimeout(()=>setStaggerOn(false),1100); return ()=>clearTimeout(t); },[]);
+  const [navDir, setNavDir] = useState("push");
   const navTickInit = useRef(true);
-  useEffect(()=>{ if(navTickInit.current){ navTickInit.current=false; return; } setNavTick(t=>t+1); },[scr,fid,sid]);
+  function captureNavSnapshot(dir){
+    if(booting) return;
+    try{
+      const root=document.querySelector("[data-ver-badge]");
+      if(!root) return;
+      const rect=root.getBoundingClientRect();
+      const ease="cubic-bezier(.33,.05,.2,1)";
+      // снимок СТАРОГО экрана (живой клон), уезжает; новый проявляется под ним
+      const snap=root.cloneNode(true);
+      snap.removeAttribute("data-ver-badge"); snap.className="";
+      try{ snap.querySelectorAll("*").forEach(el=>{ const z=parseInt(el.style&&el.style.zIndex||"0",10); if(z>=300){ el.style.visibility="hidden"; } }); }catch{}
+      // на время пролёта прячем картинки/превью — резко облегчает GPU-текстуру слоя → выше FPS
+      try{ snap.querySelectorAll("img,[data-imgsrc],video,canvas").forEach(el=>{ el.style.visibility="hidden"; }); }catch{}
+      snap.style.position="fixed"; snap.style.top=rect.top+"px"; snap.style.left=rect.left+"px";
+      snap.style.width=rect.width+"px"; snap.style.height=rect.height+"px";
+      snap.style.margin="0"; snap.style.maxWidth="none"; snap.style.pointerEvents="none";
+      snap.style.background="#1A1410"; snap.style.overflow="hidden";
+      snap.style.willChange="transform"; snap.style.backfaceVisibility="hidden"; snap.style.contain="strict";
+      snap.style.transformStyle="flat";
+      snap.style.zIndex="2147483646";
+      const shadow=document.createElement("div");
+      shadow.style.cssText="position:absolute;top:0;bottom:0;"+(dir==="pop"?"left:-18px":"right:-18px")+";width:18px;background:linear-gradient(to "+(dir==="pop"?"left":"right")+",rgba(0,0,0,.28),transparent);pointer-events:none;";
+      snap.appendChild(shadow);
+      document.body.appendChild(snap);
+      // растеризуем слой ОДИН раз перед стартом (готовая текстура двигается без перерисовки → ровный FPS)
+      snap.style.transform="translate3d(0,0,0)";
+      void snap.offsetHeight;
+      snap.style.transition="transform .35s "+ease;
+      requestAnimationFrame(()=>{
+        snap.style.transform = dir==="pop" ? "translate3d(106%,0,0)" : "translate3d(-106%,0,0)";
+      });
+      setTimeout(()=>{ try{ snap.remove(); }catch{} }, 370);
+    }catch{}
+  }
+  const prevScrInfo = useRef({scr:null,fid:null,sid:null});
+  useLayoutEffect(()=>{
+    if(navTickInit.current){ navTickInit.current=false; prevScrInfo.current={scr,fid,sid}; return; }
+    const prev=prevScrInfo.current;
+    const depth=s=> s==="main"?0 : s==="sub"?1 : 2;
+    const dir = depth(scr) >= depth(prev.scr) ? "push" : "pop";
+    prevScrInfo.current={scr,fid,sid};
+    setNavDir(dir);
+    setNavTick(t=>t+1);
+  },[scr,fid,sid]);
   const [search,    setSearch]    = useState("");
   const [subSearch, setSubSearch] = useState("");
   const [globalSearch, setGlobalSearch] = useState(null); // null=закрыт, "" или строка=открыт
@@ -1178,23 +1236,51 @@ export default function App() {
   function lmRowTouchStart(idx,e,items,setItems){
     const id=items&&items[idx]?items[idx].id:null; if(!id)return;
     const y0=e.touches[0].clientY, x0=e.touches[0].clientX;
-    lmDragRef.current={id,active:false,moved:false,y0,x0,lastSwap:0,setItems,t:setTimeout(()=>{ if(lmDragRef.current&&!lmDragRef.current.moved){ lmDragRef.current.active=true; setLmDragId(id); setLmDragOff(0); try{buzz(12);}catch{} } },400)};
+    lmDragRef.current={id,active:false,moved:false,y0,x0,lastSwap:0,setItems,t:setTimeout(()=>{ if(lmDragRef.current&&!lmDragRef.current.moved){ lmDragRef.current.active=true; lmDragRef.current.appliedOff=0; setLmDragId(id); setLmDragOff(0); try{buzz(12);}catch{} } },400)};
   }
   function lmRowTouchMove(e){
     const dt=lmDragRef.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    setLmDragOff(t.clientY-dt.y0);
+    let off=t.clientY-dt.y0;
+    // визуальный clamp по чистой позиции (не влияет на y0 → привязка к пальцу сохраняется)
+    const self0=document.querySelector(`[data-lmid="${dt.id}"]`);
+    if(self0){
+      const r=self0.getBoundingClientRect();
+      const applied=dt.appliedOff||0;
+      const cleanTop=r.top-applied, cleanH=r.height;
+      const titleEl=document.querySelector("[data-lmtitle]");
+      const footEl=document.querySelector("[data-lmfooter]");
+      const topLim=titleEl?titleEl.getBoundingClientRect().bottom:0;
+      const botLim=footEl?footEl.getBoundingClientRect().top:window.innerHeight;
+      if(cleanTop+off<topLim) off=topLim-cleanTop;
+      if(cleanTop+cleanH+off>botLim) off=botLim-cleanH-cleanTop;
+    }
+    dt.appliedOff=off;
+    setLmDragOff(off);
     const now=Date.now();
-    if(now-dt.lastSwap>140){
+    if(now-dt.lastSwap>120){
       const self=document.querySelector(`[data-lmid="${dt.id}"]`);
       if(!self) return;
       const sr=self.getBoundingClientRect();
       const rows=Array.from(document.querySelectorAll("[data-lmid]"));
       let target=null;
-      for(const r of rows){ const id=r.getAttribute("data-lmid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top); if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; } }
-      if(target){ flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; dt.y0=t.clientY; setLmDragOff(0); }
+      for(const r of rows){ const id=r.getAttribute("data-lmid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top); if(overlap>0 && overlap>=rr.height*0.55){ target=id; break; } }
+      if(target){
+        // запоминаем чистую позицию ДО перестановки
+        const cleanBefore = sr.top - (dt.appliedOff||0);
+        flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; }));
+        dt.lastSwap=now;
+        // после перестановки строка займёт новое место в потоке; корректируем y0 так, чтобы
+        // визуальный сдвиг сохранил строку ровно под пальцем (без чтения промежуточных кадров FLIP)
+        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+          const el=document.querySelector(`[data-lmid="${dt.id}"]`);
+          if(!el||lmDragRef.current!==dt) return;
+          const cleanAfter = el.getBoundingClientRect().top - (dt.appliedOff||0);
+          dt.y0 += (cleanAfter - cleanBefore);
+        }); });
+      }
     }
   }
   function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt&&dt.t)clearTimeout(dt.t); lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
@@ -1212,7 +1298,10 @@ export default function App() {
     document.addEventListener("touchcancel",up);
   }
   function toggleClItem(idx){
-    setChecklist(cl=>{
+    try{buzz(8,"check");}catch{}
+    const _cur=checklist&&checklist[idx];
+    const _checking=_cur&&!_cur.checked;
+    flipReorder("[data-clid]", ()=>setChecklist(cl=>{
       const a=cl.map(x=>({...x}));
       const it=a[idx];
       if(!it) return cl;
@@ -1228,7 +1317,7 @@ export default function App() {
         a.splice(back,0,it); delete it.origIdx;
         return a;
       }
-    });
+    }), _checking?560:320);
   }
   const ROWH=34;
   const clDragRef = useRef(null);
@@ -1473,7 +1562,7 @@ export default function App() {
     }
   }
   function fmtRec(s){ const m=Math.floor(s/60), ss=s%60; return m+":"+String(ss).padStart(2,"0"); }
-  function buzz(ms=15){ try{ if(window.AndroidRec&&window.AndroidRec.vibrate){ window.AndroidRec.vibrate(ms); return; } }catch{} try{ navigator.vibrate&&navigator.vibrate(ms); }catch{} }
+  function buzz(ms=15,kind){ try{ if(kind&&vibeCfg&&vibeCfg[kind]===false) return; if(vibeCfg&&vibeCfg.master===false) return; }catch{} try{ if(window.AndroidRec&&window.AndroidRec.vibrate){ window.AndroidRec.vibrate(ms); return; } }catch{} try{ navigator.vibrate&&navigator.vibrate(ms); }catch{} }
   async function clipWrite(t){
     clipText.current=t;
     let ok=false;
@@ -1504,12 +1593,18 @@ export default function App() {
   function tbAll(){ const el=fullTaRef.current; if(!el)return; el.focus(); el.setSelectionRange(0,el.value.length); setSelBar(s=>s?{...s,hasSel:true}:s); }
   const [composerPeek, setComposerPeek] = useState(false); // редактор уехал вправо, листаем навигацию
   const [destroying, setDestroying] = useState(null);
+  const [destroyIds, setDestroyIds] = useState([]);
   const [noInputAnim, setNoInputAnim] = useState(()=>{ try{return localStorage.getItem("napp_noInputAnim")==="1";}catch{return false;} });
   const [noDelAnim, setNoDelAnim] = useState(()=>{ try{return localStorage.getItem("napp_noDelAnim")==="1";}catch{return false;} });
   const [noScrAnim, setNoScrAnim] = useState(()=>{ try{return localStorage.getItem("napp_noScrAnim")==="1";}catch{return false;} });
   const [imgCompress, setImgCompress] = useState(()=>{ try{return localStorage.getItem("napp_imgCompress")==="1";}catch{return false;} });
   const [customSelMenu, setCustomSelMenu] = useState(()=>{ try{return localStorage.getItem("napp_customSelMenu")==="1";}catch{return false;} });
   const [softInk, setSoftInk] = useState(()=>{ try{return localStorage.getItem("napp_softInk")==="1";}catch{return false;} });
+  const [vibeSh, setVibeSh] = useState(false);
+  const [vibeCfg, setVibeCfg] = useState(()=>{ try{ const v=JSON.parse(localStorage.getItem("napp_vibe")||"null"); return v||{master:true,send:true,check:true,delete:true,drag:true}; }catch{ return {master:true,send:true,check:true,delete:true,drag:true}; } });
+  function setVibe(k,val){ setVibeCfg(c=>{ const n={...c,[k]:val}; try{localStorage.setItem("napp_vibe",JSON.stringify(n));}catch{} return n; }); }
+  const [iosTrans, setIosTrans] = useState(()=>{ try{return localStorage.getItem("napp_iosTrans")==="1";}catch{return false;} });
+  function toggleIosTrans(){ setIosTrans(v=>{ const nv=!v; try{localStorage.setItem("napp_iosTrans",nv?"1":"0");}catch{} return nv; }); }
   function toggleSoftInk(){ setSoftInk(v=>{ const nv=!v; try{localStorage.setItem("napp_softInk",nv?"1":"0");}catch{} return nv; }); }
   function toggleCustomSelMenu(){ setCustomSelMenu(v=>{ const nv=!v; try{localStorage.setItem("napp_customSelMenu",nv?"1":"0");}catch{} try{ if(window.NotengerSelMenu&&window.NotengerSelMenu.setEnabled) window.NotengerSelMenu.setEnabled(nv); }catch{} return nv; }); }
   const [imgCompressPopup, setImgCompressPopup] = useState(false);
@@ -1642,7 +1737,7 @@ export default function App() {
   const DRIVE_FILE_NAME="notenger_backup.json";
   // Модули, которые можно синкать/сохранять выборочно
   const SYNC_MODULES=[
-    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion","napp_customSelMenu","napp_softInk"]},
+    {key:"settings",label:"Настройки приложения", keys:[AS_KEY,DLAUNCH_KEY,FONT_KEY,"napp_noInputAnim","napp_noDelAnim","napp_noScrAnim","napp_animSpeed","napp_iconAccent","napp_imgCompress","napp_hideVersion","napp_customSelMenu","napp_softInk","napp_iosTrans"]},
     {key:"notes",   label:"Заметки", keys:[SK]},
     {key:"drafts",  label:"Черновики", keys:[DRAFT_KEY]},
   ];
@@ -1923,6 +2018,7 @@ export default function App() {
   const [chatSearch, setChatSearch] = useState(""); // search query within current subfolder
 
   const bottomRef    = useRef(null);
+  const [justSent, setJustSent] = useState(null);
   const pinRef       = useRef(null);
   const taRef        = useRef(null);
   const fileRef      = useRef(null);
@@ -2062,7 +2158,9 @@ export default function App() {
   const snotes = chatSearch.trim()
     ? _allNotes.filter(n=>strip(n.text).toLowerCase().includes(chatSearch.trim().toLowerCase()))
     : _allNotes;
-  const pinned = subf?.notes.find(n=>n.pinned)||null;
+  const pinnedList = subf?.notes.filter(n=>n.pinned)||[];
+  const [pinIdx, setPinIdx] = useState(0);
+  const pinned = pinnedList.length ? (pinnedList[Math.min(pinIdx,pinnedList.length-1)]) : null;
   const subColor = subf?.color||"#EF6C00";
 
   function upd(fn) {
@@ -2084,16 +2182,16 @@ export default function App() {
       else { setFid(f.id); setScr("sub"); setSubSearch(""); }
       return;
     }
-    if(f.isTheme){ setFid(f.id); setSid("__top__"); setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]); setIsTyping(false);
+    if(f.isTheme){ captureNavSnapshot("push"); setFid(f.id); setSid("__top__"); setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]); setIsTyping(false);
       setNote(drafts.current["__top__"+f.id]||"");
       return;
     }
-    setFid(f.id); setScr("sub"); setSubSearch("");
+    captureNavSnapshot("push"); setFid(f.id); setScr("sub"); setSubSearch("");
   }
   function openS(s) {
     if(settingsMenu||plusMenu||hdrMenu||folderMenu||subMenu||noteCtx){ closeAllMenus(); setNoteCtx(null); return; }
     if(composerFull){ setSid(s.id); setScr("chat"); return; } // живой редактор — только навигация
-    setSid(s.id); setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]); setIsTyping(false);
+    captureNavSnapshot("push"); setSid(s.id); setScr("chat"); cancelEdit(); setChatSearch(""); setSelectMode(null); setMultiSelect([]); setIsTyping(false);
     setNote(drafts.current[s.id] || "");
   }
   function openThemeAt(folderId, subId, noteId){
@@ -2148,8 +2246,8 @@ export default function App() {
   function back()   {
     if(multiSelect.length){setMultiSelect([]);return;}
     if(selectMode){setSelectMode(null);return;}
-    if(scr==="chat"){ if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} if(!composerFull){ cancelEdit(); } setChatSearch(""); }
-    else if(scr==="sub")setScr("main");
+    if(scr==="chat"){ captureNavSnapshot("pop"); if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} if(!composerFull){ cancelEdit(); } setChatSearch(""); }
+    else if(scr==="sub"){ captureNavSnapshot("pop"); setScr("main"); }
   }
   // Аппаратная кнопка «Назад» (Android). Возвращает true, если что-то закрыли.
   function closeAllMenus(){ setSettingsMenu(false); setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); }
@@ -2189,6 +2287,7 @@ export default function App() {
     if(fontDelSh){ setFontDelSh(false); return true; }
     if(fontSh){ setFontSh(false); setFontOpen&&setFontOpen(null); setUiSh(true); return true; }
     if(animSh){ setAnimSh(false); openUiReturn(); return true; }
+    if(vibeSh){ setVibeSh(false); return true; }
     if(miscSh){ setMiscSh(false); return true; }
     if(accentSh){ setAccentSh(false); openUiReturn(); return true; }
     if(uiSh){ setUiSh(false); return true; }
@@ -2204,8 +2303,8 @@ export default function App() {
     if(multiSelect.length){ setMultiSelect([]); return true; }
     if(selectMode){ setSelectMode(null); return true; }
     if(editId && !composerFull){ cancelEdit(); return true; }
-    if(scr==="chat"){ if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} if(!composerFull) setChatSearch(""); return true; }
-    if(scr==="sub"){ setScr("main"); return true; }
+    if(scr==="chat"){ captureNavSnapshot("pop"); if(sid==="__top__"){setScr("main");setSid(null);} else {setScr("sub");} if(!composerFull) setChatSearch(""); return true; }
+    if(scr==="sub"){ captureNavSnapshot("pop"); setScr("main"); return true; }
     return false; // на главном экране — не обработали (разрешаем выход по двойному нажатию)
   }
 
@@ -2297,7 +2396,7 @@ export default function App() {
     })}));
   }
   // FLIP: захватываем позиции ДО перестановки, выполняем перестановку, затем анимируем
-  function flipReorder(selector, doReorder){
+  function flipReorder(selector, doReorder, dur=420){
     const nodes=Array.from(document.querySelectorAll(selector));
     const first={}; nodes.forEach(n=>{ const id=n.getAttribute("data-fid")||n.getAttribute("data-sid")||n.getAttribute("data-clid")||n.getAttribute("data-lmid"); first[id]=n.getBoundingClientRect().top; });
     doReorder();
@@ -2307,14 +2406,17 @@ export default function App() {
         const id=n.getAttribute("data-fid")||n.getAttribute("data-sid")||n.getAttribute("data-clid")||n.getAttribute("data-lmid");
         if(first[id]==null) return;
         if(n.getAttribute("data-dragging")==="1") return;
-        const dy=first[id]-n.getBoundingClientRect().top;
-        if(!dy) return;
-        if(n._flipping) return; // уже анимируется — не перезапускаем (убирает мерцание при частых свопах)
-        n._flipping=true;
+        // снять старый transform, чтобы измерить чистую layout-позицию
+        if(n._flipTimer){ clearTimeout(n._flipTimer); n._flipTimer=null; }
         n.style.setProperty("transition","none","important");
+        n.style.transform="";
+        const layoutTop = n.getBoundingClientRect().top;
+        const dy = (first[id] - layoutTop);
+        if(!dy){ n._flipping=false; return; }
+        n._flipping=true;
         n.style.transform=`translateY(${dy}px)`;
         void n.offsetHeight;
-        requestAnimationFrame(()=>{ n.style.setProperty("transition","transform .42s cubic-bezier(.22,1,.36,1)","important"); n.style.transform="translateY(0)"; setTimeout(()=>{ try{ n.style.removeProperty("transition"); n.style.transform=""; n._flipping=false; }catch{ n._flipping=false; } },440); });
+        requestAnimationFrame(()=>{ n.style.setProperty("transition",`transform ${dur}ms cubic-bezier(.22,1,.36,1)`,"important"); n.style.transform="translateY(0)"; n._flipTimer=setTimeout(()=>{ try{ n.style.removeProperty("transition"); n.style.transform=""; n._flipping=false; n._flipTimer=null; }catch{ n._flipping=false; n._flipTimer=null; } },dur+20); });
       });
     }); });
   }
@@ -2345,21 +2447,28 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>140){
+    if(now-dt.lastSwap>120){
       const self=document.querySelector(`[data-fid="${dt.id}"]`);
       if(!self) return;
       const sr=self.getBoundingClientRect();
-      const selfMid=sr.top+sr.height/2;
-      // ищем соседнюю строку, которую перетаскиваемая почти накрыла (>75%)
       const rows=Array.from(document.querySelectorAll("[data-fid]"));
-      let target=null;
+      let target=null, targetH=0;
       for(const r of rows){
         const id=r.getAttribute("data-fid"); if(id===dt.id) continue;
         const rr=r.getBoundingClientRect();
         const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
+        if(overlap>0 && overlap>=rr.height*0.55){ target=id; targetH=rr.height; break; }
       }
-      if(target){ flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
+      if(target){
+        // направление: цель выше или ниже перетаскиваемой
+        const tr=document.querySelector(`[data-fid="${target}"]`).getBoundingClientRect();
+        const movingDown = tr.top > sr.top;
+        flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target));
+        // после перестановки элемент сместится в потоке на высоту соседа — компенсируем базу
+        dt.y0 += movingDown ? targetH : -targetH;
+        setDragOffset(t.clientY-dt.y0);
+        dt.lastSwap=now;
+      }
     }
   }
   function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -2371,23 +2480,30 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>140){
+    if(now-dt.lastSwap>120){
       const self=document.querySelector(`[data-sid="${dt.id}"]`);
       if(!self) return;
       const sr=self.getBoundingClientRect();
       const rows=Array.from(document.querySelectorAll("[data-sid]"));
-      let target=null;
+      let target=null, targetH=0;
       for(const r of rows){
         const id=r.getAttribute("data-sid"); if(id===dt.id) continue;
         const rr=r.getBoundingClientRect();
         const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
+        if(overlap>0 && overlap>=rr.height*0.55){ target=id; targetH=rr.height; break; }
       }
-      if(target){ flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
+      if(target){
+        const tr=document.querySelector(`[data-sid="${target}"]`).getBoundingClientRect();
+        const movingDown = tr.top > sr.top;
+        flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target));
+        dt.y0 += movingDown ? targetH : -targetH;
+        setDragOffset(t.clientY-dt.y0);
+        dt.lastSwap=now;
+      }
     }
   }
   function subDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
-  function delF(id)    { upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){setFid(null);setScr("main");} }
+  function delF(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){setFid(null);setScr("main");} }
 
   // ── Subfolder CRUD ──
   function mkS(n,i,c)  { upd(d=>({...d,folders:d.folders.map(f=>f.id!==fid?f:{...f,subfolders:[...f.subfolders,{id:uid("sf"),name:n,icon:i,color:c,notes:[]}]})})); setModal(null); }
@@ -2408,7 +2524,7 @@ export default function App() {
       return f.subfolders.map(s=>s.id!==id?s:(s.pinned?{...s,pinned:false}:{...s,pinned:true,pinOrder:maxOrder+1}));
     })()})}));
   }
-  function delS(id)    { upd(d=>({...d,folders:d.folders.map(f=>f.id!==fid?f:{...f,subfolders:f.subfolders.filter(s=>s.id!==id)})})); if(sid===id){setSid(null);setScr("sub");} }
+  function delS(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.map(f=>f.id!==fid?f:{...f,subfolders:f.subfolders.filter(s=>s.id!==id)})})); if(sid===id){setSid(null);setScr("sub");} }
 
   // ── Edit in main input ──
   function startEdit(n) {
@@ -2476,10 +2592,12 @@ export default function App() {
   function send() {
     if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
     if(editId) { saveEdit(); return; }
-    updNotes(_n=>([..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined}]));
+    const nid=uid("n"); setJustSent(nid); try{buzz(10,"send");}catch{}
+    updNotes(_n=>([..._n,{id:nid,text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined}]));
     setNote(""); setPatts([]); setIsTyping(false); setTaHeight(null); manualResize.current=false; if(draftKey){ delete drafts.current[draftKey]; saveDrafts(drafts.current); }
     if(taRef.current) taRef.current.style.height="auto";
-    setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),50);
+    setTimeout(()=>bottomRef.current?.scrollIntoView({behavior:"smooth"}),120);
+    setTimeout(()=>{ setJustSent(null); },500);
   }
   // ── Multi-select ──
   // single tap in multi mode toggles membership; clearing the last one exits multi mode
@@ -2541,8 +2659,15 @@ export default function App() {
   }
   function clearMulti() { if(scrollRef.current) preserveScroll.current=scrollRef.current.scrollTop; setMultiSelect([]); setTextArmed(false); setImgSel([]); }
   function deleteMulti() {
-    const ids=new Set(multiSelect);
-    updNotes(_n=>(_n.filter(n=>!ids.has(n.id))));
+    const arr = (sid==="__top__"&&folder?.isTheme)?(folder.notes||[]):(subf?.notes||[]);
+    const chosen = arr.map((n,i)=>({n,i})).filter(x=>multiSelect.includes(x.n.id));
+    if(!chosen.length) return;
+    if(undo) commitDel();
+    const ids = chosen.map(x=>x.n.id);
+    setDestroyIds(ids);
+    setUndo({multi:chosen.map(x=>({note:x.n,idx:x.i})),fid,sid});
+    const durMs = noDelAnim?0:Math.round(spd("del",2)*1000);
+    multiDelTimer.current=setTimeout(()=>{ const set=new Set(ids); updNotesAt(fid,sid,_n=>_n.filter(x=>!set.has(x.id))); setDestroyIds([]); multiDelTimer.current=null; }, durMs+20);
     clearMulti();
   }
   function copyTextMulti(){
@@ -2592,14 +2717,19 @@ export default function App() {
   function undoDel() {
     if(!undo) return;
     const u=undo;
-    // если ещё не удалили из данных — отменяем удаление; если удалили — возвращаем
+    if(u.multi){
+      if(multiDelTimer.current){ clearTimeout(multiDelTimer.current); multiDelTimer.current=null; setDestroyIds([]); setUndo(null); return; }
+      // уже удалены — возвращаем по исходным позициям
+      updNotesAt(u.fid,u.sid,_n=>{ const arr=[..._n]; u.multi.slice().sort((a,b)=>a.idx-b.idx).forEach(m=>{ const at=Math.max(0,Math.min(m.idx,arr.length)); arr.splice(at,0,m.note); }); return arr; });
+      setDestroyIds([]); setUndo(null); return;
+    }
     if(delTimers.current[u.note.id]){ clearTimeout(delTimers.current[u.note.id]); delete delTimers.current[u.note.id]; setDestroying(null); setUndo(null); return; }
     setDestroying(null);
     updNotesAt(u.fid,u.sid,_n=>{ const arr=[..._n]; const at=Math.max(0,Math.min(u.idx, arr.length)); arr.splice(at,0,u.note); return arr; });
     setUndo(null);
   }
   function commitDel(){
-    // зафиксировать немедленно (например при удалении следующего)
+    if(undo && undo.multi){ if(multiDelTimer.current){ clearTimeout(multiDelTimer.current); multiDelTimer.current=null; const set=new Set(undo.multi.map(m=>m.note.id)); updNotesAt(undo.fid,undo.sid,_n=>_n.filter(x=>!set.has(x.id))); } setDestroyIds([]); setUndo(null); return; }
     if(undo && delTimers.current[undo.note.id]){ clearTimeout(delTimers.current[undo.note.id]); delete delTimers.current[undo.note.id]; updNotesAt(undo.fid,undo.sid,_n=>_n.filter(x=>x.id!==undo.note.id)); }
     setDestroying(null);
     setUndo(null);
@@ -2858,7 +2988,7 @@ export default function App() {
 
   return (
     <div
-      className={booting?"booting":undefined}
+      className={(booting?"booting":"")+(iosTrans?(navDir==="pop"?" iosT iosPop":" iosT"):"")}
       style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"#1A1410",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
         "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s","--input-dur":spd("input",0.38)+"s",
@@ -2912,10 +3042,41 @@ export default function App() {
         .editor-ta::selection{background:rgba(239,108,0,.35);}
         .selectable,.selectable *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;cursor:text;}
         ::-webkit-scrollbar{width:0;}
+        /* staggered появление карточек — только прозрачность (не двигаем хит-зону) */
+        @keyframes cardIn{from{opacity:0}to{opacity:1}}
+        .stagger>*{animation:cardIn .4s ease both;}
+        .stagger>*:nth-child(1){animation-delay:.03s}
+        .stagger>*:nth-child(2){animation-delay:.08s}
+        .stagger>*:nth-child(3){animation-delay:.13s}
+        .stagger>*:nth-child(4){animation-delay:.18s}
+        .stagger>*:nth-child(5){animation-delay:.23s}
+        .stagger>*:nth-child(6){animation-delay:.28s}
+        .stagger>*:nth-child(7){animation-delay:.33s}
+        .stagger>*:nth-child(8){animation-delay:.38s}
+        .stagger>*:nth-child(n+9){animation-delay:.42s}
+        /* fade-in картинок */
+        @keyframes imgFade{from{opacity:0}to{opacity:1}}
+        img[data-imgsrc]{animation:imgFade .35s ease;}
+        /* pinned баннер slide-down */
+        @keyframes pinDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
         @keyframes scrIn{from{opacity:0;transform:translateX(30px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
+        @keyframes dropGrow{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+        @keyframes msgInUp{from{opacity:0;transform:translateY(28px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes checkPop{0%{transform:scale(.6)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+        @keyframes lbZoom{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+        .msgInUp{animation:msgInUp .34s cubic-bezier(.2,.7,.2,1) both;}
+        .checkPop{animation:checkPop .32s cubic-bezier(.3,1.3,.4,1) both;}
         .scrAnim{animation-name:scrIn;animation-duration:var(--scr-dur,.6s);animation-timing-function:cubic-bezier(.05,.7,.1,1);animation-fill-mode:both;}
+        .iosT .scrAnim{animation:none!important;}
+        
+        
+        
+        
+        
+        @keyframes iosPushIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+        @keyframes iosPopIn{from{transform:translateX(-30%)}to{transform:translateX(0)}}
         @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
         @keyframes recPulse {0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
         @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -2923,7 +3084,6 @@ export default function App() {
         .row:active{background:#4A3A2A;}
         .dmi:active{background:#4A3A2A;}
         .dmi:hover{background:#332512;}
-        .row:has(button:active){background:transparent;}
         .menu-dots:active{background:#4A3A2A;border-radius:50%;}
         textarea:focus,input:focus{outline:none;}
         *{-webkit-tap-highlight-color:transparent;}
@@ -2945,7 +3105,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v271</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v365</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -2955,39 +3115,50 @@ export default function App() {
         const lnote=(()=>{ const f=data.folders.find(x=>x.id===lm.fid); if(!f)return null; if(f.isTheme) return (f.notes||[]).find(x=>x.id===lm.id); const sb=(f.subfolders||[]).find(x=>x.id===lm.sid); return sb&&(sb.notes||[]).find(x=>x.id===lm.id); })();
         const items=lnote?.checklist||[];
         const setItems=fn=>updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,checklist:fn(n.checklist||[])}:n));
-        const toggle=id=>setItems(arr=>{ const a=arr.map(x=>({...x})); const i=a.findIndex(x=>x.id===id); if(i<0)return arr; const it=a[i]; if(!it.checked){ it.checked=true; it.origIdx=i; a.splice(i,1); a.push(it); } else { it.checked=false; a.splice(i,1); const unchecked=a.filter(x=>!x.checked).length; const back=Math.min(it.origIdx??unchecked,unchecked); a.splice(back,0,it); delete it.origIdx; } return a; });
+        const toggle=id=>{ const cur=items.find(x=>x.id===id); const checking=cur&&!cur.checked; flipReorder("[data-lmid]", ()=>setItems(arr=>{ const a=arr.map(x=>({...x})); const i=a.findIndex(x=>x.id===id); if(i<0)return arr; const it=a[i]; if(!it.checked){ it.checked=true; it.origIdx=i; a.splice(i,1); a.push(it); } else { it.checked=false; a.splice(i,1); const unchecked=a.filter(x=>!x.checked).length; const back=Math.min(it.origIdx??unchecked,unchecked); a.splice(back,0,it); delete it.origIdx; } return a; }), checking?560:320); try{buzz(8,"check");}catch{} };
         const editTxt=(id,v)=>setItems(arr=>arr.map(x=>x.id===id?{...x,text:v}:x));
         return (
         <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:620,display:"flex",flexDirection:"column"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"0 12px",height:52,borderBottom:"1px solid var(--gline2,#2A2017)",flexShrink:0}}>
-            <button onClick={()=>{setListMode(null);setLmEditMode(false);}} style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,#F2EAE0)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
-            <div style={{fontWeight:600,fontSize:16,color:"var(--ink,#F2EAE0)"}}>Список</div>
-          </div>
-          <div onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd} style={{flex:1,overflowY:"auto",padding:"12px 10px"}}>
-            <input value={lnote?.clTitle||""} readOnly={!lmEditMode} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
-              placeholder="Заголовок (необязательно)"
-              style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 8px 10px",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
+          <div onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd} style={{flex:1,overflowY:"auto",padding:"12px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+            <div style={{width:"max-content",maxWidth:"calc(100% - 24px)",marginLeft:"auto",marginRight:14,boxSizing:"border-box"}}>
+            <input data-lmtitle value={lnote?.clTitle||""} readOnly={!lmEditMode} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
+              placeholder="Заголовок"
+              style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 0 10px 30px",textAlign:"left",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
             {items.map((it,idx)=>(
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
-                transform: lmDragId===it.id?`translateY(${lmDragOff}px) scale(1.03)`:"none",
+                style={{display:"flex",alignItems:"flex-start",gap:8,padding:"2px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
+                transform: lmDragId===it.id?`translateY(${lmDragOff}px) scale(1.02)`:"none",
                 transition: lmDragId===it.id?"box-shadow .18s ease":"transform .42s cubic-bezier(.16,1,.3,1)",
                 position:"relative", zIndex:lmDragId===it.id?30:1,
-                background:lmDragId===it.id?"#241B12":"transparent",borderRadius:8,
-                boxShadow:lmDragId===it.id?"0 14px 32px rgba(0,0,0,.6)":"none"}}>
-                <button onClick={()=>toggle(it.id)} style={{flexShrink:0,padding:"8px 6px 8px 4px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                background:lmDragId===it.id?"#241B12":"transparent",
+                border:"none",
+                boxShadow:lmDragId===it.id?"0 14px 32px rgba(0,0,0,.6)":"none",
+                borderRadius:8}}>
+                <button onClick={()=>toggle(it.id)} style={{flexShrink:0,padding:"8px 4px 6px 0",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
-                <input value={it.text} readOnly={!lmEditMode} onChange={e=>editTxt(it.id,e.target.value)}
-                  style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"#8A7A65":"var(--ink,#F2EAE0)",fontSize:16,fontFamily:"var(--font-msg)",textDecoration:it.checked?"line-through":"none",padding:"4px 0",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
+                    {it.checked&&<span className="checkPop" style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
+                <div style={{display:"inline-grid",minWidth:0,maxWidth:"100%",flex:"0 1 auto"}}>
+                  <span aria-hidden="true" style={{gridArea:"1/1/2/2",visibility:"hidden",whiteSpace:"pre-wrap",overflowWrap:"break-word",lineHeight:"1.35",fontSize:16,fontFamily:"var(--font-msg)",padding:"6px 0",minWidth:"1ch"}}>{(it.text||" ")+"\u200b"}</span>
+                  <textarea value={it.text} readOnly={!lmEditMode} rows={1}
+                    onChange={e=>editTxt(it.id,e.target.value)} data-lmrow={idx}
+                    style={{gridArea:"1/1/2/2",width:"100%",background:"transparent",border:"none",outline:"none",textAlign:"left",resize:"none",overflow:"hidden",whiteSpace:"pre-wrap",overflowWrap:"break-word",lineHeight:"1.35",color:it.checked?"#8A7A65":"var(--ink,#F2EAE0)",fontSize:16,fontFamily:"var(--font-msg)",textDecoration:it.checked?"line-through":"none",padding:"6px 0",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
+                </div>
               </div>
             ))}
+            </div>
           </div>
-          <button onClick={()=>setLmEditMode(v=>!v)} title={lmEditMode?"Готово":"Редактировать"}
-            style={{position:"absolute",right:18,bottom:24,width:54,height:54,borderRadius:"50%",background:"#EF6C00",border:"none",
-              color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 20px rgba(0,0,0,.5)"}}>
-            <span style={{display:"flex"}}>{lmEditMode?IC.check:IC.edit}</span></button>
+          {/* Нижняя шапка списка — скруглённая, как остальные панели */}
+          <div data-lmfooter style={{display:"flex",alignItems:"center",gap:8,padding:"0 12px",height:52,
+            background:"#2A2017",border:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",
+            boxShadow:"0 -4px 16px rgba(0,0,0,.35)",flexShrink:0,position:"relative"}}>
+            <button onClick={()=>{setListMode(null);setLmEditMode(false);}} style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,#F2EAE0)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
+            <div style={{flex:1,fontWeight:600,fontSize:16,color:"var(--ink,#F2EAE0)"}}>Список</div>
+            <button onClick={()=>{ const entering=!lmEditMode; setLmEditMode(entering); if(entering){ setTimeout(()=>{ const el=document.querySelector('[data-lmrow="0"]'); if(el){ el.focus(); try{el.setSelectionRange(el.value.length,el.value.length);}catch{} } },80); } }} title={lmEditMode?"Готово":"Редактировать"}
+              style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 1px 5px rgba(239,108,0,.3)":"none")}}>
+              <span style={{display:"flex",transform:"scale(.82)"}}>{lmEditMode?IC.check:IC.edit}</span></button>
+          </div>
         </div>
         );
       })()}
@@ -3119,8 +3290,9 @@ export default function App() {
                 style={{position:"absolute",top:"calc(100% + 8px)",left:0}}
                 items={[
                   {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
-                  {ic:IC.sparkle,label:"Интерфейс",fn:()=>{ uiNoAnim.current=false; setUiSh(true); }},
-                {ic:IC.dots,label:"Прочее",fn:()=>setMiscSh(true)},
+                  {ic:IC.palette,label:"Интерфейс",fn:()=>{ uiNoAnim.current=false; setUiSh(true); }},
+                {ic:IC.vibrate,label:"Вибрация",fn:()=>setVibeSh(true)},
+                {ic:IC.sliders,label:"Прочее",fn:()=>setMiscSh(true)},
                 ]}/>}
             </div>
           )}
@@ -3207,12 +3379,12 @@ export default function App() {
 
       {/* Pinned banner */}
       {scr==="chat"&&pinned&&!(isTyping&&note.length>0)&&(
-        <PinnedBanner note={pinned} color={subColor} onJump={()=>jumpTo(pinned.id)}/>
+        <PinnedBanner note={pinned} color={subColor} count={pinnedList.length} index={Math.min(pinIdx,pinnedList.length-1)}
+          onJump={()=>{ jumpTo(pinned.id); if(pinnedList.length>1) setPinIdx(i=>(i+1)%pinnedList.length); }}/>
       )}
 
-      {/* ═══ FOLDERS ═══ */}
       {scr==="main"&&(
-        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={noScrAnim?"scr-main":"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={((noScrAnim||navTick===0)?"":"scrAnim ")+((staggerOn&&!dragActive)?"stagger":"")} key={noScrAnim?"scr-main":"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
@@ -3276,8 +3448,9 @@ export default function App() {
               style={{position:"absolute",bottom:"calc(100% + 8px)",left:0}}
               items={[
                 {ic:IC.save,label:"Резервная копия данных",fn:()=>setExpSh(true)},
-                {ic:IC.sparkle,label:"Интерфейс",fn:()=>{ uiNoAnim.current=false; setUiSh(true); }},
-                {ic:IC.dots,label:"Прочее",fn:()=>setMiscSh(true)},
+                {ic:IC.palette,label:"Интерфейс",fn:()=>{ uiNoAnim.current=false; setUiSh(true); }},
+                {ic:IC.vibrate,label:"Вибрация",fn:()=>setVibeSh(true)},
+                {ic:IC.sliders,label:"Прочее",fn:()=>setMiscSh(true)},
               ]}/>}
           </div>
           {/* Центрированный FAB + */}
@@ -3285,20 +3458,20 @@ export default function App() {
             style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",zIndex:5,
               width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",
               fontSize:24,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 1px 5px rgba(239,108,0,.3)":"none")}}>{IC.plus}</button>
-          {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
-            style={{position:"absolute",bottom:"calc(100% + 10px)",left:"50%",transform:"translateX(-50%)"}}
+          {plusMenu&&<div style={{position:"absolute",bottom:"calc(100% + 10px)",left:"50%",transform:"translateX(-50%)"}}>
+            <DropMenu onClose={()=>setPlusMenu(false)}
+            style={{position:"relative",transformOrigin:"bottom center"}}
             items={[
               {ic:IC.fFolder,label:"Новая категория",fn:()=>setModal("mkF")},
               {ic:IC.fNote,label:"Новая тема",fn:()=>setModal("mkTop")},
-            ]}/>}
+            ]}/></div>}
           <button onClick={()=>setGlobalSearch("")} title="Поиск по сообщениям"
             style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"#B0A498",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{IC.search}</button>
         </div>
       )}
 
-      {/* ═══ SUBFOLDERS ═══ */}
       {scr==="sub"&&folder&&(
-        <div className={(noScrAnim||navTick===0)?undefined:"scrAnim"} key={noScrAnim?"scr-sub":"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={((noScrAnim||navTick===0)?"":"scrAnim ")+((staggerOn&&!dragActive)?"stagger":"")} key={noScrAnim?"scr-sub":"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
@@ -3387,12 +3560,13 @@ export default function App() {
             <button data-menutrigger onClick={()=>{ setSettingsMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setPlusMenu(v=>!v); }} title="Создать"
               style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",
                 fontSize:22,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||(iconAccent==="orange"?"0 1px 5px rgba(239,108,0,.3)":"none")}}>{IC.plus}</button>
-            {plusMenu&&<DropMenu onClose={()=>setPlusMenu(false)}
-              style={{position:"absolute",bottom:"calc(100% + 8px)",left:"50%",transform:"translateX(-50%)"}}
+            {plusMenu&&<div style={{position:"absolute",bottom:"calc(100% + 8px)",left:"50%",transform:"translateX(-50%)"}}>
+              <DropMenu onClose={()=>setPlusMenu(false)}
+              style={{position:"relative",transformOrigin:"bottom center"}}
               items={[
                 {ic:IC.fFolder,label:"Новая категория",fn:()=>setModal("mkF")},
                 {ic:IC.fNote,label:"Новая тема",fn:()=>setModal("mkS")},
-              ]}/>}
+              ]}/></div>}
           </div>
         </div>
       )}
@@ -3426,8 +3600,8 @@ export default function App() {
             return (
             <div key={n.id}
               ref={el=>{ bubbleEls.current[n.id]=el; if(n.pinned)pinRef.current=el; }}
-              data-noteid={n.id} className={"nb"+((destroying===n.id&&!noDelAnim)?" destroying":"")}
-              style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:0,pointerEvents:destroying===n.id?"none":"auto"}}>
+              data-noteid={n.id} className={"nb"+(((destroying===n.id||destroyIds.includes(n.id))&&!noDelAnim)?" destroying":"")+(justSent===n.id?" msgInUp":"")}
+              style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:0,pointerEvents:(destroying===n.id||destroyIds.includes(n.id))?"none":"auto"}}>
               {n.pinned&&<div style={{fontSize:11,color:subColor,marginBottom:2,paddingRight:2,display:"flex",alignItems:"center",gap:4}}><span style={{display:"flex",transform:"scale(.62)",margin:"-3px"}}>{IC.pin}</span>закреплено</div>}
 
               <div onClick={(e)=>{ if(e.target!==e.currentTarget) return;
@@ -3476,7 +3650,8 @@ export default function App() {
                     borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))?"3px":"6px 14px 4px",
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",opacity:editId===n.id?.5:1,
                     border:(highlightId===n.id)?"1px solid #F5A623":(selActive||isMulti)?"1px solid #EF6C00":"1px solid transparent",
-                    transition:highlightId===n.id?"border .4s,background .4s":"none"}}>
+                    boxShadow:highlightId===n.id?"0 0 0 2px rgba(245,166,35,.45), 0 0 18px rgba(245,166,35,.35)":"none",
+                    transition:"border .5s ease, background .5s ease, box-shadow .5s ease"}}>
                   {editId===n.id&&<div style={{fontSize:10.5,color:"#EF6C00",fontWeight:600,marginBottom:3,opacity:1}}>Редактируется вами…</div>}
                   {n.text&&n.checklist&&n.checklist.length>0&&(
                     <div className={((selActive&&textArmed)||multiActive)?"selectable":undefined}
@@ -3498,8 +3673,8 @@ export default function App() {
                         </div>
                       ))}
                       <button onClick={e=>{ e.stopPropagation(); setListMode({fid,sid,id:n.id}); }}
-                        style={{marginTop:6,display:"flex",alignItems:"center",gap:6,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",borderRadius:9,padding:"6px 10px",color:"#EF6C00",fontSize:12,cursor:"pointer"}}>
-                        <span style={{display:"flex",transform:"scale(.8)"}}>{IC.check}</span> Открыть список</button>
+                        style={{marginTop:8,width:"100%",display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,background:"transparent",border:"none",borderTop:"1px solid var(--gline,#4A3A2A)",borderRadius:0,padding:"10px 2px 2px",color:"#EF6C00",fontSize:13,fontWeight:600,cursor:"pointer",letterSpacing:.2}}>
+                        Открыть список <span style={{display:"flex",transform:"scale(.7)"}}>{IC.arrRight}</span></button>
                     </div>
                   )}
                   {n.text&&!(n.checklist&&n.checklist.length>0)&&(n.capPos||"top")==="top"&&(
@@ -3647,7 +3822,7 @@ export default function App() {
                     <button onClick={()=>toggleClItem(idx)}
                       style={{flexShrink:0,padding:"8px 6px 8px 4px",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <span style={{width:22,height:22,borderRadius:6,border:"2px solid "+(it.checked?"#EF6C00":"#6A5A48"),background:it.checked?"#EF6C00":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        {it.checked&&<span style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
+                        {it.checked&&<span className="checkPop" style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
                     <input value={it.text} readOnly={clEditId!==it.id}
                       ref={el=>{ if(el) clItemRefs.current[it.id]=el; }}
                       onBlur={()=>{ if(clEditId===it.id) setClEditId(null); }}
@@ -3958,7 +4133,7 @@ export default function App() {
       {/* Глобальное подтверждение голосового (для записи кнопкой микрофона в шапке) */}
       {pendingVoice && !composerFull && (
         <div onClick={discardPendingVoice} style={{position:"fixed",inset:0,zIndex:610,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",borderTop:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .2s ease"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"#2A2017",borderTop:"1px solid var(--gline,#4A3A2A)",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .3s cubic-bezier(.2,.9,.3,1)"}}>
             <div style={{fontSize:13,color:"#B0A498"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
             <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
             <div style={{display:"flex",gap:10}}>
@@ -3980,7 +4155,7 @@ export default function App() {
         return (
         <div onClick={closeLightbox} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:600,
           display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <img src={lightbox} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8}}/>
+          <img src={lightbox} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8,animation:"lbZoom .26s cubic-bezier(.2,.8,.2,1)"}}/>
           {meta && (meta.size||meta.origSize) && (
             <div style={{position:"absolute",left:16,bottom:24,fontSize:11,lineHeight:1.5,color:"#C8BCAE",textShadow:"0 1px 3px rgba(0,0,0,.9)"}}>
               <div>{hb(meta.origSize||meta.size)}</div>
@@ -4130,7 +4305,7 @@ export default function App() {
             style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:(syncCfg.modules&&syncCfg.modules[m.key])?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-              <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+              <div style={{position:"absolute",top:2,left:(syncCfg.modules&&syncCfg.modules[m.key])?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
             </div>
           </div>
         ))}
@@ -4140,7 +4315,7 @@ export default function App() {
             style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#2A2017",borderRadius:10,border:"1px solid var(--gline,#4A3A2A)",cursor:avail?"pointer":"default",opacity:avail?1:.4,marginBottom:6}}>
             <span style={{flex:1,fontSize:14,color:"var(--ink,#F2EAE0)"}}>{m.label}</span>
             <div style={{width:40,height:24,borderRadius:12,background:on?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-              <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+              <div style={{position:"absolute",top:2,left:on?18:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
             </div>
           </div>
         ); })}
@@ -4180,24 +4355,48 @@ export default function App() {
               <div onClick={toggleHideVersion} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
                 <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Скрыть номер версии</span>
                 <div style={{width:46,height:26,borderRadius:13,background:hideVersion?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-                  <div style={{position:"absolute",top:2,left:hideVersion?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                  <div style={{position:"absolute",top:2,left:hideVersion?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
                 </div>
               </div>
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 14px"}}>Скрывает метку «beta v…» в углу экрана.</div>
               <div onClick={toggleImgCompress} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
                 <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Сжимать изображения</span>
                 <div style={{width:46,height:26,borderRadius:13,background:imgCompress?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-                  <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                  <div style={{position:"absolute",top:2,left:imgCompress?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
                 </div>
               </div>
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Новые добавляемые изображения будут автоматически уменьшаться в размере. Уже добавленные не затрагиваются.</div>
               <div onClick={toggleCustomSelMenu} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer"}}>
                 <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Своё меню выделения текста</span>
                 <div style={{width:46,height:26,borderRadius:13,background:customSelMenu?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-                  <div style={{position:"absolute",top:2,left:customSelMenu?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                  <div style={{position:"absolute",top:2,left:customSelMenu?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
                 </div>
               </div>
               <div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px"}}>Заменяет системное меню (Копировать / Вставить и т.д.) на компактное со значками. Применяется после перезапуска приложения.</div>
+            </Sheet>
+            <Sheet open={vibeSh} onClose={()=>setVibeSh(false)} title="Вибрация">
+              {[
+                {k:"master",label:"Вибрация включена",hint:"Главный выключатель тактильного отклика."},
+                {k:"send",label:"При отправке сообщения"},
+                {k:"check",label:"При отметке пункта списка"},
+                {k:"delete",label:"При удалении"},
+                {k:"drag",label:"При захвате для перетаскивания"},
+              ].map(row=>{
+                const on = row.k==="master" ? vibeCfg.master!==false : (vibeCfg.master!==false && vibeCfg[row.k]!==false);
+                const dis = row.k!=="master" && vibeCfg.master===false;
+                return (
+                  <div key={row.k}>
+                    <div onClick={()=>{ if(dis) return; setVibe(row.k, !(vibeCfg[row.k]!==false)); try{buzz(12,"master");}catch{} }}
+                      style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",display:"flex",alignItems:"center",gap:12,cursor:dis?"default":"pointer",opacity:dis?.45:1,marginBottom:row.hint?0:10}}>
+                      <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>{row.label}</span>
+                      <div style={{width:46,height:26,borderRadius:13,background:on?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
+                        <div style={{position:"absolute",top:2,left:on?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
+                      </div>
+                    </div>
+                    {row.hint&&<div style={{fontSize:12,color:"#8A7A65",padding:"8px 4px 14px"}}>{row.hint}</div>}
+                  </div>
+                );
+              })}
             </Sheet>
             {imgCompressPopup && (
               <div onClick={()=>setImgCompressPopup(false)} style={{position:"fixed",inset:0,zIndex:700,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
@@ -4255,7 +4454,7 @@ export default function App() {
             <div key={it.key} onClick={it.toggle} style={{background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",padding:"14px",marginBottom:10,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
               <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>{it.label}</span>
               <div style={{width:46,height:26,borderRadius:13,background:enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-                <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+                <div style={{position:"absolute",top:2,left:enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
               </div>
             </div>
           );
@@ -4271,7 +4470,7 @@ export default function App() {
           style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
           <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Синхронизация с Google Диском</span>
           <div style={{width:46,height:26,borderRadius:13,background:syncCfg.enabled?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-            <div style={{position:"absolute",top:2,left:syncCfg.enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            <div style={{position:"absolute",top:2,left:syncCfg.enabled?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
           </div>
         </div>
         <div style={{fontSize:12,color:"#6A5A48",padding:"0 4px 8px",lineHeight:1.5}}>Данные хранятся в скрытой папке приложения на вашем Google Диске и используют ваше место. По умолчанию выключено.</div>
@@ -4302,7 +4501,7 @@ export default function App() {
             style={{display:"flex",alignItems:"center",gap:12,padding:"12px 4px",cursor:"pointer"}}>
             <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Автоматически</span>
             <div style={{width:46,height:26,borderRadius:13,background:syncCfg.auto?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-              <div style={{position:"absolute",top:2,left:syncCfg.auto?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+              <div style={{position:"absolute",top:2,left:syncCfg.auto?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
             </div>
           </div>
 
@@ -4333,7 +4532,7 @@ export default function App() {
         <div onClick={toggleSoftInk} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",background:"#2A2017",borderRadius:12,border:"1px solid var(--gline,#4A3A2A)",cursor:"pointer",marginBottom:14}}>
           <span style={{flex:1,fontSize:15,color:"var(--ink,#F2EAE0)"}}>Приглушённый шрифт</span>
           <div style={{width:46,height:26,borderRadius:13,background:softInk?"#EF6C00":"#4A3A2A",position:"relative",transition:"background .2s",flexShrink:0}}>
-            <div style={{position:"absolute",top:2,left:softInk?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            <div style={{position:"absolute",top:2,left:softInk?22:2,width:22,height:22,borderRadius:"50%",background:"#fff",transition:"left .28s cubic-bezier(.3,1.4,.4,1)"}}/>
           </div>
         </div>
         <div style={{fontSize:12,color:"#8A7A65",padding:"0 4px 14px"}}>Делает текст мягче — не ярко-белым, а приглушённым, приятнее для глаз.</div>
