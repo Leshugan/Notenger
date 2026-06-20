@@ -2384,18 +2384,19 @@ export default function App() {
         const id=n.getAttribute("data-fid")||n.getAttribute("data-sid")||n.getAttribute("data-clid")||n.getAttribute("data-lmid");
         if(first[id]==null) return;
         if(n.getAttribute("data-dragging")==="1") return;
-        // снять старый transform, чтобы измерить чистую layout-позицию
+        const wasFlipping=n._flipping;                     // элемент уже ехал — его догнали
         if(n._flipTimer){ clearTimeout(n._flipTimer); n._flipTimer=null; }
         n.style.setProperty("transition","none","important");
         n.style.transform="";
         const layoutTop = n.getBoundingClientRect().top;
         const dy = (first[id] - layoutTop);
         if(!dy){ n._flipping=false; return; }
-        if(Math.abs(dy)>2000){ n._flipping=false; return; }   // аномальный скачок — не анимируем
+        if(Math.abs(dy)>2000){ n._flipping=false; return; }
+        const thisDur = wasFlipping ? Math.max(110, Math.round(dur*0.32)) : dur;  // догнанный доезжает быстрее
         n._flipping=true;
         n.style.transform=`translateY(${dy}px)`;
         void n.offsetHeight;
-        requestAnimationFrame(()=>{ n.style.setProperty("transition",`transform ${dur}ms cubic-bezier(.22,1,.36,1)`,"important"); n.style.transform="translateY(0)"; n._flipTimer=setTimeout(()=>{ try{ n.style.removeProperty("transition"); n.style.transform=""; n._flipping=false; n._flipTimer=null; }catch{ n._flipping=false; n._flipTimer=null; } },dur+20); });
+        requestAnimationFrame(()=>{ n.style.setProperty("transition",`transform ${thisDur}ms cubic-bezier(.22,1,.36,1)`,"important"); n.style.transform="translateY(0)"; n._flipTimer=setTimeout(()=>{ try{ n.style.removeProperty("transition"); n.style.transform=""; n._flipping=false; n._flipTimer=null; }catch{ n._flipping=false; n._flipTimer=null; } },thisDur+20); });
       });
     }); });
   }
@@ -3068,7 +3069,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v411</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v415</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
