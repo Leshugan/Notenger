@@ -1253,17 +1253,16 @@ export default function App() {
     dt.curD=D;
     self.style.transform=`translateY(${D}px)`;   // прямо в DOM — без задержки React (важно для APK)
     const now=Date.now();
-    if(now-dt.lastSwap>140){
-      const sr=self.getBoundingClientRect();
+    if(now-dt.lastSwap>200){
       const rows=Array.from(document.querySelectorAll("[data-lmid]"));
       let target=null;
       for(const r of rows){
         const id=r.getAttribute("data-lmid"); if(id===dt.id) continue;
+        if(r._flipping) continue;
         const rr=r.getBoundingClientRect();
-        const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
+        if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
-      if(target){ flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; }
+      if(target){ dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; }); dt.lastSwap=now; }
     }
   }
   function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-lmid="${dt.id}"]`); if(el) el.style.transform=""; } lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
@@ -3074,7 +3073,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v416</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v417</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
