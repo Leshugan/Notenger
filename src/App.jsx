@@ -1253,7 +1253,7 @@ export default function App() {
     dt.curD=D;
     self.style.transform=`translateY(${D}px)`;   // прямо в DOM — без задержки React (важно для APK)
     const now=Date.now();
-    if(now-dt.lastSwap>200){
+    if(now-dt.lastSwap>90){
       const rows=Array.from(document.querySelectorAll("[data-lmid]"));
       let target=null;
       for(const r of rows){
@@ -2438,7 +2438,7 @@ export default function App() {
     dt.curD=D;
     self.style.transform=`translateY(${D}px) scale(1.07)`;
     const now=Date.now();
-    if(now-dt.lastSwap>200){
+    if(now-dt.lastSwap>90){
       const rows=Array.from(document.querySelectorAll("[data-fid]"));
       let target=null;
       for(const r of rows){
@@ -2466,7 +2466,7 @@ export default function App() {
     dt.curD=D;
     self.style.transform=`translateY(${D}px) scale(1.07)`;
     const now=Date.now();
-    if(now-dt.lastSwap>200){
+    if(now-dt.lastSwap>90){
       const rows=Array.from(document.querySelectorAll("[data-sid]"));
       let target=null;
       for(const r of rows){
@@ -3081,7 +3081,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v419</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v420</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
