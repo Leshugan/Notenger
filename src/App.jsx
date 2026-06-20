@@ -1263,12 +1263,11 @@ export default function App() {
         if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
       if(target){
-        // мини-FLIP только для соседей (перетаскиваемый не трогаем — им управляет прямой DOM)
-        const sib=Array.from(document.querySelectorAll("[data-lmid]")).filter(n=>n.getAttribute("data-lmid")!==dt.id);
-        const firstTop={}; sib.forEach(n=>{ firstTop[n.getAttribute("data-lmid")]=n.getBoundingClientRect().top; });
+        const sibAll=Array.from(document.querySelectorAll("[data-lmid]")).filter(n=>n.getAttribute("data-lmid")!==dt.id);
+        const firstTop={}; sibAll.forEach(n=>{ const id=n.getAttribute("data-lmid"); n.style.transition="none"; const tf=n.style.transform; n.style.transform=""; firstTop[id]=n.getBoundingClientRect().top; n.style.transform=tf; });
         dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; });
         dt.lastSwap=now;
-        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+        setTimeout(()=>{
           const sib2=Array.from(document.querySelectorAll("[data-lmid]")).filter(n=>n.getAttribute("data-lmid")!==dt.id);
           sib2.forEach(n=>{
             const id=n.getAttribute("data-lmid"); if(firstTop[id]==null) return;
@@ -1282,7 +1281,7 @@ export default function App() {
             const done=()=>{ n.style.transition=""; n.style.transform=""; n.removeEventListener("transitionend",done); };
             n.addEventListener("transitionend",done);
           });
-        }); });
+        },0);
       }
     }
   }
@@ -3109,7 +3108,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v405</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v407</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
