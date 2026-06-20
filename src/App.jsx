@@ -1244,11 +1244,16 @@ export default function App() {
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    setLmDragOff(t.clientY-dt.y0);
+    const self=document.querySelector(`[data-lmid="${dt.id}"]`);
+    if(!self) return;
+    const curD=dt.curD||0;
+    const rect=self.getBoundingClientRect();
+    const cleanMid=(rect.top-curD)+rect.height/2;
+    const D=t.clientY-cleanMid;            // строка строго под пальцем, считается от истины каждый кадр
+    dt.curD=D;
+    self.style.transform=`translateY(${D}px)`;   // прямо в DOM — без задержки React (важно для APK)
     const now=Date.now();
     if(now-dt.lastSwap>140){
-      const self=document.querySelector(`[data-lmid="${dt.id}"]`);
-      if(!self) return;
       const sr=self.getBoundingClientRect();
       const rows=Array.from(document.querySelectorAll("[data-lmid]"));
       let target=null;
@@ -1258,10 +1263,10 @@ export default function App() {
         const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
         if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
       }
-      if(target){ flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; dt.y0=t.clientY; setLmDragOff(0); }
+      if(target){ flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; }
     }
   }
-  function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt&&dt.t)clearTimeout(dt.t); lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
+  function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-lmid="${dt.id}"]`); if(el) el.style.transform=""; } lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
   function lmDragStart(idx,e,items,setItems){
     e.stopPropagation();
     let y0=e.touches[0].clientY; let cur=idx;
@@ -3069,7 +3074,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v415</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v416</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3094,7 +3099,7 @@ export default function App() {
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
                 style={{display:"flex",alignItems:"flex-start",gap:8,padding:"2px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
-                transform: lmDragId===it.id?`translateY(${lmDragOff}px)`:"none",
+                transform: undefined,
                 transition: lmDragId===it.id?"box-shadow .18s ease":"transform 180ms cubic-bezier(.2,.8,.2,1)",
                 position:"relative", zIndex:lmDragId===it.id?30:1,
                 background:lmDragId===it.id?"#241B12":"transparent",
