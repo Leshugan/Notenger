@@ -1268,13 +1268,13 @@ export default function App() {
         const firstTop={}; sib.forEach(n=>{ firstTop[n.getAttribute("data-lmid")]=n.getBoundingClientRect().top; });
         dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; });
         dt.lastSwap=now;
-        requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
           const sib2=Array.from(document.querySelectorAll("[data-lmid]")).filter(n=>n.getAttribute("data-lmid")!==dt.id);
           sib2.forEach(n=>{
             const id=n.getAttribute("data-lmid"); if(firstTop[id]==null) return;
+            n.style.transition="none"; n.style.transform="";
             const dy=firstTop[id]-n.getBoundingClientRect().top;
             if(!dy) return;
-            n.style.transition="none";
             n.style.transform=`translateY(${dy}px)`;
             void n.offsetHeight;
             n.style.transition="transform 200ms cubic-bezier(.2,.8,.2,1)";
@@ -1282,7 +1282,7 @@ export default function App() {
             const done=()=>{ n.style.transition=""; n.style.transform=""; n.removeEventListener("transitionend",done); };
             n.addEventListener("transitionend",done);
           });
-        });
+        }); });
       }
     }
   }
@@ -3109,7 +3109,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v404</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v405</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
