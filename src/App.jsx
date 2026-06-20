@@ -2429,45 +2429,53 @@ export default function App() {
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    setDragOffset(t.clientY-dt.y0);
+    const self=document.querySelector(`[data-fid="${dt.id}"]`);
+    if(!self) return;
+    const curD=dt.curD||0;
+    const rect=self.getBoundingClientRect();
+    const cleanMid=(rect.top-curD)+rect.height/2;
+    const D=t.clientY-cleanMid;
+    dt.curD=D;
+    self.style.transform=`translateY(${D}px) scale(1.07)`;
     const now=Date.now();
-    if(now-dt.lastSwap>140){
-      const self=document.querySelector(`[data-fid="${dt.id}"]`);
-      if(!self) return;
-      const sr=self.getBoundingClientRect();
+    if(now-dt.lastSwap>200){
       const rows=Array.from(document.querySelectorAll("[data-fid]"));
       let target=null;
       for(const r of rows){
         const id=r.getAttribute("data-fid"); if(id===dt.id) continue;
+        if(r._flipping) continue;
         const rr=r.getBoundingClientRect();
-        const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
+        if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
-      if(target){ flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
+      if(target){ reorderPinFolder(dt.id,target); dt.lastSwap=now; }
     }
   }
-  function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
+  function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-fid="${dt.id}"]`); if(el) el.style.transform=""; } dragTouch.current=null; setDragActive(null); setDragOffset(0); }
   function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function subDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    setDragOffset(t.clientY-dt.y0);
+    const self=document.querySelector(`[data-sid="${dt.id}"]`);
+    if(!self) return;
+    const curD=dt.curD||0;
+    const rect=self.getBoundingClientRect();
+    const cleanMid=(rect.top-curD)+rect.height/2;
+    const D=t.clientY-cleanMid;
+    dt.curD=D;
+    self.style.transform=`translateY(${D}px) scale(1.07)`;
     const now=Date.now();
-    if(now-dt.lastSwap>140){
-      const self=document.querySelector(`[data-sid="${dt.id}"]`);
-      if(!self) return;
-      const sr=self.getBoundingClientRect();
+    if(now-dt.lastSwap>200){
       const rows=Array.from(document.querySelectorAll("[data-sid]"));
       let target=null;
       for(const r of rows){
         const id=r.getAttribute("data-sid"); if(id===dt.id) continue;
+        if(r._flipping) continue;
         const rr=r.getBoundingClientRect();
-        const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
+        if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
-      if(target){ flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
+      if(target){ reorderPinSub(dt.id,target); dt.lastSwap=now; }
     }
   }
   function subDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -3073,7 +3081,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v417</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v418</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3369,7 +3377,7 @@ export default function App() {
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===f.id?"#33271B":"#2A2017",
                   border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
-                  transform:dragActive===f.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
+                  transform:dragActive===f.id?undefined:"none",
                   transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
                   boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:f.isTheme?22:12,
@@ -3456,7 +3464,7 @@ export default function App() {
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===s.id?"#33271B":"#2A2017",
                   border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
-                  transform:dragActive===s.id?`translateY(${dragOffset}px) scale(1.07)`:"none",
+                  transform:dragActive===s.id?undefined:"none",
                   transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
                   boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:22,
