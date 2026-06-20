@@ -2382,13 +2382,13 @@ export default function App() {
     const nodes=Array.from(document.querySelectorAll(selector));
     const first={}; nodes.forEach(n=>{ const id=n.getAttribute("data-fid")||n.getAttribute("data-sid")||n.getAttribute("data-clid")||n.getAttribute("data-lmid"); first[id]=n.getBoundingClientRect().top; });
     doReorder();
-    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
       const nodes2=Array.from(document.querySelectorAll(selector));
       nodes2.forEach(n=>{
         const id=n.getAttribute("data-fid")||n.getAttribute("data-sid")||n.getAttribute("data-clid")||n.getAttribute("data-lmid");
         if(first[id]==null) return;
         if(n.getAttribute("data-dragging")==="1") return;
-        const wasFlipping=n._flipping;                     // элемент уже ехал — его догнали
+        const wasFlipping=n._flipping;
         if(n._flipTimer){ clearTimeout(n._flipTimer); n._flipTimer=null; }
         n.style.setProperty("transition","none","important");
         n.style.transform="";
@@ -2396,13 +2396,16 @@ export default function App() {
         const dy = (first[id] - layoutTop);
         if(!dy){ n._flipping=false; return; }
         if(Math.abs(dy)>2000){ n._flipping=false; return; }
-        const thisDur = wasFlipping ? Math.max(110, Math.round(dur*0.32)) : dur;  // догнанный доезжает быстрее
+        const thisDur = wasFlipping ? Math.max(110, Math.round(dur*0.32)) : dur;
         n._flipping=true;
+        // ставим элемент в старую позицию и СИНХРОННО запускаем переход (без второго rAF — нет перескока)
         n.style.transform=`translateY(${dy}px)`;
         void n.offsetHeight;
-        requestAnimationFrame(()=>{ n.style.setProperty("transition",`transform ${thisDur}ms cubic-bezier(.22,1,.36,1)`,"important"); n.style.transform="translateY(0)"; n._flipTimer=setTimeout(()=>{ try{ n.style.removeProperty("transition"); n.style.transform=""; n._flipping=false; n._flipTimer=null; }catch{ n._flipping=false; n._flipTimer=null; } },thisDur+20); });
+        n.style.setProperty("transition",`transform ${thisDur}ms cubic-bezier(.22,1,.36,1)`,"important");
+        n.style.transform="translateY(0)";
+        n._flipTimer=setTimeout(()=>{ try{ n.style.removeProperty("transition"); n.style.transform=""; n._flipping=false; n._flipTimer=null; }catch{ n._flipping=false; n._flipTimer=null; } },thisDur+20);
       });
-    }); });
+    });
   }
   function flipRows(selector){
     const nodes=Array.from(document.querySelectorAll(selector));
@@ -3081,7 +3084,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v420</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v421</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
