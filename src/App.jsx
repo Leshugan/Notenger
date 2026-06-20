@@ -2509,24 +2509,6 @@ export default function App() {
     };
     requestAnimationFrame(run);
   }
-  function flipRows(selector){
-    const nodes=Array.from(document.querySelectorAll(selector));
-    const first={}; nodes.forEach(n=>{ const id=n.getAttribute("data-fid")||n.getAttribute("data-sid"); first[id]=n.getBoundingClientRect().top; });
-    requestAnimationFrame(()=>{
-      const nodes2=Array.from(document.querySelectorAll(selector));
-      nodes2.forEach(n=>{
-        const id=n.getAttribute("data-fid")||n.getAttribute("data-sid");
-        if(first[id]==null) return;
-        const dy=first[id]-n.getBoundingClientRect().top;
-        if(!dy) return;
-        if(n.getAttribute("data-dragging")==="1") return; // перетаскиваемую не трогаем
-        n.style.transition="none";
-        n.style.transform=`translateY(${dy}px)`;
-        void n.offsetHeight; // форс reflow — иначе переход не проигрывается
-        requestAnimationFrame(()=>{ n.style.transition="transform .55s cubic-bezier(.45,0,.2,1)"; n.style.transform=""; });
-      });
-    });
-  }
   // Перетаскивание касанием (long-press + drag): определяем строку под пальцем
   function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function folderDragTouchMove(e){
@@ -3188,7 +3170,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v448</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v449</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
