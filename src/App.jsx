@@ -2421,27 +2421,7 @@ export default function App() {
   const dragTouch = useRef(null);
   const [dragActive, setDragActive] = useState(null);
   const [dragOffset, setDragOffset] = useState(0);
-  function reorderPinFolder(srcId,dstId){
-    upd(d=>{
-      const arr=d.folders.map(f=>f.id);
-      const si=arr.indexOf(srcId), di=arr.indexOf(dstId);
-      if(si<0||di<0) return d;
-      arr.splice(si,1); arr.splice(di,0,srcId);
-      const order={}; arr.forEach((id,i)=>order[id]=i);
-      return {...d,folders:d.folders.slice().sort((a,b)=>order[a.id]-order[b.id])};
-    });
-  }
-  function reorderPinSub(srcId,dstId){
-    upd(d=>({...d,folders:d.folders.map(f=>{
-      if(f.id!==fid) return f;
-      const arr=f.subfolders.map(s=>s.id);
-      const si=arr.indexOf(srcId), di=arr.indexOf(dstId);
-      if(si<0||di<0) return f;
-      arr.splice(si,1); arr.splice(di,0,srcId);
-      const order={}; arr.forEach((id,i)=>order[id]=i);
-      return {...f,subfolders:f.subfolders.slice().sort((a,b)=>order[a.id]-order[b.id])};
-    })}));
-  }
+  const [dragOrder, setDragOrder] = useState(null);   // локальный порядок id при drag тем/категорий
   // Сосед едет СВОЕЙ анимацией сразу (без перескока), массив переставляется по завершении.
   // Догнанный (ещё едущий) доезжает остаток быстрее.
   function slideSwap(selector, draggedId, targetId, reorderFn, movingDown, dur=300){
@@ -2510,7 +2490,7 @@ export default function App() {
     requestAnimationFrame(run);
   }
   // Перетаскивание касанием (long-press + drag): определяем строку под пальцем
-  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
+  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-fid]")).map(n=>n.getAttribute("data-fid")); dragTouch.current={id,active:false,y0,x0,lastSwap:0,curD:0,order,kind:"fid",t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragOrder(order.slice()); setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function folderDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
@@ -2522,24 +2502,34 @@ export default function App() {
     const rect=self.getBoundingClientRect();
     const cleanMid=(rect.top-curD)+rect.height/2;
     const D=t.clientY-cleanMid;
-    dt.curD=D;
+    dt.curD=D; dt.lastFingerY=t.clientY;
     self.style.transform=`translateY(${D}px) scale(1.07)`;
     const now=Date.now();
-    if(now-dt.lastSwap>120){
-      const rows=Array.from(document.querySelectorAll("[data-fid]"));
-      let target=null;
-      for(const r of rows){
-        const id=r.getAttribute("data-fid"); if(id===dt.id) continue;
-        if(r._flipping) continue;
-        const rr=r.getBoundingClientRect();
-        const overlap=Math.min(rect.bottom,rr.bottom)-Math.max(rect.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.5){ target=id; break; }
+    const dtMs=Math.max(1, now-(dt.lastMoveT||now));
+    const speed=Math.abs(t.clientY-(dt.lastMoveY!=null?dt.lastMoveY:t.clientY))/dtMs;
+    dt.lastMoveT=now; dt.lastMoveY=t.clientY;
+    const fast=speed>0.9;
+    if(now-dt.lastSwap>(fast?90:120)){
+      const reorder=(target)=>{ const a=[...dt.order]; const from=a.indexOf(dt.id); const to=a.indexOf(target); if(from<0||to<0)return; const [m]=a.splice(from,1); a.splice(to,0,m); dt.order=a; setDragOrder(a); };
+      if(fast){
+        flushSlides("[data-fid]");
+        document.querySelectorAll("[data-fid]").forEach(n=>{ if(n.getAttribute("data-fid")!==dt.id){ n.style.transition="none"; n.style.transform=""; n._sliding=false; if(n._slideTimer){clearTimeout(n._slideTimer);n._slideTimer=null;} n._slideCommit=null; } });
+        const rows=Array.from(document.querySelectorAll("[data-fid]"));
+        const selfTop=self.getBoundingClientRect().top;
+        const myIdx=dt.order.indexOf(dt.id);
+        let target=null, best=Infinity;
+        for(const r of rows){ const id=r.getAttribute("data-fid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const mid=rr.top+rr.height/2; const passed=selfTop<rr.top?(t.clientY>mid):(t.clientY<mid); if(passed){ const d=Math.abs(dt.order.indexOf(id)-myIdx); if(d<best){ best=d; target=id; } } }
+        if(target){ reorder(target); dt.lastSwap=now; }
+      } else {
+        const rows=Array.from(document.querySelectorAll("[data-fid]"));
+        let target=null;
+        for(const r of rows){ const id=r.getAttribute("data-fid"); if(id===dt.id) continue; if(r._sliding) continue; const rr=r.getBoundingClientRect(); if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; } }
+        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-fid]", dt.id, target, ()=>reorder(target), md); dt.lastSwap=now; }
       }
-      if(target){ flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target)); dt.lastSwap=now; }
     }
   }
-  function folderDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); flushSlides("[data-fid]"); const el=document.querySelector(`[data-fid="${dt.id}"]`); const cur=dt.curD||0; dragTouch.current=null; if(el && Math.abs(cur)>0.5){ el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); void el.offsetHeight; el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} setDragActive(null); setDragOffset(0); },210); } else { if(el) el.style.transform=""; setDragActive(null); setDragOffset(0); } }
-  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; dragTouch.current={id,active:false,y0,x0,lastSwap:0,t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
+  function folderDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-fid="${dt.id}"]`); const cur=dt.curD||0; const finalOrder=dt.order?dt.order.slice():null; dragTouch.current=null; flushSlides("[data-fid]"); const commit=()=>{ if(finalOrder){ upd(d=>{ const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...d,folders:d.folders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; }); } }; if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
+  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-sid]")).map(n=>n.getAttribute("data-sid")); dragTouch.current={id,active:false,y0,x0,lastSwap:0,curD:0,order,kind:"sid",t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragOrder(order.slice()); setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function subDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
@@ -2551,23 +2541,33 @@ export default function App() {
     const rect=self.getBoundingClientRect();
     const cleanMid=(rect.top-curD)+rect.height/2;
     const D=t.clientY-cleanMid;
-    dt.curD=D;
+    dt.curD=D; dt.lastFingerY=t.clientY;
     self.style.transform=`translateY(${D}px) scale(1.07)`;
     const now=Date.now();
-    if(now-dt.lastSwap>120){
-      const rows=Array.from(document.querySelectorAll("[data-sid]"));
-      let target=null;
-      for(const r of rows){
-        const id=r.getAttribute("data-sid"); if(id===dt.id) continue;
-        if(r._flipping) continue;
-        const rr=r.getBoundingClientRect();
-        const overlap=Math.min(rect.bottom,rr.bottom)-Math.max(rect.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.5){ target=id; break; }
+    const dtMs=Math.max(1, now-(dt.lastMoveT||now));
+    const speed=Math.abs(t.clientY-(dt.lastMoveY!=null?dt.lastMoveY:t.clientY))/dtMs;
+    dt.lastMoveT=now; dt.lastMoveY=t.clientY;
+    const fast=speed>0.9;
+    if(now-dt.lastSwap>(fast?90:120)){
+      const reorder=(target)=>{ const a=[...dt.order]; const from=a.indexOf(dt.id); const to=a.indexOf(target); if(from<0||to<0)return; const [m]=a.splice(from,1); a.splice(to,0,m); dt.order=a; setDragOrder(a); };
+      if(fast){
+        flushSlides("[data-sid]");
+        document.querySelectorAll("[data-sid]").forEach(n=>{ if(n.getAttribute("data-sid")!==dt.id){ n.style.transition="none"; n.style.transform=""; n._sliding=false; if(n._slideTimer){clearTimeout(n._slideTimer);n._slideTimer=null;} n._slideCommit=null; } });
+        const rows=Array.from(document.querySelectorAll("[data-sid]"));
+        const selfTop=self.getBoundingClientRect().top;
+        const myIdx=dt.order.indexOf(dt.id);
+        let target=null, best=Infinity;
+        for(const r of rows){ const id=r.getAttribute("data-sid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const mid=rr.top+rr.height/2; const passed=selfTop<rr.top?(t.clientY>mid):(t.clientY<mid); if(passed){ const d=Math.abs(dt.order.indexOf(id)-myIdx); if(d<best){ best=d; target=id; } } }
+        if(target){ reorder(target); dt.lastSwap=now; }
+      } else {
+        const rows=Array.from(document.querySelectorAll("[data-sid]"));
+        let target=null;
+        for(const r of rows){ const id=r.getAttribute("data-sid"); if(id===dt.id) continue; if(r._sliding) continue; const rr=r.getBoundingClientRect(); if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; } }
+        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-sid]", dt.id, target, ()=>reorder(target), md); dt.lastSwap=now; }
       }
-      if(target){ flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target)); dt.lastSwap=now; }
     }
   }
-  function subDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); flushSlides("[data-sid]"); const el=document.querySelector(`[data-sid="${dt.id}"]`); const cur=dt.curD||0; dragTouch.current=null; if(el && Math.abs(cur)>0.5){ el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); void el.offsetHeight; el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} setDragActive(null); setDragOffset(0); },210); } else { if(el) el.style.transform=""; setDragActive(null); setDragOffset(0); } }
+  function subDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-sid="${dt.id}"]`); const cur=dt.curD||0; const finalOrder=dt.order?dt.order.slice():null; dragTouch.current=null; flushSlides("[data-sid]"); const commit=()=>{ if(finalOrder){ upd(d=>({...d,folders:d.folders.map(f=>{ if(f.id!==fid) return f; const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...f,subfolders:f.subfolders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; })})); } }; if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
   function delF(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){setFid(null);setScr("main");} }
 
   // ── Subfolder CRUD ──
@@ -3170,7 +3170,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v449</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v450</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3462,7 +3462,7 @@ export default function App() {
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
-          {filtF.map(f=>{
+          {(()=>{ let _ff=filtF; if(dragOrder){ const m={}; filtF.forEach(x=>m[x.id]=x); const ord=dragOrder.map(id=>m[id]).filter(Boolean); const rest=filtF.filter(x=>!dragOrder.includes(x.id)); _ff=[...ord,...rest]; } return _ff; })().map(f=>{
             const last = f.isTheme
               ? ((f.notes&&f.notes.length)?f.notes.slice(-1)[0]:(f.subfolders||[]).flatMap(s=>s.notes||[]).slice(-1)[0])
               : f.subfolders.flatMap(s=>s.notes).pop();
@@ -3551,7 +3551,7 @@ export default function App() {
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
-          {folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())).map(s=>{
+          {(()=>{ let _ss=folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())); if(dragOrder){ const m={}; _ss.forEach(x=>m[x.id]=x); const ord=dragOrder.map(id=>m[id]).filter(Boolean); const rest=_ss.filter(x=>!dragOrder.includes(x.id)); _ss=[...ord,...rest]; } return _ss; })().map(s=>{
             const last=s.notes[s.notes.length-1];
             return (
               <div key={s.id} data-sid={s.id} data-dragging={dragActive===s.id?"1":"0"} className="row" onClick={()=>openS(s)}
