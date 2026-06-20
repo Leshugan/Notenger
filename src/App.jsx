@@ -1263,23 +1263,7 @@ export default function App() {
         if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
       if(target){
-        const tgtEl=document.querySelector(`[data-lmid="${target}"]`);
-        if(tgtEl && !tgtEl._sliding){
-          const sr=self.getBoundingClientRect();
-          const trr=tgtEl.getBoundingClientRect();
-          const movingDown = trr.top > sr.top;
-          const slide = movingDown ? trr.height : -trr.height; // сосед был ниже → стартует со смещения вниз, едет вверх к нулю
-          tgtEl._sliding=true;
-          tgtEl.style.transition="none";
-          tgtEl.style.transform=`translateY(${slide}px)`;
-          void tgtEl.offsetHeight;
-          tgtEl.style.transition="transform 180ms cubic-bezier(.2,.8,.2,1)";
-          tgtEl.style.transform="translateY(0)";
-          const done=()=>{ tgtEl.style.transition=""; tgtEl.style.transform=""; tgtEl._sliding=false; tgtEl.removeEventListener("transitionend",done); };
-          tgtEl.addEventListener("transitionend",done);
-          setTimeout(()=>{ if(tgtEl._sliding){ tgtEl.style.transition=""; tgtEl.style.transform=""; tgtEl._sliding=false; } }, 240);
-        }
-        dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; });
+        flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; }));
         dt.lastSwap=now;
       }
     }
@@ -3107,7 +3091,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v408</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v410</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3132,8 +3116,8 @@ export default function App() {
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
                 style={{display:"flex",alignItems:"flex-start",gap:8,padding:"2px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
-                transform: lmDragId===it.id?undefined:"none",
-                transition: lmDragId===it.id?"box-shadow .18s ease":"none",
+                transform: undefined,
+                transition: lmDragId===it.id?"box-shadow .18s ease":"transform 180ms cubic-bezier(.2,.8,.2,1)",
                 position:"relative", zIndex:lmDragId===it.id?30:1,
                 background:lmDragId===it.id?"#241B12":"transparent",
                 border:"none",
