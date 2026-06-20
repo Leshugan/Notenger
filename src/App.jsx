@@ -1263,25 +1263,24 @@ export default function App() {
         if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
       if(target){
-        const sibAll=Array.from(document.querySelectorAll("[data-lmid]")).filter(n=>n.getAttribute("data-lmid")!==dt.id);
-        const firstTop={}; sibAll.forEach(n=>{ const id=n.getAttribute("data-lmid"); n.style.transition="none"; const tf=n.style.transform; n.style.transform=""; firstTop[id]=n.getBoundingClientRect().top; n.style.transform=tf; });
+        const tgtEl=document.querySelector(`[data-lmid="${target}"]`);
+        if(tgtEl && !tgtEl._sliding){
+          const sr=self.getBoundingClientRect();
+          const trr=tgtEl.getBoundingClientRect();
+          const movingDown = trr.top > sr.top;
+          const slide = movingDown ? trr.height : -trr.height; // сосед был ниже → стартует со смещения вниз, едет вверх к нулю
+          tgtEl._sliding=true;
+          tgtEl.style.transition="none";
+          tgtEl.style.transform=`translateY(${slide}px)`;
+          void tgtEl.offsetHeight;
+          tgtEl.style.transition="transform 180ms cubic-bezier(.2,.8,.2,1)";
+          tgtEl.style.transform="translateY(0)";
+          const done=()=>{ tgtEl.style.transition=""; tgtEl.style.transform=""; tgtEl._sliding=false; tgtEl.removeEventListener("transitionend",done); };
+          tgtEl.addEventListener("transitionend",done);
+          setTimeout(()=>{ if(tgtEl._sliding){ tgtEl.style.transition=""; tgtEl.style.transform=""; tgtEl._sliding=false; } }, 240);
+        }
         dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; });
         dt.lastSwap=now;
-        setTimeout(()=>{
-          const sib2=Array.from(document.querySelectorAll("[data-lmid]")).filter(n=>n.getAttribute("data-lmid")!==dt.id);
-          sib2.forEach(n=>{
-            const id=n.getAttribute("data-lmid"); if(firstTop[id]==null) return;
-            n.style.transition="none"; n.style.transform="";
-            const dy=firstTop[id]-n.getBoundingClientRect().top;
-            if(!dy) return;
-            n.style.transform=`translateY(${dy}px)`;
-            void n.offsetHeight;
-            n.style.transition="transform 200ms cubic-bezier(.2,.8,.2,1)";
-            n.style.transform="translateY(0)";
-            const done=()=>{ n.style.transition=""; n.style.transform=""; n.removeEventListener("transitionend",done); };
-            n.addEventListener("transitionend",done);
-          });
-        },0);
       }
     }
   }
@@ -3108,7 +3107,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v407</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v408</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
