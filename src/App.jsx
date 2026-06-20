@@ -1262,7 +1262,7 @@ export default function App() {
         const rr=r.getBoundingClientRect();
         if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
-      if(target){ dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; }); dt.lastSwap=now; }
+      if(target){ flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; }
     }
   }
   function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-lmid="${dt.id}"]`); if(el) el.style.transform=""; } lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
@@ -2447,7 +2447,7 @@ export default function App() {
         const rr=r.getBoundingClientRect();
         if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
-      if(target){ reorderPinFolder(dt.id,target); dt.lastSwap=now; }
+      if(target){ flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target)); dt.lastSwap=now; }
     }
   }
   function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-fid="${dt.id}"]`); if(el) el.style.transform=""; } dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -2475,10 +2475,10 @@ export default function App() {
         const rr=r.getBoundingClientRect();
         if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
       }
-      if(target){ reorderPinSub(dt.id,target); dt.lastSwap=now; }
+      if(target){ flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target)); dt.lastSwap=now; }
     }
   }
-  function subDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
+  function subDragTouchEnd(){ const dt=dragTouch.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-sid="${dt.id}"]`); if(el) el.style.transform=""; } dragTouch.current=null; setDragActive(null); setDragOffset(0); }
   function delF(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){setFid(null);setScr("main");} }
 
   // ── Subfolder CRUD ──
@@ -3081,7 +3081,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v418</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v419</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
