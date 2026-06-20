@@ -1158,6 +1158,7 @@ export default function App() {
   const firstRender = useRef(true);
   const delTimers = useRef({});
   const multiDelTimer = useRef(null);
+  const lmTitleTimer = useRef(null);
   const writeHoldTimer = useRef(null);
   const writeHoldFired = useRef(false);
   const writeStartX = useRef(null);
@@ -1236,54 +1237,38 @@ export default function App() {
   function lmRowTouchStart(idx,e,items,setItems){
     const id=items&&items[idx]?items[idx].id:null; if(!id)return;
     const y0=e.touches[0].clientY, x0=e.touches[0].clientX;
-    lmDragRef.current={id,active:false,moved:false,y0,x0,lastSwap:0,setItems,t:setTimeout(()=>{ if(lmDragRef.current&&!lmDragRef.current.moved){ lmDragRef.current.active=true; lmDragRef.current.appliedOff=0; setLmDragId(id); setLmDragOff(0); try{buzz(12);}catch{} } },400)};
+    lmDragRef.current={id,active:false,moved:false,y0,x0,lastSwap:0,curD:0,setItems,t:setTimeout(()=>{ if(lmDragRef.current&&!lmDragRef.current.moved){ lmDragRef.current.active=true; setLmDragId(id); setLmDragOff(0); try{buzz(12);}catch{} } },400)};
   }
   function lmRowTouchMove(e){
     const dt=lmDragRef.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    let off=t.clientY-dt.y0;
-    // визуальный clamp по чистой позиции (не влияет на y0 → привязка к пальцу сохраняется)
-    const self0=document.querySelector(`[data-lmid="${dt.id}"]`);
-    if(self0){
-      const r=self0.getBoundingClientRect();
-      const applied=dt.appliedOff||0;
-      const cleanTop=r.top-applied, cleanH=r.height;
-      const titleEl=document.querySelector("[data-lmtitle]");
-      const footEl=document.querySelector("[data-lmfooter]");
-      const topLim=titleEl?titleEl.getBoundingClientRect().bottom:0;
-      const botLim=footEl?footEl.getBoundingClientRect().top:window.innerHeight;
-      if(cleanTop+off<topLim) off=topLim-cleanTop;
-      if(cleanTop+cleanH+off>botLim) off=botLim-cleanH-cleanTop;
-    }
-    dt.appliedOff=off;
-    setLmDragOff(off);
+    const self=document.querySelector(`[data-lmid="${dt.id}"]`);
+    if(!self) return;
+    const curD=dt.curD||0;
+    const rect=self.getBoundingClientRect();
+    const cleanMid=(rect.top-curD)+rect.height/2;
+    const D=t.clientY-cleanMid;
+    dt.curD=D;
+    self.style.transform=`translateY(${D}px)`;   // прямо в DOM, без задержки React-стейта
     const now=Date.now();
-    if(now-dt.lastSwap>120){
-      const self=document.querySelector(`[data-lmid="${dt.id}"]`);
-      if(!self) return;
-      const sr=self.getBoundingClientRect();
+    if(now-dt.lastSwap>200){
       const rows=Array.from(document.querySelectorAll("[data-lmid]"));
       let target=null;
-      for(const r of rows){ const id=r.getAttribute("data-lmid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top); if(overlap>0 && overlap>=rr.height*0.55){ target=id; break; } }
+      for(const r of rows){
+        const id=r.getAttribute("data-lmid"); if(id===dt.id) continue;
+        if(r._flipping) continue;            // сосед ещё едет — не трогаем
+        const rr=r.getBoundingClientRect();
+        if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
+      }
       if(target){
-        // запоминаем чистую позицию ДО перестановки
-        const cleanBefore = sr.top - (dt.appliedOff||0);
-        flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; }));
+        dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; });
         dt.lastSwap=now;
-        // после перестановки строка займёт новое место в потоке; корректируем y0 так, чтобы
-        // визуальный сдвиг сохранил строку ровно под пальцем (без чтения промежуточных кадров FLIP)
-        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
-          const el=document.querySelector(`[data-lmid="${dt.id}"]`);
-          if(!el||lmDragRef.current!==dt) return;
-          const cleanAfter = el.getBoundingClientRect().top - (dt.appliedOff||0);
-          dt.y0 += (cleanAfter - cleanBefore);
-        }); });
       }
     }
   }
-  function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt&&dt.t)clearTimeout(dt.t); lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
+  function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-lmid="${dt.id}"]`); if(el) el.style.transform=""; } lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
   function lmDragStart(idx,e,items,setItems){
     e.stopPropagation();
     let y0=e.touches[0].clientY; let cur=idx;
@@ -2413,6 +2398,7 @@ export default function App() {
         const layoutTop = n.getBoundingClientRect().top;
         const dy = (first[id] - layoutTop);
         if(!dy){ n._flipping=false; return; }
+        if(Math.abs(dy)>2000){ n._flipping=false; return; }   // аномальный скачок — не анимируем
         n._flipping=true;
         n.style.transform=`translateY(${dy}px)`;
         void n.offsetHeight;
@@ -3105,7 +3091,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v365</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v403</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3121,15 +3107,17 @@ export default function App() {
         <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"#1A1410",zIndex:620,display:"flex",flexDirection:"column"}}>
           <div onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd} style={{flex:1,overflowY:"auto",padding:"12px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
             <div style={{width:"max-content",maxWidth:"calc(100% - 24px)",marginLeft:"auto",marginRight:14,boxSizing:"border-box"}}>
-            <input data-lmtitle value={lnote?.clTitle||""} readOnly={!lmEditMode} onChange={e=>{ const v=e.target.value; updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
+            <input data-lmtitle defaultValue={lnote?.clTitle||""} key={"lmtitle-"+lm.id} readOnly={!lmEditMode}
+              onChange={e=>{ const v=e.target.value; clearTimeout(lmTitleTimer.current); lmTitleTimer.current=setTimeout(()=>updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)),300); }}
+              onBlur={e=>{ const v=e.target.value; clearTimeout(lmTitleTimer.current); updNotesAt(lm.fid,lm.sid,_n=>_n.map(n=>n.id===lm.id?{...n,clTitle:v}:n)); }}
               placeholder="Заголовок"
               style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,#F2EAE0)",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 0 10px 30px",textAlign:"left",userSelect:lmEditMode?"text":"none",WebkitUserSelect:lmEditMode?"text":"none",pointerEvents:lmEditMode?"auto":"none"}}/>
             {items.map((it,idx)=>(
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
                 style={{display:"flex",alignItems:"flex-start",gap:8,padding:"2px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
-                transform: lmDragId===it.id?`translateY(${lmDragOff}px) scale(1.02)`:"none",
-                transition: lmDragId===it.id?"box-shadow .18s ease":"transform .42s cubic-bezier(.16,1,.3,1)",
+                transform: lmDragId===it.id?undefined:"none",
+                transition: lmDragId===it.id?"box-shadow .18s ease":"none",
                 position:"relative", zIndex:lmDragId===it.id?30:1,
                 background:lmDragId===it.id?"#241B12":"transparent",
                 border:"none",
@@ -3384,12 +3372,14 @@ export default function App() {
       )}
 
       {scr==="main"&&(
-        <div className={((noScrAnim||navTick===0)?"":"scrAnim ")+((staggerOn&&!dragActive)?"stagger":"")} key={noScrAnim?"scr-main":"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={((noScrAnim||navTick===0)?"":"scrAnim ")} key={noScrAnim?"scr-main":"scr-main-"+navTick} style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
           {filtF.map(f=>{
-            const last = f.isTheme ? (f.notes||[]).slice(-1)[0] : f.subfolders.flatMap(s=>s.notes).pop();
+            const last = f.isTheme
+              ? ((f.notes&&f.notes.length)?f.notes.slice(-1)[0]:(f.subfolders||[]).flatMap(s=>s.notes||[]).slice(-1)[0])
+              : f.subfolders.flatMap(s=>s.notes).pop();
             return (
               <div key={f.id} data-fid={f.id} data-dragging={dragActive===f.id?"1":"0"} className="row" onClick={()=>openF(f)}
                 onTouchStart={e=>folderDragTouchStart(f.id,e)}
@@ -3471,7 +3461,7 @@ export default function App() {
       )}
 
       {scr==="sub"&&folder&&(
-        <div className={((noScrAnim||navTick===0)?"":"scrAnim ")+((staggerOn&&!dragActive)?"stagger":"")} key={noScrAnim?"scr-sub":"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
+        <div className={((noScrAnim||navTick===0)?"":"scrAnim ")} key={noScrAnim?"scr-sub":"scr-sub-"+navTick}  style={{flex:1,overflowY:"auto",padding:"4px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end",animationDuration:spd("scr",0.6)+"s"}}
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
