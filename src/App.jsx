@@ -1244,31 +1244,24 @@ export default function App() {
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    const self=document.querySelector(`[data-lmid="${dt.id}"]`);
-    if(!self) return;
-    const curD=dt.curD||0;
-    const rect=self.getBoundingClientRect();
-    const cleanMid=(rect.top-curD)+rect.height/2;
-    const D=t.clientY-cleanMid;
-    dt.curD=D;
-    self.style.transform=`translateY(${D}px)`;   // прямо в DOM, без задержки React-стейта
+    setLmDragOff(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>200){
+    if(now-dt.lastSwap>140){
+      const self=document.querySelector(`[data-lmid="${dt.id}"]`);
+      if(!self) return;
+      const sr=self.getBoundingClientRect();
       const rows=Array.from(document.querySelectorAll("[data-lmid]"));
       let target=null;
       for(const r of rows){
         const id=r.getAttribute("data-lmid"); if(id===dt.id) continue;
-        if(r._flipping) continue;            // сосед ещё едет — не трогаем
         const rr=r.getBoundingClientRect();
-        if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; }
+        const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
+        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
       }
-      if(target){
-        flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; }));
-        dt.lastSwap=now;
-      }
+      if(target){ flipReorder("[data-lmid]", ()=>dt.setItems(arr=>{ const a=[...arr]; const from=a.findIndex(x=>x.id===dt.id); const to=a.findIndex(x=>x.id===target); if(from<0||to<0)return arr; const [m]=a.splice(from,1); a.splice(to,0,m); return a; })); dt.lastSwap=now; dt.y0=t.clientY; setLmDragOff(0); }
     }
   }
-  function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt){ if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-lmid="${dt.id}"]`); if(el) el.style.transform=""; } lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
+  function lmRowTouchEnd(){ const dt=lmDragRef.current; if(dt&&dt.t)clearTimeout(dt.t); lmDragRef.current=null; setLmDragId(null); setLmDragOff(0); }
   function lmDragStart(idx,e,items,setItems){
     e.stopPropagation();
     let y0=e.touches[0].clientY; let cur=idx;
@@ -2433,28 +2426,19 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>120){
+    if(now-dt.lastSwap>140){
       const self=document.querySelector(`[data-fid="${dt.id}"]`);
       if(!self) return;
       const sr=self.getBoundingClientRect();
       const rows=Array.from(document.querySelectorAll("[data-fid]"));
-      let target=null, targetH=0;
+      let target=null;
       for(const r of rows){
         const id=r.getAttribute("data-fid"); if(id===dt.id) continue;
         const rr=r.getBoundingClientRect();
         const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.55){ target=id; targetH=rr.height; break; }
+        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
       }
-      if(target){
-        // направление: цель выше или ниже перетаскиваемой
-        const tr=document.querySelector(`[data-fid="${target}"]`).getBoundingClientRect();
-        const movingDown = tr.top > sr.top;
-        flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target));
-        // после перестановки элемент сместится в потоке на высоту соседа — компенсируем базу
-        dt.y0 += movingDown ? targetH : -targetH;
-        setDragOffset(t.clientY-dt.y0);
-        dt.lastSwap=now;
-      }
+      if(target){ flipReorder("[data-fid]", ()=>reorderPinFolder(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
     }
   }
   function folderDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -2466,26 +2450,19 @@ export default function App() {
     const t=e.touches[0];
     setDragOffset(t.clientY-dt.y0);
     const now=Date.now();
-    if(now-dt.lastSwap>120){
+    if(now-dt.lastSwap>140){
       const self=document.querySelector(`[data-sid="${dt.id}"]`);
       if(!self) return;
       const sr=self.getBoundingClientRect();
       const rows=Array.from(document.querySelectorAll("[data-sid]"));
-      let target=null, targetH=0;
+      let target=null;
       for(const r of rows){
         const id=r.getAttribute("data-sid"); if(id===dt.id) continue;
         const rr=r.getBoundingClientRect();
         const overlap=Math.min(sr.bottom,rr.bottom)-Math.max(sr.top,rr.top);
-        if(overlap>0 && overlap>=rr.height*0.55){ target=id; targetH=rr.height; break; }
+        if(overlap>0 && overlap>=rr.height*0.75){ target=id; break; }
       }
-      if(target){
-        const tr=document.querySelector(`[data-sid="${target}"]`).getBoundingClientRect();
-        const movingDown = tr.top > sr.top;
-        flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target));
-        dt.y0 += movingDown ? targetH : -targetH;
-        setDragOffset(t.clientY-dt.y0);
-        dt.lastSwap=now;
-      }
+      if(target){ flipReorder("[data-sid]", ()=>reorderPinSub(dt.id,target)); dt.lastSwap=now; dt.y0=t.clientY; setDragOffset(0); }
     }
   }
   function subDragTouchEnd(){ const dt=dragTouch.current; if(dt&&dt.t)clearTimeout(dt.t); dragTouch.current=null; setDragActive(null); setDragOffset(0); }
@@ -3091,7 +3068,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v410</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v411</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3116,7 +3093,7 @@ export default function App() {
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
                 style={{display:"flex",alignItems:"flex-start",gap:8,padding:"2px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
-                transform: undefined,
+                transform: lmDragId===it.id?`translateY(${lmDragOff}px)`:"none",
                 transition: lmDragId===it.id?"box-shadow .18s ease":"transform 180ms cubic-bezier(.2,.8,.2,1)",
                 position:"relative", zIndex:lmDragId===it.id?30:1,
                 background:lmDragId===it.id?"#241B12":"transparent",
