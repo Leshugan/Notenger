@@ -1229,6 +1229,7 @@ export default function App() {
   const [lmDragId, setLmDragId] = useState(null);
   const [lmDragOff, setLmDragOff] = useState(0);
   const [lmDragOrder, setLmDragOrder] = useState(null);   // локальный порядок id при drag
+  const [lmLand, setLmLand] = useState(null);             // {id, off} — приземление после броска
   const [clEditId,  setClEditId]  = useState(null); // id пункта, который сейчас редактируется (input не readOnly)
   const [lmEditId,  setLmEditId]  = useState(null);
   const [lmEditMode, setLmEditMode] = useState(false);
@@ -1240,53 +1241,48 @@ export default function App() {
     const id=items&&items[idx]?items[idx].id:null; if(!id)return;
     const y0=e.touches[0].clientY, x0=e.touches[0].clientX;
     const order=items.map(x=>x.id);
-    lmDragRef.current={id,active:false,moved:false,y0,x0,lastSwap:0,curD:0,order,setItems,t:setTimeout(()=>{ if(lmDragRef.current&&!lmDragRef.current.moved){ lmDragRef.current.active=true; setLmDragOrder(order.slice()); setLmDragId(id); setLmDragOff(0); try{buzz(12);}catch{} } },400)};
+    lmDragRef.current={id,active:false,moved:false,y0,x0,order,setItems,curIndex:order.indexOf(id),t:setTimeout(()=>{
+      if(lmDragRef.current&&!lmDragRef.current.moved){
+        const dt=lmDragRef.current; dt.active=true;
+        // СНИМОК геометрии один раз (как в SortableJS): центры и высоты слотов в текущем порядке
+        const els=dt.order.map(id=>document.querySelector(`[data-lmid="${id}"]`));
+        dt.slots=els.map(el=>{ const r=el.getBoundingClientRect(); return {top:r.top, h:r.height, mid:r.top+r.height/2}; });
+        dt.els=els;
+        dt.startIndex=dt.order.indexOf(id);
+        dt.curIndex=dt.startIndex;
+        setLmDragId(id); setLmDragOff(0); try{buzz(12);}catch{}
+      }
+    },400)};
   }
   function lmRowTouchMove(e){
     const dt=lmDragRef.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    const self=document.querySelector(`[data-lmid="${dt.id}"]`);
-    if(!self) return;
-    const curD=dt.curD||0;
-    const rect=self.getBoundingClientRect();
-    const cleanMid=(rect.top-curD)+rect.height/2;
-    const D=t.clientY-cleanMid;            // строка строго под пальцем, считается от истины каждый кадр
-    dt.curD=D;
-    dt.lastFingerY=t.clientY;
-    self.style.transform=`translateY(${D}px)`;   // прямо в DOM — без задержки React (важно для APK)
-    const now=Date.now();
-    // скорость пальца: px за мс между событиями
-    const dtMs=Math.max(1, now-(dt.lastMoveT||now));
-    const speed=Math.abs(t.clientY-(dt.lastMoveY!=null?dt.lastMoveY:t.clientY))/dtMs;
-    dt.lastMoveT=now; dt.lastMoveY=t.clientY;
-    const fast = speed>0.9;   // быстрое вождение
-    if(now-dt.lastSwap>90){
-      const reorder=(target)=>{ const a=[...dt.order]; const from=a.indexOf(dt.id); const to=a.indexOf(target); if(from<0||to<0)return; const [m]=a.splice(from,1); a.splice(to,0,m); dt.order=a; setLmDragOrder(a); };
-      if(fast){
-        flushSlides("[data-lmid]");
-        // снять любые остаточные transform/transition у соседей, чтобы не было прыжков
-        document.querySelectorAll("[data-lmid]").forEach(n=>{ if(n.getAttribute("data-lmid")!==dt.id){ n.style.transition="none"; n.style.transform=""; n._sliding=false; if(n._slideTimer){clearTimeout(n._slideTimer);n._slideTimer=null;} n._slideCommit=null; } });
-        const rows=Array.from(document.querySelectorAll("[data-lmid]"));
-        const selfTop=self.getBoundingClientRect().top;
-        // соседний по порядку пункт в сторону движения
-        const myIdx=dt.order.indexOf(dt.id);
-        let target=null, best=Infinity;
-        for(const r of rows){
-          const id=r.getAttribute("data-lmid"); if(id===dt.id) continue;
-          const rr=r.getBoundingClientRect();
-          const mid=rr.top+rr.height/2;
-          const passed = selfTop<rr.top ? (t.clientY>mid) : (t.clientY<mid);
-          if(passed){ const d=Math.abs(dt.order.indexOf(id)-myIdx); if(d<best){ best=d; target=id; } }  // ближайший по индексу (соседний)
-        }
-        if(target){ reorder(target); dt.lastSwap=now; }
-      } else {
-        const rows=Array.from(document.querySelectorAll("[data-lmid]"));
-        let target=null;
-        for(const r of rows){ const id=r.getAttribute("data-lmid"); if(id===dt.id) continue; if(r._sliding) continue; const rr=r.getBoundingClientRect(); if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; } }
-        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-lmid]", dt.id, target, ()=>reorder(target), md); dt.lastSwap=now; }
-      }
+    if(!dt.slots) return;
+    const startSlot=dt.slots[dt.startIndex];
+    const self=dt.els[dt.startIndex];
+    // перетаскиваемый строго под пальцем: смещение от его исходного слота
+    const dragY = t.clientY - dt.y0;            // насколько палец ушёл от точки захвата
+    dt.lastDragY=dragY;
+    if(self){ self.style.transition="none"; self.style.transform=`translateY(${dragY}px)`; self.style.zIndex="30"; self.style.position="relative"; }
+    // куда вставить: индекс слота, чью середину пересёк центр перетаскиваемого (по ЗАФИКСИРОВАННЫМ центрам)
+    const dragMid = startSlot.mid + dragY;
+    let newIndex=dt.startIndex;
+    for(let i=0;i<dt.slots.length;i++){ if(i===dt.startIndex) continue; const s=dt.slots[i]; if(i<dt.startIndex && dragMid < s.mid){ newIndex=Math.min(newIndex,i); } else if(i>dt.startIndex && dragMid > s.mid){ newIndex=Math.max(newIndex,i); } }
+    if(newIndex!==dt.curIndex){
+      dt.curIndex=newIndex;
+      // ghost-preview: сдвигаем соседей между старым и новым индексом на высоту перетаскиваемого
+      const dragH=startSlot.h;
+      dt.order.forEach((id,i)=>{
+        if(i===dt.startIndex) return;
+        const el=dt.els[i]; if(!el) return;
+        let shift=0;
+        if(dt.startIndex<newIndex && i>dt.startIndex && i<=newIndex) shift=-dragH;
+        else if(dt.startIndex>newIndex && i<dt.startIndex && i>=newIndex) shift=dragH;
+        el.style.transition="transform 200ms cubic-bezier(.22,1,.36,1)";
+        el.style.transform = shift? `translateY(${shift}px)` : "";
+      });
     }
   }
   function flushSlides(selector){
@@ -1305,15 +1301,44 @@ export default function App() {
     const dt=lmDragRef.current;
     if(!dt){ return; }
     if(dt.t)clearTimeout(dt.t);
+    lmDragRef.current=null;
+    if(!dt.active || !dt.slots){ setLmDragId(null); setLmDragOff(0); return; }
+    const order=dt.order.slice();
+    const [mv]=order.splice(dt.startIndex,1);
+    order.splice(dt.curIndex,0,mv);
+    const self=dt.els[dt.startIndex];
+    const dragY = dt.lastDragY||0;
+    // снять preview-сдвиги соседей
+    dt.els.forEach((el,i)=>{ if(el && i!==dt.startIndex){ el.style.transition=""; el.style.transform=""; } });
+    if(self){ self.style.transition=""; self.style.transform=""; self.style.zIndex=""; self.style.position=""; }
+    const changed = dt.curIndex!==dt.startIndex;
+    if(changed){
+      // позиция слота curIndex в зафиксированных координатах
+      let destTop;
+      if(dt.curIndex>dt.startIndex){ destTop = dt.slots[dt.curIndex].top + dt.slots[dt.curIndex].h - dt.slots[dt.startIndex].h; }
+      else { destTop = dt.slots[dt.curIndex].top; }
+      const curVisualTop = dt.slots[dt.startIndex].top + dragY;
+      const landOff = curVisualTop - destTop;   // насколько визуально пункт смещён от нового слота
+      // применяем новый порядок В ДАННЫЕ и landing-offset ОДНОВРЕМЕННО (React отрисует атомарно)
+      setLmLand({id:dt.id, off:landOff});
+      if(lm_setItemsRef.current){ lm_setItemsRef.current(arr=>{ const map={}; arr.forEach(x=>map[x.id]=x); const ord=order.map(id=>map[id]).filter(Boolean); const rest=arr.filter(x=>!order.includes(x.id)); return [...ord,...rest]; }); }
+      // на следующем кадре анимируем landing → 0, затем убираем
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ setLmLand(l=>l&&l.id===dt.id?{id:dt.id,off:0,animate:true}:l); setTimeout(()=>setLmLand(l=>l&&l.id===dt.id?null:l),240); }); });
+    }
+    setLmDragId(null); setLmDragOff(0);
+  }
+  function lmRowTouchEnd_OLD(){
+    const dt=lmDragRef.current;
+    if(!dt){ return; }
+    if(dt.t)clearTimeout(dt.t);
     const el=document.querySelector(`[data-lmid="${dt.id}"]`);
     const cur=dt.curD||0;
-    const finalOrder=dt.order?dt.order.slice():null;
     lmDragRef.current=null;
     flushSlides("[data-lmid]");
-    // зафиксировать новый порядок в данных (один тяжёлый апдейт — на отпускании, не в drag)
-    const commitOrder=()=>{
-      if(finalOrder && lm_setItemsRef.current){ lm_setItemsRef.current(arr=>{ const m={}; arr.forEach(x=>m[x.id]=x); const ord=finalOrder.map(id=>m[id]).filter(Boolean); const rest=arr.filter(x=>!finalOrder.includes(x.id)); return [...ord,...rest]; }); }
-    };
+    const finalOrder=dt.order?dt.order.slice():null;
+    // фиксируем порядок в данных СРАЗУ (до анимации и сброса) — иначе при быстром отпускании возвращается
+    if(finalOrder && lm_setItemsRef.current){ lm_setItemsRef.current(arr=>{ const m={}; arr.forEach(x=>m[x.id]=x); const ord=finalOrder.map(id=>m[id]).filter(Boolean); const rest=arr.filter(x=>!finalOrder.includes(x.id)); return [...ord,...rest]; }); }
+    const commitOrder=()=>{};
     if(el && Math.abs(cur)>0.5){
       requestAnimationFrame(()=>{
         const r=el.getBoundingClientRect();
@@ -1324,11 +1349,11 @@ export default function App() {
         void el.offsetHeight;
         el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important");
         el.style.transform="translateY(0)";
-        setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} commitOrder(); setLmDragId(null); setLmDragOff(0); setTimeout(()=>setLmDragOrder(null),30); }, 210);
+        setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} setLmDragId(null); setLmDragOff(0); setTimeout(()=>setLmDragOrder(null),30); }, 210);
       });
     } else {
       if(el) el.style.transform="";
-      commitOrder(); setLmDragId(null); setLmDragOff(0); setTimeout(()=>setLmDragOrder(null),30);
+      setLmDragId(null); setLmDragOff(0); setTimeout(()=>setLmDragOrder(null),30);
     }
   }
   function lmDragStart(idx,e,items,setItems){
@@ -2424,11 +2449,13 @@ export default function App() {
   const [dragOrder, setDragOrder] = useState(null);   // локальный порядок id при drag тем/категорий
   // Сосед едет СВОЕЙ анимацией сразу (без перескока), массив переставляется по завершении.
   // Догнанный (ещё едущий) доезжает остаток быстрее.
-  function slideSwap(selector, draggedId, targetId, reorderFn, movingDown, dur=300){
+  function slideSwap(selector, draggedId, targetId, reorderFn, movingDown, reactClears, dur=300){
     const tgt=document.querySelector(`${selectorAttr(selector,targetId)}`);
     if(!tgt){ reorderFn(); return; }
-    const h=tgt.getBoundingClientRect().height;
-    const slide = movingDown ? -h : h;  // вниз: сосед уезжает вверх; вверх: сосед уезжает вниз
+    const cs=getComputedStyle(tgt);
+    const mt=parseFloat(cs.marginTop)||0, mb=parseFloat(cs.marginBottom)||0;
+    const pitch=tgt.getBoundingClientRect().height + mt + mb;   // реальный шаг слота с учётом отступов
+    const slide = movingDown ? -pitch : pitch;
     const wasSliding = tgt._sliding;
     const thisDur = wasSliding ? Math.max(120, Math.round(dur*0.35)) : dur;
     if(tgt._slideTimer){ clearTimeout(tgt._slideTimer); tgt._slideTimer=null; }
@@ -2441,8 +2468,16 @@ export default function App() {
       tgt.style.transform="";
       reorderFn();
       tgt._sliding=false; tgt._slideTimer=null; tgt._slideCommit=null;
-      requestAnimationFrame(()=>{ try{ tgt.style.removeProperty("transition"); }catch{} });
-    }, thisDur);
+      requestAnimationFrame(()=>{
+        try{ tgt.style.removeProperty("transition"); }catch{}
+        // перестановка изменила раскладку — удержим перетаскиваемый строго под пальцем даже если палец стоит
+        const adt=lmDragRef.current||dragTouch.current;
+        if(adt&&adt.active&&adt.lastFingerY!=null){
+          const dEl=document.querySelector(`${selectorAttr(selector,adt.id)}`);
+          if(dEl){ const r=dEl.getBoundingClientRect(); const cm=(r.top-(adt.curD||0))+r.height/2; const nd=adt.lastFingerY-cm; adt.curD=nd; const sc=(selector.indexOf("lmid")>=0)?"":" scale(1.07)"; dEl.style.transform=`translateY(${nd}px)${sc}`; }
+        }
+      });
+    }, thisDur+40);
   }
   function selectorAttr(selector,id){ const attr=selector.replace(/[\[\]]/g,""); return `[${attr}="${id}"]`; }
   // FLIP: захватываем позиции ДО перестановки, выполняем перестановку, затем анимируем
@@ -2524,11 +2559,11 @@ export default function App() {
         const rows=Array.from(document.querySelectorAll("[data-fid]"));
         let target=null;
         for(const r of rows){ const id=r.getAttribute("data-fid"); if(id===dt.id) continue; if(r._sliding) continue; const rr=r.getBoundingClientRect(); if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; } }
-        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-fid]", dt.id, target, ()=>reorder(target), md); dt.lastSwap=now; }
+        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-fid]", dt.id, target, ()=>reorder(target), md, true); dt.lastSwap=now; }
       }
     }
   }
-  function folderDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-fid="${dt.id}"]`); const cur=dt.curD||0; const finalOrder=dt.order?dt.order.slice():null; dragTouch.current=null; flushSlides("[data-fid]"); const commit=()=>{ if(finalOrder){ upd(d=>{ const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...d,folders:d.folders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; }); } }; if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
+  function folderDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-fid="${dt.id}"]`); const cur=dt.curD||0; dragTouch.current=null; flushSlides("[data-fid]"); const finalOrder=dt.order?dt.order.slice():null; if(finalOrder){ upd(d=>{ const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...d,folders:d.folders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; }); } if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
   function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-sid]")).map(n=>n.getAttribute("data-sid")); dragTouch.current={id,active:false,y0,x0,lastSwap:0,curD:0,order,kind:"sid",t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragOrder(order.slice()); setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function subDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
@@ -2563,11 +2598,11 @@ export default function App() {
         const rows=Array.from(document.querySelectorAll("[data-sid]"));
         let target=null;
         for(const r of rows){ const id=r.getAttribute("data-sid"); if(id===dt.id) continue; if(r._sliding) continue; const rr=r.getBoundingClientRect(); if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; } }
-        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-sid]", dt.id, target, ()=>reorder(target), md); dt.lastSwap=now; }
+        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-sid]", dt.id, target, ()=>reorder(target), md, true); dt.lastSwap=now; }
       }
     }
   }
-  function subDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-sid="${dt.id}"]`); const cur=dt.curD||0; const finalOrder=dt.order?dt.order.slice():null; dragTouch.current=null; flushSlides("[data-sid]"); const commit=()=>{ if(finalOrder){ upd(d=>({...d,folders:d.folders.map(f=>{ if(f.id!==fid) return f; const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...f,subfolders:f.subfolders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; })})); } }; if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; commit(); setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
+  function subDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-sid="${dt.id}"]`); const cur=dt.curD||0; dragTouch.current=null; flushSlides("[data-sid]"); const finalOrder=dt.order?dt.order.slice():null; if(finalOrder){ upd(d=>({...d,folders:d.folders.map(f=>{ if(f.id!==fid) return f; const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...f,subfolders:f.subfolders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; })})); } if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
   function delF(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){setFid(null);setScr("main");} }
 
   // ── Subfolder CRUD ──
@@ -3170,7 +3205,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v450</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v465</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3198,9 +3233,9 @@ export default function App() {
               <div key={it.id} data-lmid={it.id} data-dragging={lmDragId===it.id?"1":"0"}
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
                 style={{display:"flex",alignItems:"flex-start",gap:8,padding:"2px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
-                transform: undefined,
-                transition: lmDragId===it.id?"box-shadow .18s ease":"transform 180ms cubic-bezier(.2,.8,.2,1)",
-                position:"relative", zIndex:lmDragId===it.id?30:1,
+                transform: (lmLand&&lmLand.id===it.id)?`translateY(${lmLand.off}px)`:undefined,
+                transition: lmDragId===it.id?"box-shadow .18s ease":((lmLand&&lmLand.id===it.id&&lmLand.animate)?"transform 220ms cubic-bezier(.22,1,.36,1)":((lmLand&&lmLand.id===it.id)?"none":"transform 180ms cubic-bezier(.2,.8,.2,1)")),
+                position:"relative", zIndex:(lmDragId===it.id||(lmLand&&lmLand.id===it.id))?30:1,
                 background:lmDragId===it.id?"#241B12":"transparent",
                 border:"none",
                 boxShadow:lmDragId===it.id?"0 14px 32px rgba(0,0,0,.6)":"none",
