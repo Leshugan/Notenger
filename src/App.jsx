@@ -2526,7 +2526,7 @@ export default function App() {
     requestAnimationFrame(run);
   }
   // Перетаскивание касанием (long-press + drag): snapshot + ghost-preview + атомарное приземление
-  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-fid]")).map(n=>n.getAttribute("data-fid")); dragTouch.current={id,active:false,y0,x0,order,kind:"fid",startIndex:order.indexOf(id),curIndex:order.indexOf(id),t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){ const dt=dragTouch.current; dt.active=true; const els=dt.order.map(id=>document.querySelector(`[data-fid="${id}"]`)); dt.slots=els.map(el=>{const r=el.getBoundingClientRect();return{top:r.top,h:r.height,mid:r.top+r.height/2};}); dt.els=els; dt.startIndex=dt.order.indexOf(id); dt.curIndex=dt.startIndex; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
+  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-fid]")).map(n=>n.getAttribute("data-fid")); dragTouch.current={id,active:false,y0,x0,order,kind:"fid",startIndex:order.indexOf(id),curIndex:order.indexOf(id),t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){ const dt=dragTouch.current; dt.active=true; const els=dt.order.map(id=>document.querySelector(`[data-fid="${id}"]`)); dt.slots=els.map(el=>{const r=el.getBoundingClientRect();return{top:r.top,h:r.height,mid:r.top+r.height/2};}); dt.els=els; dt.startIndex=dt.order.indexOf(id); dt.curIndex=dt.startIndex; setDragActive(id); setDragOffset(0); buzz(12);} },400)}; }
   function folderDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
@@ -2551,7 +2551,7 @@ export default function App() {
     if(!dt.active||!dt.slots){ setDragActive(null); setDragOffset(0); return; }
     const order=dt.order.slice(); const [mv]=order.splice(dt.startIndex,1); order.splice(dt.curIndex,0,mv);
     const self=dt.els[dt.startIndex]; const dragY=dt.lastDragY||0;
-    dt.els.forEach((el,i)=>{ if(el&&i!==dt.startIndex){ el.style.transition=""; el.style.transform=""; } });
+    dt.els.forEach((el,i)=>{ if(el&&i!==dt.startIndex){ el.style.transition="none"; el.style.transform=""; requestAnimationFrame(()=>{ try{el.style.transition="";}catch{} }); } });
     if(self){ self.style.transition=""; self.style.transform=""; self.style.zIndex=""; self.style.position=""; }
     if(dt.curIndex!==dt.startIndex){
       let destTop; if(dt.curIndex>dt.startIndex){ destTop=dt.slots[dt.curIndex].top+dt.slots[dt.curIndex].h-dt.slots[dt.startIndex].h; } else { destTop=dt.slots[dt.curIndex].top; }
@@ -2562,7 +2562,7 @@ export default function App() {
     }
     setDragActive(null); setDragOffset(0);
   }
-  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-sid]")).map(n=>n.getAttribute("data-sid")); dragTouch.current={id,active:false,y0,x0,order,kind:"sid",startIndex:order.indexOf(id),curIndex:order.indexOf(id),t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){ const dt=dragTouch.current; dt.active=true; const els=dt.order.map(id=>document.querySelector(`[data-sid="${id}"]`)); dt.slots=els.map(el=>{const r=el.getBoundingClientRect();return{top:r.top,h:r.height,mid:r.top+r.height/2};}); dt.els=els; dt.startIndex=dt.order.indexOf(id); dt.curIndex=dt.startIndex; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
+  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-sid]")).map(n=>n.getAttribute("data-sid")); dragTouch.current={id,active:false,y0,x0,order,kind:"sid",startIndex:order.indexOf(id),curIndex:order.indexOf(id),t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){ const dt=dragTouch.current; dt.active=true; const els=dt.order.map(id=>document.querySelector(`[data-sid="${id}"]`)); dt.slots=els.map(el=>{const r=el.getBoundingClientRect();return{top:r.top,h:r.height,mid:r.top+r.height/2};}); dt.els=els; dt.startIndex=dt.order.indexOf(id); dt.curIndex=dt.startIndex; setDragActive(id); setDragOffset(0); buzz(12);} },400)}; }
   function subDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
@@ -2587,7 +2587,7 @@ export default function App() {
     if(!dt.active||!dt.slots){ setDragActive(null); setDragOffset(0); return; }
     const order=dt.order.slice(); const [mv]=order.splice(dt.startIndex,1); order.splice(dt.curIndex,0,mv);
     const self=dt.els[dt.startIndex]; const dragY=dt.lastDragY||0;
-    dt.els.forEach((el,i)=>{ if(el&&i!==dt.startIndex){ el.style.transition=""; el.style.transform=""; } });
+    dt.els.forEach((el,i)=>{ if(el&&i!==dt.startIndex){ el.style.transition="none"; el.style.transform=""; requestAnimationFrame(()=>{ try{el.style.transition="";}catch{} }); } });
     if(self){ self.style.transition=""; self.style.transform=""; self.style.zIndex=""; self.style.position=""; }
     if(dt.curIndex!==dt.startIndex){
       let destTop; if(dt.curIndex>dt.startIndex){ destTop=dt.slots[dt.curIndex].top+dt.slots[dt.curIndex].h-dt.slots[dt.startIndex].h; } else { destTop=dt.slots[dt.curIndex].top; }
@@ -3200,7 +3200,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v467</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v468</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
