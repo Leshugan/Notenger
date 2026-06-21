@@ -1323,7 +1323,7 @@ export default function App() {
       setLmLand({id:dt.id, off:landOff});
       if(lm_setItemsRef.current){ lm_setItemsRef.current(arr=>{ const map={}; arr.forEach(x=>map[x.id]=x); const ord=order.map(id=>map[id]).filter(Boolean); const rest=arr.filter(x=>!order.includes(x.id)); return [...ord,...rest]; }); }
       // на следующем кадре анимируем landing → 0, затем убираем
-      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ setLmLand(l=>l&&l.id===dt.id?{id:dt.id,off:0,animate:true}:l); setTimeout(()=>setLmLand(l=>l&&l.id===dt.id?null:l),240); }); });
+      requestAnimationFrame(()=>{ setLmLand(l=>l&&l.id===dt.id?{id:dt.id,off:0,animate:true}:l); setTimeout(()=>setLmLand(l=>l&&l.id===dt.id?null:l),160); });
     }
     setLmDragId(null); setLmDragOff(0);
   }
@@ -2447,6 +2447,7 @@ export default function App() {
   const [dragActive, setDragActive] = useState(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragOrder, setDragOrder] = useState(null);   // локальный порядок id при drag тем/категорий
+  const [fLand, setFLand] = useState(null);           // {id, off, animate} приземление тем/категорий
   // Сосед едет СВОЕЙ анимацией сразу (без перескока), массив переставляется по завершении.
   // Догнанный (ещё едущий) доезжает остаток быстрее.
   function slideSwap(selector, draggedId, targetId, reorderFn, movingDown, reactClears, dur=300){
@@ -2524,85 +2525,79 @@ export default function App() {
     };
     requestAnimationFrame(run);
   }
-  // Перетаскивание касанием (long-press + drag): определяем строку под пальцем
-  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-fid]")).map(n=>n.getAttribute("data-fid")); dragTouch.current={id,active:false,y0,x0,lastSwap:0,curD:0,order,kind:"fid",t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragOrder(order.slice()); setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
+  // Перетаскивание касанием (long-press + drag): snapshot + ghost-preview + атомарное приземление
+  function folderDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-fid]")).map(n=>n.getAttribute("data-fid")); dragTouch.current={id,active:false,y0,x0,order,kind:"fid",startIndex:order.indexOf(id),curIndex:order.indexOf(id),t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){ const dt=dragTouch.current; dt.active=true; const els=dt.order.map(id=>document.querySelector(`[data-fid="${id}"]`)); dt.slots=els.map(el=>{const r=el.getBoundingClientRect();return{top:r.top,h:r.height,mid:r.top+r.height/2};}); dt.els=els; dt.startIndex=dt.order.indexOf(id); dt.curIndex=dt.startIndex; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function folderDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    const self=document.querySelector(`[data-fid="${dt.id}"]`);
-    if(!self) return;
-    const curD=dt.curD||0;
-    const rect=self.getBoundingClientRect();
-    const cleanMid=(rect.top-curD)+rect.height/2;
-    const D=t.clientY-cleanMid;
-    dt.curD=D; dt.lastFingerY=t.clientY;
-    self.style.transform=`translateY(${D}px) scale(1.07)`;
-    const now=Date.now();
-    const dtMs=Math.max(1, now-(dt.lastMoveT||now));
-    const speed=Math.abs(t.clientY-(dt.lastMoveY!=null?dt.lastMoveY:t.clientY))/dtMs;
-    dt.lastMoveT=now; dt.lastMoveY=t.clientY;
-    const fast=speed>0.9;
-    if(now-dt.lastSwap>(fast?90:120)){
-      const reorder=(target)=>{ const a=[...dt.order]; const from=a.indexOf(dt.id); const to=a.indexOf(target); if(from<0||to<0)return; const [m]=a.splice(from,1); a.splice(to,0,m); dt.order=a; setDragOrder(a); };
-      if(fast){
-        flushSlides("[data-fid]");
-        document.querySelectorAll("[data-fid]").forEach(n=>{ if(n.getAttribute("data-fid")!==dt.id){ n.style.transition="none"; n.style.transform=""; n._sliding=false; if(n._slideTimer){clearTimeout(n._slideTimer);n._slideTimer=null;} n._slideCommit=null; } });
-        const rows=Array.from(document.querySelectorAll("[data-fid]"));
-        const selfTop=self.getBoundingClientRect().top;
-        const myIdx=dt.order.indexOf(dt.id);
-        let target=null, best=Infinity;
-        for(const r of rows){ const id=r.getAttribute("data-fid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const mid=rr.top+rr.height/2; const passed=selfTop<rr.top?(t.clientY>mid):(t.clientY<mid); if(passed){ const d=Math.abs(dt.order.indexOf(id)-myIdx); if(d<best){ best=d; target=id; } } }
-        if(target){ reorder(target); dt.lastSwap=now; }
-      } else {
-        const rows=Array.from(document.querySelectorAll("[data-fid]"));
-        let target=null;
-        for(const r of rows){ const id=r.getAttribute("data-fid"); if(id===dt.id) continue; if(r._sliding) continue; const rr=r.getBoundingClientRect(); if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; } }
-        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-fid]", dt.id, target, ()=>reorder(target), md, true); dt.lastSwap=now; }
-      }
+    if(!dt.slots) return;
+    const startSlot=dt.slots[dt.startIndex];
+    const self=dt.els[dt.startIndex];
+    const dragY=t.clientY-dt.y0; dt.lastDragY=dragY;
+    if(self){ self.style.transition="none"; self.style.transform=`translateY(${dragY}px) scale(1.07)`; self.style.zIndex="30"; self.style.position="relative"; }
+    const dragMid=startSlot.mid+dragY;
+    let newIndex=dt.startIndex;
+    for(let i=0;i<dt.slots.length;i++){ if(i===dt.startIndex) continue; const s=dt.slots[i]; if(i<dt.startIndex && dragMid<s.mid){ newIndex=Math.min(newIndex,i); } else if(i>dt.startIndex && dragMid>s.mid){ newIndex=Math.max(newIndex,i); } }
+    if(newIndex!==dt.curIndex){
+      dt.curIndex=newIndex;
+      const dragH=startSlot.h;
+      dt.order.forEach((id,i)=>{ if(i===dt.startIndex) return; const el=dt.els[i]; if(!el) return; let shift=0; if(dt.startIndex<newIndex && i>dt.startIndex && i<=newIndex) shift=-dragH; else if(dt.startIndex>newIndex && i<dt.startIndex && i>=newIndex) shift=dragH; el.style.transition="transform 200ms cubic-bezier(.22,1,.36,1)"; el.style.transform=shift?`translateY(${shift}px)`:""; });
     }
   }
-  function folderDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-fid="${dt.id}"]`); const cur=dt.curD||0; dragTouch.current=null; flushSlides("[data-fid]"); const finalOrder=dt.order?dt.order.slice():null; if(finalOrder){ upd(d=>{ const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...d,folders:d.folders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; }); } if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
-  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-sid]")).map(n=>n.getAttribute("data-sid")); dragTouch.current={id,active:false,y0,x0,lastSwap:0,curD:0,order,kind:"sid",t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){dragTouch.current.active=true; setDragOrder(order.slice()); setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
+  function folderDragTouchEnd(){
+    const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); dragTouch.current=null;
+    if(!dt.active||!dt.slots){ setDragActive(null); setDragOffset(0); return; }
+    const order=dt.order.slice(); const [mv]=order.splice(dt.startIndex,1); order.splice(dt.curIndex,0,mv);
+    const self=dt.els[dt.startIndex]; const dragY=dt.lastDragY||0;
+    dt.els.forEach((el,i)=>{ if(el&&i!==dt.startIndex){ el.style.transition=""; el.style.transform=""; } });
+    if(self){ self.style.transition=""; self.style.transform=""; self.style.zIndex=""; self.style.position=""; }
+    if(dt.curIndex!==dt.startIndex){
+      let destTop; if(dt.curIndex>dt.startIndex){ destTop=dt.slots[dt.curIndex].top+dt.slots[dt.curIndex].h-dt.slots[dt.startIndex].h; } else { destTop=dt.slots[dt.curIndex].top; }
+      const landOff=(dt.slots[dt.startIndex].top+dragY)-destTop;
+      setFLand({id:dt.id, off:landOff});
+      upd(d=>{ const o={}; order.forEach((id,i)=>o[id]=i); return {...d,folders:d.folders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; });
+      requestAnimationFrame(()=>{ setFLand(l=>l&&l.id===dt.id?{id:dt.id,off:0,animate:true}:l); setTimeout(()=>setFLand(l=>l&&l.id===dt.id?null:l),160); });
+    }
+    setDragActive(null); setDragOffset(0);
+  }
+  function subDragTouchStart(id,e){ const y0=e.touches[0].clientY, x0=e.touches[0].clientX; const order=Array.from(document.querySelectorAll("[data-sid]")).map(n=>n.getAttribute("data-sid")); dragTouch.current={id,active:false,y0,x0,order,kind:"sid",startIndex:order.indexOf(id),curIndex:order.indexOf(id),t:setTimeout(()=>{ if(dragTouch.current&&!dragTouch.current.moved){ const dt=dragTouch.current; dt.active=true; const els=dt.order.map(id=>document.querySelector(`[data-sid="${id}"]`)); dt.slots=els.map(el=>{const r=el.getBoundingClientRect();return{top:r.top,h:r.height,mid:r.top+r.height/2};}); dt.els=els; dt.startIndex=dt.order.indexOf(id); dt.curIndex=dt.startIndex; setDragActive(id); setDragOffset(0); buzz(12);} },550)}; }
   function subDragTouchMove(e){
     const dt=dragTouch.current; if(!dt) return;
     if(!dt.active){ const tt=e.touches[0]; if(Math.abs(tt.clientX-dt.x0)>8||Math.abs(tt.clientY-dt.y0)>8){ dt.moved=true; if(dt.t)clearTimeout(dt.t); } return; }
     e.preventDefault();
     const t=e.touches[0];
-    const self=document.querySelector(`[data-sid="${dt.id}"]`);
-    if(!self) return;
-    const curD=dt.curD||0;
-    const rect=self.getBoundingClientRect();
-    const cleanMid=(rect.top-curD)+rect.height/2;
-    const D=t.clientY-cleanMid;
-    dt.curD=D; dt.lastFingerY=t.clientY;
-    self.style.transform=`translateY(${D}px) scale(1.07)`;
-    const now=Date.now();
-    const dtMs=Math.max(1, now-(dt.lastMoveT||now));
-    const speed=Math.abs(t.clientY-(dt.lastMoveY!=null?dt.lastMoveY:t.clientY))/dtMs;
-    dt.lastMoveT=now; dt.lastMoveY=t.clientY;
-    const fast=speed>0.9;
-    if(now-dt.lastSwap>(fast?90:120)){
-      const reorder=(target)=>{ const a=[...dt.order]; const from=a.indexOf(dt.id); const to=a.indexOf(target); if(from<0||to<0)return; const [m]=a.splice(from,1); a.splice(to,0,m); dt.order=a; setDragOrder(a); };
-      if(fast){
-        flushSlides("[data-sid]");
-        document.querySelectorAll("[data-sid]").forEach(n=>{ if(n.getAttribute("data-sid")!==dt.id){ n.style.transition="none"; n.style.transform=""; n._sliding=false; if(n._slideTimer){clearTimeout(n._slideTimer);n._slideTimer=null;} n._slideCommit=null; } });
-        const rows=Array.from(document.querySelectorAll("[data-sid]"));
-        const selfTop=self.getBoundingClientRect().top;
-        const myIdx=dt.order.indexOf(dt.id);
-        let target=null, best=Infinity;
-        for(const r of rows){ const id=r.getAttribute("data-sid"); if(id===dt.id) continue; const rr=r.getBoundingClientRect(); const mid=rr.top+rr.height/2; const passed=selfTop<rr.top?(t.clientY>mid):(t.clientY<mid); if(passed){ const d=Math.abs(dt.order.indexOf(id)-myIdx); if(d<best){ best=d; target=id; } } }
-        if(target){ reorder(target); dt.lastSwap=now; }
-      } else {
-        const rows=Array.from(document.querySelectorAll("[data-sid]"));
-        let target=null;
-        for(const r of rows){ const id=r.getAttribute("data-sid"); if(id===dt.id) continue; if(r._sliding) continue; const rr=r.getBoundingClientRect(); if(t.clientY>rr.top && t.clientY<rr.bottom){ target=id; break; } }
-        if(target){ const md=dt.order.indexOf(target)>dt.order.indexOf(dt.id); slideSwap("[data-sid]", dt.id, target, ()=>reorder(target), md, true); dt.lastSwap=now; }
-      }
+    if(!dt.slots) return;
+    const startSlot=dt.slots[dt.startIndex];
+    const self=dt.els[dt.startIndex];
+    const dragY=t.clientY-dt.y0; dt.lastDragY=dragY;
+    if(self){ self.style.transition="none"; self.style.transform=`translateY(${dragY}px) scale(1.07)`; self.style.zIndex="30"; self.style.position="relative"; }
+    const dragMid=startSlot.mid+dragY;
+    let newIndex=dt.startIndex;
+    for(let i=0;i<dt.slots.length;i++){ if(i===dt.startIndex) continue; const s=dt.slots[i]; if(i<dt.startIndex && dragMid<s.mid){ newIndex=Math.min(newIndex,i); } else if(i>dt.startIndex && dragMid>s.mid){ newIndex=Math.max(newIndex,i); } }
+    if(newIndex!==dt.curIndex){
+      dt.curIndex=newIndex;
+      const dragH=startSlot.h;
+      dt.order.forEach((id,i)=>{ if(i===dt.startIndex) return; const el=dt.els[i]; if(!el) return; let shift=0; if(dt.startIndex<newIndex && i>dt.startIndex && i<=newIndex) shift=-dragH; else if(dt.startIndex>newIndex && i<dt.startIndex && i>=newIndex) shift=dragH; el.style.transition="transform 200ms cubic-bezier(.22,1,.36,1)"; el.style.transform=shift?`translateY(${shift}px)`:""; });
     }
   }
-  function subDragTouchEnd(){ const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); const el=document.querySelector(`[data-sid="${dt.id}"]`); const cur=dt.curD||0; dragTouch.current=null; flushSlides("[data-sid]"); const finalOrder=dt.order?dt.order.slice():null; if(finalOrder){ upd(d=>({...d,folders:d.folders.map(f=>{ if(f.id!==fid) return f; const o={}; finalOrder.forEach((id,i)=>o[id]=i); return {...f,subfolders:f.subfolders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; })})); } if(el && Math.abs(cur)>0.5){ requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); const cleanTop=r.top-cur; const startD=(dt.lastFingerY!=null?dt.lastFingerY:(cleanTop+r.height/2))-(cleanTop+r.height/2); el.style.setProperty("transition","none","important"); el.style.transform=`translateY(${startD}px) scale(1.07)`; void el.offsetHeight; el.style.setProperty("transition","transform 200ms cubic-bezier(.22,1,.36,1)","important"); el.style.transform="translateY(0) scale(1)"; setTimeout(()=>{ try{ el.style.removeProperty("transition"); el.style.transform=""; }catch{} setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); },210); }); } else { if(el) el.style.transform=""; setDragActive(null); setDragOffset(0); setTimeout(()=>setDragOrder(null),30); } }
+  function subDragTouchEnd(){
+    const dt=dragTouch.current; if(!dt){ return; } if(dt.t)clearTimeout(dt.t); dragTouch.current=null;
+    if(!dt.active||!dt.slots){ setDragActive(null); setDragOffset(0); return; }
+    const order=dt.order.slice(); const [mv]=order.splice(dt.startIndex,1); order.splice(dt.curIndex,0,mv);
+    const self=dt.els[dt.startIndex]; const dragY=dt.lastDragY||0;
+    dt.els.forEach((el,i)=>{ if(el&&i!==dt.startIndex){ el.style.transition=""; el.style.transform=""; } });
+    if(self){ self.style.transition=""; self.style.transform=""; self.style.zIndex=""; self.style.position=""; }
+    if(dt.curIndex!==dt.startIndex){
+      let destTop; if(dt.curIndex>dt.startIndex){ destTop=dt.slots[dt.curIndex].top+dt.slots[dt.curIndex].h-dt.slots[dt.startIndex].h; } else { destTop=dt.slots[dt.curIndex].top; }
+      const landOff=(dt.slots[dt.startIndex].top+dragY)-destTop;
+      setFLand({id:dt.id, off:landOff});
+      upd(d=>({...d,folders:d.folders.map(f=>{ if(f.id!==fid) return f; const o={}; order.forEach((id,i)=>o[id]=i); return {...f,subfolders:f.subfolders.slice().sort((a,b)=>(o[a.id]??999)-(o[b.id]??999))}; })}));
+      requestAnimationFrame(()=>{ setFLand(l=>l&&l.id===dt.id?{id:dt.id,off:0,animate:true}:l); setTimeout(()=>setFLand(l=>l&&l.id===dt.id?null:l),160); });
+    }
+    setDragActive(null); setDragOffset(0);
+  }
   function delF(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){setFid(null);setScr("main");} }
 
   // ── Subfolder CRUD ──
@@ -3205,7 +3200,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v465</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v467</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3234,7 +3229,7 @@ export default function App() {
                 onTouchStart={e=>{ if(!lmEditMode) lmRowTouchStart(idx,e,items,setItems); }}
                 style={{display:"flex",alignItems:"flex-start",gap:8,padding:"2px 0",opacity:it.checked?.6:1,touchAction:lmDragId===it.id?"none":"auto",
                 transform: (lmLand&&lmLand.id===it.id)?`translateY(${lmLand.off}px)`:undefined,
-                transition: lmDragId===it.id?"box-shadow .18s ease":((lmLand&&lmLand.id===it.id&&lmLand.animate)?"transform 220ms cubic-bezier(.22,1,.36,1)":((lmLand&&lmLand.id===it.id)?"none":"transform 180ms cubic-bezier(.2,.8,.2,1)")),
+                transition: lmDragId===it.id?"box-shadow .18s ease":((lmLand&&lmLand.id===it.id&&lmLand.animate)?"transform 140ms cubic-bezier(.22,1,.36,1)":((lmLand&&lmLand.id===it.id)?"none":"transform 180ms cubic-bezier(.2,.8,.2,1)")),
                 position:"relative", zIndex:(lmDragId===it.id||(lmLand&&lmLand.id===it.id))?30:1,
                 background:lmDragId===it.id?"#241B12":"transparent",
                 border:"none",
@@ -3497,7 +3492,7 @@ export default function App() {
           onTouchMove={folderDragTouchMove}
           onTouchEnd={folderDragTouchEnd}>
           {filtF.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет категорий — нажмите +</div>}
-          {(()=>{ let _ff=filtF; if(dragOrder){ const m={}; filtF.forEach(x=>m[x.id]=x); const ord=dragOrder.map(id=>m[id]).filter(Boolean); const rest=filtF.filter(x=>!dragOrder.includes(x.id)); _ff=[...ord,...rest]; } return _ff; })().map(f=>{
+          {filtF.map(f=>{
             const last = f.isTheme
               ? ((f.notes&&f.notes.length)?f.notes.slice(-1)[0]:(f.subfolders||[]).flatMap(s=>s.notes||[]).slice(-1)[0])
               : f.subfolders.flatMap(s=>s.notes).pop();
@@ -3508,11 +3503,11 @@ export default function App() {
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===f.id?"#33271B":"#2A2017",
                   border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
-                  transform:dragActive===f.id?undefined:"none",
-                  transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
+                  transform:dragActive===f.id?undefined:((fLand&&fLand.id===f.id)?`translateY(${fLand.off}px)`:"none"),
+                  transition:dragActive===f.id?"box-shadow .18s ease, background .15s ease":((fLand&&fLand.id===f.id&&fLand.animate)?"transform 140ms cubic-bezier(.22,1,.36,1), background .15s ease":((fLand&&fLand.id===f.id)?"background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease")),
                   boxShadow:dragActive===f.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:f.isTheme?22:12,
-                  zIndex:dragActive===f.id?30:"auto"}}>
+                  zIndex:(dragActive===f.id||(fLand&&fLand.id===f.id))?30:"auto"}}>
                 {/* Метка типа — прижата к верхней грани, правый угол */}
                 <span style={{position:"absolute",top:3,right:12,fontSize:8,letterSpacing:.3,
                   textTransform:"uppercase",color:"#6A5A48",pointerEvents:"none"}}>{f.isTheme?"тема":"катег"}</span>
@@ -3586,7 +3581,7 @@ export default function App() {
           onTouchMove={subDragTouchMove}
           onTouchEnd={subDragTouchEnd}>
           {folder.subfolders.length===0&&<div style={{textAlign:"center",color:"#B0A498",marginTop:60,fontSize:15}}>Нет тем — нажмите +</div>}
-          {(()=>{ let _ss=folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())); if(dragOrder){ const m={}; _ss.forEach(x=>m[x.id]=x); const ord=dragOrder.map(id=>m[id]).filter(Boolean); const rest=_ss.filter(x=>!dragOrder.includes(x.id)); _ss=[...ord,...rest]; } return _ss; })().map(s=>{
+          {folder.subfolders.filter(s=>s.name.toLowerCase().includes(subSearch.trim().toLowerCase())).map(s=>{
             const last=s.notes[s.notes.length-1];
             return (
               <div key={s.id} data-sid={s.id} data-dragging={dragActive===s.id?"1":"0"} className="row" onClick={()=>openS(s)}
@@ -3595,11 +3590,11 @@ export default function App() {
                   cursor:"pointer",margin:"3px 8px",
                   background:dragActive===s.id?"#33271B":"#2A2017",
                   border:"1px solid "+(iconAccent==="choconeon"?"rgba(239,108,0,.55)":"#4A3A2A"),
-                  transform:dragActive===s.id?undefined:"none",
-                  transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease",
+                  transform:dragActive===s.id?undefined:((fLand&&fLand.id===s.id)?`translateY(${fLand.off}px)`:"none"),
+                  transition:dragActive===s.id?"box-shadow .18s ease, background .15s ease":((fLand&&fLand.id===s.id&&fLand.animate)?"transform 140ms cubic-bezier(.22,1,.36,1), background .15s ease":((fLand&&fLand.id===s.id)?"background .15s ease":"transform .42s cubic-bezier(.16,1,.3,1), background .15s ease")),
                   boxShadow:dragActive===s.id?"0 18px 42px rgba(0,0,0,.7)":(iconAccent==="choconeon"?"0 0 10px rgba(239,108,0,.35)":"none"),
                   borderRadius:22,
-                  zIndex:dragActive===s.id?30:"auto"}}>
+                  zIndex:(dragActive===s.id||(fLand&&fLand.id===s.id))?30:"auto"}}>
                 <Av icon={s.icon} color={s.color} acc={iconAccent}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
