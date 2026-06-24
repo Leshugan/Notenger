@@ -569,7 +569,7 @@ function PlaneGhost({ phase, acc, accFg, glow, anchor, micAnchor, accBorder }){
   const [late,setLate]=useState(false); // финальная фаза: превращение в микрофон
   useEffect(()=>{
     let r2;
-    const r1=requestAnimationFrame(()=>{ r2=requestAnimationFrame(()=>setGo(true)); });
+    const r1=requestAnimationFrame(()=>setGo(true));
     const tl=setTimeout(()=>setLate(true), 500); // превращение в микрофон ТОЛЬКО после посадки
     return ()=>{ cancelAnimationFrame(r1); if(r2)cancelAnimationFrame(r2); clearTimeout(tl); };
   },[]);
@@ -3200,7 +3200,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v468</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v471</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3904,7 +3904,7 @@ export default function App() {
               onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
-              ref={el=>{ fullTaRef.current=el; if(el){ if(checklist){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } if(composerWantFocus.current){ composerWantFocus.current=false; setTimeout(()=>{ try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} },50); } } }}
+              ref={el=>{ fullTaRef.current=el; if(el){ if(checklist){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } if(composerWantFocus.current){ composerWantFocus.current=false; try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} } } }}
               placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
               style={{flex:checklist?"0 0 auto":1,width:"100%",background:"#1A1410",border:"none",outline:"none",
                 color:"var(--ink,#F2EAE0)",fontSize:16,lineHeight:1.5,fontWeight:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
@@ -4074,20 +4074,20 @@ export default function App() {
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyT}</button>
           )}
-          {/* Копировать сообщение */}
-          <button onClick={()=>{ if(single){ if(selNote){ setSelectMode(null); copyMulti("cut",[selNote.id]); } } else { copyMulti("cut"); } setScr("main"); }} title="Переместить в раздел"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
-              cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyMsg}</button>
+          {/* Удалить */}
+          <button onClick={()=>{ if(single){ if(selNote){softDel(selNote);setSelectMode(null);} } else { deleteMulti(); } }} title="Удалить"
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#33231A",border:"1px solid #5A3A2A",color:"#E05252",
+              cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.trash}</button>
           {/* Редактировать — только для одиночного */}
           {single&&(
             <button onClick={()=>{ if(selNote){ startEdit(selNote); } setMultiSelect([]); }} title="Редактировать"
               style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.edit}</button>
           )}
-          {/* Удалить */}
-          <button onClick={()=>{ if(single){ if(selNote){softDel(selNote);setSelectMode(null);} } else { deleteMulti(); } }} title="Удалить"
-            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#33231A",border:"1px solid #5A3A2A",color:"#E05252",
-              cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.trash}</button>
+          {/* Переместить в раздел (переслать) */}
+          <button onClick={()=>{ if(single){ if(selNote){ setSelectMode(null); copyMulti("cut",[selNote.id]); } } else { copyMulti("cut"); } setScr("main"); }} title="Переместить в раздел"
+            style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"#2E251C",border:"1px solid var(--gline,#4A3A2A)",boxShadow:"var(--gline-glow,none)",color:"#EF6C00",
+              cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.copyMsg}</button>
         </div>
         );
       })()}
@@ -4132,7 +4132,7 @@ export default function App() {
             <div style={{flex:1}}/>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button ref={el=>{ writeBtnRef.current=el; if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
-              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); composerWantFocus.current=true; if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { capturePlaneAnchor(); setPlanePhase('in'); setTimeout(()=>{ setComposerFull(true); setComposerPeek(false); setPlanePhase('idle'); }, 700); } }}
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); composerWantFocus.current=true; if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { capturePlaneAnchor(); setPlanePhase('in'); requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ setComposerFull(true); setComposerPeek(false); }); }); setTimeout(()=>setPlanePhase('idle'), 700); } }}
               title="Написать"
               style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
