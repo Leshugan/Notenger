@@ -138,6 +138,10 @@ jobs:
           package $PKG;
           import android.os.Build;
           import android.os.Bundle;
+          import android.graphics.Color;
+          import android.view.View;
+          import android.view.Window;
+          import android.view.WindowManager;
           import android.Manifest;
           import android.content.Intent;
           import android.content.pm.PackageManager;
@@ -180,6 +184,22 @@ jobs:
             @Override
             public void onCreate(Bundle savedInstanceState) {
               super.onCreate(savedInstanceState);
+              // Статус-бар и навбар — цвет фона приложения (#1A1410), светлые иконки (тёмная тема)
+              try {
+                Window w = getWindow();
+                int bg = Color.parseColor("#1A1410");
+                w.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                w.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+                w.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                w.setStatusBarColor(bg);
+                w.setNavigationBarColor(bg);
+                View dv = w.getDecorView();
+                int vis = dv.getSystemUiVisibility();
+                // убрать флаги "светлых баров" → иконки останутся белыми на тёмном фоне
+                vis &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                if (Build.VERSION.SDK_INT >= 26) vis &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                dv.setSystemUiVisibility(vis);
+              } catch (Exception e) {}
               requestStartupPermissions();
               fileChooserLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
