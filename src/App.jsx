@@ -3200,7 +3200,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v474</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v475</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3976,9 +3976,9 @@ export default function App() {
               <div role="button" onPointerDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</div>
-              <div role="button" onPointerDown={()=>suppressKb()} onClick={undoNote} title="Отменить"
+              <div role="button" onPointerDown={e=>e.preventDefault()} onClick={undoNote} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.undo}</span></div>
-              <div role="button" onPointerDown={()=>suppressKb()} onClick={redoNote} title="Вернуть"
+              <div role="button" onPointerDown={e=>e.preventDefault()} onClick={redoNote} title="Вернуть"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{display:"flex",transform:"scale(.8)"}}>{IC.redo}</span></div>
               <div role="button" onPointerDown={()=>suppressKb()} onClick={()=>setPrevSh(true)} title="Предпросмотр"
                 style={{width:38,height:38,borderRadius:"50%",background:"#2E251C",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.eye}</div>
@@ -3993,7 +3993,7 @@ export default function App() {
                 </div>
               )}
               <div style={{flex:1}}/>
-              <div role="button" onPointerDown={()=>suppressKb()} onClick={()=>setAttSh(true)} title="Прикрепить"
+              <div role="button" onPointerDown={e=>e.preventDefault()} onClick={()=>setAttSh(true)} title="Прикрепить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</div>
               <div role="button" onClick={closeComposer} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",cursor:"pointer",color:"#B0A498",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</div>
