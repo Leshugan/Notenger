@@ -788,7 +788,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
           <Av icon={subf.icon} img={subf.iconImg} color={subf.color||color} size={40} acc={accent}/>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"var(--font-title)"}}>{subf.name}</div>
-            <div style={{fontSize:12,color:"#B0A498"}}>{subf.notes.length} сообщений</div>
+            
           </div>
         </div>
         <div style={{display:"flex",flexWrap:"wrap",gap:8,padding:"0 14px 12px",flexShrink:0}}>
@@ -3200,7 +3200,7 @@ export default function App() {
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v471</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"#6A5A48",pointerEvents:"none",fontFamily:"monospace"}}>beta v474</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3422,7 +3422,7 @@ export default function App() {
               </div>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{fontWeight:600,fontSize:16,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontFamily:"var(--font-title)"}}>{subf.name}</div>
-                <div style={{fontSize:12,color:"#B0A498"}}>{subf.notes.length} сообщений</div>
+                
               </div>
             </div>
           )}
@@ -3897,7 +3897,7 @@ export default function App() {
             {/* Текст + список как одно сообщение, прижато вниз */}
             <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:checklist?"flex-start":"flex-end",overflowY:"auto"}}>
             <textarea value={note} className="editor-ta"
-              onKeyDown={e=>{ if(e.key==="Enter" && !checklist){ const el=e.target; const pos=el.selectionStart; const before=el.value.slice(0,pos); const lineStart=before.lastIndexOf("\n")+1; const curLine=before.slice(lineStart); if(/^•\s/.test(curLine)){ if(curLine.trim()==="•"){ e.preventDefault(); const ns=el.value.slice(0,lineStart)+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=lineStart; el.scrollTop=el.scrollHeight;}catch{} }); return; } e.preventDefault(); const ins="\n• "; const ns=el.value.slice(0,pos)+ins+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=pos+ins.length; el.blur(); el.focus(); el.setSelectionRange(pos+ins.length,pos+ins.length); el.scrollTop=el.scrollHeight;}catch{} }); } } }}
+              onKeyDown={e=>{ if(e.key==="Enter" && !checklist){ const el=e.target; const pos=el.selectionStart; const before=el.value.slice(0,pos); const after=el.value.slice(pos); const lineStart=before.lastIndexOf("\n")+1; const curLine=before.slice(lineStart); if(/^•\s/.test(curLine)){ if(curLine.trim()==="•"){ e.preventDefault(); const ns=el.value.slice(0,lineStart)+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=lineStart; el.scrollTop=el.scrollHeight;}catch{} }); return; } e.preventDefault(); const nextLineMatch=after.match(/^(\n)(•\s)/); if(nextLineMatch){ const newPos=pos+2; requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=newPos+1; el.scrollTop=el.scrollHeight;}catch{} }); return; } const ins="\n• "; const ns=el.value.slice(0,pos)+ins+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=pos+ins.length; el.blur(); el.focus(); el.setSelectionRange(pos+ins.length,pos+ins.length); el.scrollTop=el.scrollHeight;}catch{} }); } } }}
               onChange={e=>{ let v=e.target.value; if(checklist){ const el=e.target; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); setClEditId(nid); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } v=v.replace(/(^|\n)- /g,"$1• "); setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
@@ -3973,7 +3973,7 @@ export default function App() {
             )}
             {/* Нижняя панель инструментов */}
             <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,#4A3A2A)",background:"#2A2017",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
-              <div role="button" onPointerDown={()=>suppressKb()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
+              <div role="button" onPointerDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"#EF6C00":"#2E251C",cursor:"pointer",
                   color:fullFmt?"#fff":"#B0A498",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</div>
               <div role="button" onPointerDown={()=>suppressKb()} onClick={undoNote} title="Отменить"
@@ -4127,7 +4127,7 @@ export default function App() {
                 cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
             <div style={{minWidth:0,maxWidth:"calc(50% - 30px)",paddingLeft:4,overflow:"hidden"}}>
               <div onClick={e=>{e.stopPropagation(); if(subf) setMediaBrowser(true);}} style={{cursor:"pointer",fontFamily:"var(--font-title)"}}>{(()=>{const nm=subf?.name||"Сообщение"; const l1=nm.slice(0,13); const l2=nm.slice(13,28); const base={fontWeight:600,fontSize:14,color:"var(--ink,#F2EAE0)",lineHeight:1.1,whiteSpace:"nowrap"}; const fade={WebkitMaskImage:"linear-gradient(90deg,#000 78%,transparent 100%)",maskImage:"linear-gradient(90deg,#000 78%,transparent 100%)"}; return (<>{React.createElement("div",{style:base},l1)}{l2?React.createElement("div",{style:{...base,...fade}},l2):null}</>);})()}</div>
-              {subf&&!((subf?.name||"").length>13)&&<div style={{fontSize:11,color:"#8A7A65",whiteSpace:"nowrap"}}>{subf.notes.length} сообщений</div>}
+              
             </div>
             <div style={{flex:1}}/>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
