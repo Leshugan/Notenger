@@ -574,11 +574,12 @@ function PlaneGhost({ phase, acc, accFg, glow, anchor, micAnchor, accBorder }){
   // 'out': справа(самолёт носом влево -90) летит в центр, доворот -> 0 (носом вверх)
   const [go,setGo]=useState(false);
   const [late,setLate]=useState(false); // финальная фаза: превращение в микрофон
+  const ghostRef=useRef(null);
   useEffect(()=>{
-    let r2;
-    const r1=requestAnimationFrame(()=>setGo(true));
-    const tl=setTimeout(()=>setLate(true), 500); // превращение в микрофон ТОЛЬКО после посадки
-    return ()=>{ cancelAnimationFrame(r1); if(r2)cancelAnimationFrame(r2); clearTimeout(tl); };
+    if(ghostRef.current) void ghostRef.current.offsetHeight;
+    const t0=setTimeout(()=>setGo(true), 60);
+    const tl=setTimeout(()=>setLate(true), 560);
+    return ()=>{ clearTimeout(t0); clearTimeout(tl); };
   },[]);
   // Центр = реальная позиция кнопки «Написать»; если не захвачена — запасной вариант по центру низа
   const cx = anchor?anchor.cx:null, cy = anchor?anchor.cy:null;
@@ -598,7 +599,7 @@ function PlaneGhost({ phase, acc, accFg, glow, anchor, micAnchor, accBorder }){
     planeRot = go?0:-90;
   }
   return (
-    <div className="planeGhost" style={{...pos,background:acc||"#EF6C00",color:accFg||"#fff",border:(accBorder&&accBorder!=="transparent")?("1px solid "+accBorder):"none",boxShadow:glow||((acc&&acc!=="#EF6C00")?"none":"0 1px 5px rgba(239,108,0,.3)")}}>
+    <div ref={ghostRef} className="planeGhost" style={{...pos,background:acc||"#EF6C00",color:accFg||"#fff",border:(accBorder&&accBorder!=="transparent")?("1px solid "+accBorder):"none",boxShadow:glow||((acc&&acc!=="#EF6C00")?"none":"0 1px 5px rgba(239,108,0,.3)")}}>
       <span style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>
         <span style={{display:"flex",transition:"transform .5s cubic-bezier(.4,0,.2,1)",
           transform:`scale(.9) rotate(${planeRot}deg)`}}>{IC.sendUp}</span>
@@ -1731,6 +1732,8 @@ export default function App() {
   const prevLoc = useRef(null); // где был пользователь до перехода на правый экран (восстанавливаем при peek)
   const micAnchor = useRef(null); // реальная позиция кнопки микрофона в шапке
   const writeBtnRef = useRef(null);
+  const sendBtnRef = useRef(null);
+  const [planeXY, setPlaneXY] = useState(null);
   function capturePlaneAnchor(){ try{ const r=writeBtnRef.current&&writeBtnRef.current.getBoundingClientRect(); if(r) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} }
   const [planePhase, setPlanePhase] = useState('idle'); // 'idle' | 'in'(написать->отправить) | 'out'(отправить->написать)
   const [animSh, setAnimSh] = useState(false); // шторка настроек анимаций
@@ -2325,6 +2328,7 @@ export default function App() {
     });
     return out.slice(0,300);
   }
+  function playPlaneBack(){ if(noInputAnim)return; setPlanePhase('outStart'); setTimeout(()=>setPlanePhase('out'),60); setTimeout(()=>setPlanePhase('idle'),650); }
   function back()   {
     if(multiSelect.length){setMultiSelect([]);return;}
     if(selectMode){setSelectMode(null);return;}
@@ -2658,8 +2662,8 @@ export default function App() {
     if(dk){ delete drafts.current[dk]; saveDrafts(drafts.current); }
     const wasEdit=!!editId;
     if(editId) cancelEdit();
-    setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setComposerFull(false); setComposerPeek(false); setTxtSel(null);
-    if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
+    setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setComposerFull(false); setComposerPeek(false); setTxtSel(null); playPlaneBack();
+    
   }
   function saveEdit() {
     if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
@@ -2684,9 +2688,9 @@ export default function App() {
     if(dKey){ delete drafts.current[dKey]; saveDrafts(drafts.current); }
     setEditId(null); setNote(""); setPatts([]); setChecklist(null); setClTitle(""); setIsTyping(false);
     // возврат в исходную тему + анимация полёта кнопки обратно в позицию "написать"
-    setComposerFull(false); setComposerPeek(false);
+    setComposerFull(false); setComposerPeek(false); playPlaneBack();
     setFid(o.fid); setSid(o.sid); setScr("chat");
-    if(!noInputAnim && !wasEdit){ setPlanePhase('out'); setTimeout(()=>setPlanePhase('idle'),560); }
+    
     if(wasEdit){
       setTimeout(()=>{ const el=bubbleEls.current[editedId]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); },80);
     } else {
@@ -3207,12 +3211,23 @@ export default function App() {
           100%{transform:translateX(-140vw) rotate(-8deg);opacity:0}}
         .destroying{animation:flyAwayLeft var(--del-dur,2s) cubic-bezier(.5,0,.75,0) forwards;will-change:transform;}
         .planeGhost{position:fixed;width:44px;height:44px;border-radius:50%;background:var(--acc);
-          display:flex;align-items:center;justify-content:center;color:#fff;z-index:95;pointer-events:none;
+          display:flex;align-items:center;justify-content:center;color:#fff;z-index:500;pointer-events:none;
           box-shadow:0 1px 5px rgba(239,108,0,.3);
           transition:left .5s cubic-bezier(.4,0,.2,1),top .5s cubic-bezier(.4,0,.2,1),bottom .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);}
       `}</style>
 
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v509</div>}
+      
+      {planePhase!=='idle' && (
+        <div style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",height:52,pointerEvents:"none",zIndex:9998}}>
+          <div style={{position:"absolute",top:"50%",width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||"none",
+            left:(planePhase==='in'||planePhase==='outStart')?"calc(100% - 35px)":"50%",
+            transform:(planePhase==='in'||planePhase==='outStart')?"translate(-50%,-50%) rotate(90deg)":"translate(-50%,-50%) rotate(0deg)",
+            transition:(planePhase==='start'||planePhase==='outStart')?"none":"left .45s ease-in-out, transform .45s ease-in-out"}}>
+            <span style={{display:"flex",transform:"scale(.9)"}}>{IC.sendUp}</span>
+          </div>
+        </div>
+      )}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v547</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3333,7 +3348,7 @@ export default function App() {
       {/* Летящий самолётик: визуальный переход между «написать» (центр) и «отправить» (угол) */}
 
       {/* Летящий самолётик между «написать» (центр-низ) и «отправить» (угол) */}
-      {planePhase!=='idle' && <PlaneGhost phase={planePhase} acc={ACC} accFg={ACC_FG} glow={ACC_GLOW} anchor={planeAnchor.current} micAnchor={micAnchor.current} accBorder={ACC_BORDER}/>}
+      {/* PlaneGhost перемещён в конец для верхнего слоя */}
 
       {/* Toast */}
       {toast&&<div style={{position:"fixed",bottom:84,left:"50%",transform:"translateX(-50%)",
@@ -4011,9 +4026,9 @@ export default function App() {
                 style={{width:38,height:38,borderRadius:"50%",background:"none",cursor:"pointer",color:"var(--sub)",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.clip}</div>
               <div role="button" onClick={closeComposer} title="Отменить"
                 style={{width:38,height:38,borderRadius:"50%",background:"none",cursor:"pointer",color:"var(--sub)",display:"flex",alignItems:"center",justifyContent:"center",marginLeft:3}}>{IC.close}</div>
-              <div role="button" onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
+              <div ref={sendBtnRef} role="button" onClick={composerCommit} title={editId?"Сохранить":"Отправить"}
                     style={{width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,cursor:"pointer",marginLeft:3,
-                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||((!_lite&&iconAccent==="orange")?"0 2px 10px rgba(239,108,0,.4)":"none")}}><span style={{display:"flex",transform:"scale(.9) rotate(90deg)"}}>{IC.send}</span></div>
+                      color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",opacity:planePhase==='in'?0:1,boxShadow:ACC_GLOW||((!_lite&&iconAccent==="orange")?"0 2px 10px rgba(239,108,0,.4)":"none")}}><span style={{display:"flex",transform:"scale(.9) rotate(90deg)"}}>{IC.send}</span></div>
             </div>
             {/* Подтверждение отправки голосового */}
             {pendingVoice && (
@@ -4142,9 +4157,9 @@ export default function App() {
             <div style={{flex:1}}/>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button ref={el=>{ writeBtnRef.current=el; if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
-              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); composerWantFocus.current=true; if(noInputAnim){ setComposerFull(true); setComposerPeek(false); } else { capturePlaneAnchor(); setComposerFull(true); setComposerPeek(false); setTimeout(()=>{ setPlanePhase('in'); setTimeout(()=>setPlanePhase('idle'), 700); }, 260); } }}
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); composerWantFocus.current=true; setComposerFull(true); setComposerPeek(false); if(!noInputAnim){ setPlanePhase('start'); setTimeout(()=>setPlanePhase('in'),60); setTimeout(()=>setPlanePhase('idle'),650); } }}
               title="Написать"
-              style={{position:"absolute",left:"50%",bottom:6,transform:"translateX(-50%)",
+              style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
                 background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,cursor:"pointer",zIndex:3,
                 display:"flex",alignItems:"center",justifyContent:"center",transition:"background .15s",
