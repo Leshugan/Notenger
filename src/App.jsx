@@ -3287,7 +3287,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v555</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v556</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -4106,7 +4106,7 @@ export default function App() {
             )}
             {/* Оверлей записи голосового (только в редакторе) */}
             {recording && composerFull && (
-              <div style={{position:"absolute",left:1,right:1,bottom:0,padding:"0 12px",background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
+              <div style={{position:"absolute",left:1,right:1,bottom:0,boxSizing:"border-box",padding:"0 12px",background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"var(--ink,var(--txt))",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
                 <span style={{flex:1,fontSize:13,textAlign:"center",color:recSlide>60?"#E05252":"var(--sub2)",transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`}}>{recSlide>60?"Отпустите для отмены":"← смахните влево для отмены"}</span>
@@ -4138,7 +4138,7 @@ export default function App() {
         const selNote = single ? subf?.notes.find(x=>x.id===selectMode) : null;
         const closePanel = ()=>{ if(single){ setSelectMode(null); setTextArmed(false); } else clearMulti(); };
         return (
-        <div style={{background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+        <div style={{background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 1px",width:"calc(100% - 2px)",boxSizing:"border-box",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0,overflowX:"auto"}}>
           <button onClick={closePanel} title="Отмена"
             style={{width:42,height:42,borderRadius:"50%",flexShrink:0,background:"none",border:"none",color:"var(--ink,var(--txt))",marginRight:2,
@@ -4181,7 +4181,7 @@ export default function App() {
         );
       })()}
       {scr==="chat" && imgSel.length>0 && (
-        <div style={{background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 0 0",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
+        <div style={{background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 1px",width:"calc(100% - 2px)",boxSizing:"border-box",padding:"0 12px",height:52,boxShadow:"0 4px 16px rgba(0,0,0,.35)",
           display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
           <button onClick={()=>setImgSel([])} title="Отмена"
             style={{width:38,height:38,borderRadius:"50%",flexShrink:0,background:"var(--row2)",border:"none",color:"var(--ink,var(--txt))",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.close}</button>
