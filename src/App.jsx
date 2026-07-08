@@ -2385,7 +2385,7 @@ export default function App() {
     });
     return out.slice(0,300);
   }
-  function playPlaneBack(){ if(noInputAnim)return; setPlanePhase('outStart'); setTimeout(()=>setPlanePhase('out'),60); setTimeout(()=>setPlanePhase('idle'),650); }
+  function playPlaneBack(){ if(noInputAnim)return; const sr=sendBtnRef.current&&sendBtnRef.current.getBoundingClientRect(); const toX=(sr&&sr.width)?sr.left+sr.width/2:null; setPlanePhase('outStart'); setTimeout(()=>{ const wr=writeBtnRef.current&&writeBtnRef.current.getBoundingClientRect(); if(toX!=null&&wr&&wr.width){ setPlaneXY({fromX:wr.left+wr.width/2,toX}); } setPlanePhase('out'); },60); setTimeout(()=>{setPlanePhase('idle');setPlaneXY(null);},650); }
   function back()   {
     if(multiSelect.length){setMultiSelect([]);return;}
     if(selectMode){setSelectMode(null);return;}
@@ -3280,14 +3280,14 @@ export default function App() {
       {planePhase!=='idle' && (
         <div style={{position:"fixed",bottom:0,left:0,right:0,height:52,pointerEvents:"none",zIndex:9998}}>
           <div style={{position:"absolute",top:"50%",width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||"none",
-            left:(planePhase==='in'||planePhase==='outStart')?"calc(100% - 35px)":"50%",
+            left:planeXY?(((planePhase==='in'||planePhase==='outStart')?planeXY.toX:planeXY.fromX)+"px"):((planePhase==='in'||planePhase==='outStart')?"calc(100% - 35px)":"50%"),
             transform:(planePhase==='in'||planePhase==='outStart')?"translate(-50%,-50%) rotate(90deg)":"translate(-50%,-50%) rotate(0deg)",
             transition:(planePhase==='start'||planePhase==='outStart')?"none":"left .4s cubic-bezier(.25,.9,.3,1), transform .4s cubic-bezier(.25,.9,.3,1)"}}>
             <span style={{display:"flex",transform:"scale(.9)"}}>{IC.sendUp}</span>
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v559</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v560</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -4217,7 +4217,7 @@ export default function App() {
             <div style={{flex:1}}/>
             {/* Кнопка Написать — по центру панели; удержание = запись (та же механика, что у микрофона) */}
             <button ref={el=>{ writeBtnRef.current=el; if(el){ try{ const r=el.getBoundingClientRect(); if(r&&r.width) planeAnchor.current={cx:r.left+r.width/2, cy:r.top+r.height/2}; }catch{} } }}
-              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); composerWantFocus.current=true; setComposerFull(true); setComposerPeek(false); if(!noInputAnim){ setPlanePhase('start'); setTimeout(()=>setPlanePhase('in'),60); setTimeout(()=>setPlanePhase('idle'),650); } }}
+              onClick={e=>{ closeAllMenus(); if(planePhase!=='idle')return; composerOrigin.current={fid,sid}; setEditId(null); composerWantFocus.current=true; const wr=writeBtnRef.current&&writeBtnRef.current.getBoundingClientRect(); const fromX=wr&&wr.width?wr.left+wr.width/2:null; setComposerFull(true); setComposerPeek(false); if(!noInputAnim){ setPlanePhase('start'); setTimeout(()=>{ const sr=sendBtnRef.current&&sendBtnRef.current.getBoundingClientRect(); if(fromX!=null&&sr&&sr.width){ setPlaneXY({fromX,toX:sr.left+sr.width/2}); } setPlanePhase('in'); },60); setTimeout(()=>{setPlanePhase('idle');setPlaneXY(null);},650); } }}
               title="Написать"
               style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",
                 width:44,height:44,borderRadius:"50%",opacity:(planePhase==='idle'&&!recording)?1:0,pointerEvents:recording?"none":"auto",
