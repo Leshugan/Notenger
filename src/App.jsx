@@ -3287,7 +3287,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v556</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v557</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3631,7 +3631,7 @@ export default function App() {
       {/* НИЖНЯЯ ШАПКА ГЛАВНОГО: Notenger ▾ · поиск · [центр FAB +] */}
       {scr==="main"&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
-          background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 1px",width:"calc(100% - 2px)",boxSizing:"border-box",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <div style={{position:"relative",flex:1,minWidth:0}}>
             <div data-menutrigger onClick={()=>{ setPlusMenu(false); setHdrMenu(null); setFolderMenu(null); setSubMenu(null); setSettingsMenu(v=>!v); }}
               style={{fontSize:17,fontWeight:700,letterSpacing:-.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
@@ -3729,7 +3729,7 @@ export default function App() {
       {/* ═══ НИЖНЯЯ ШАПКА КАТЕГОРИИ — назад · категория · поиск · ⋯ · + ═══ */}
       {scr==="sub"&&folder&&subSearch===""&&!selectMode&&multiSelect.length===0&&(
         <div style={{position:"relative",display:"flex",alignItems:"center",gap:8,padding:"0 12px",
-          background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 0 0",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
+          background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 1px",width:"calc(100% - 2px)",boxSizing:"border-box",flexShrink:0,height:52,overflow:"visible",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}} onClick={e=>e.stopPropagation()}>
           <button onClick={back} title="Назад"
             style={{width:42,height:42,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,var(--txt))",
               cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:2}}>{IC.back}</button>
