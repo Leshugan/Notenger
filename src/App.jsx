@@ -3280,14 +3280,14 @@ export default function App() {
       {planePhase!=='idle' && (
         <div style={{position:"fixed",bottom:0,left:0,right:0,height:52,pointerEvents:"none",zIndex:9998}}>
           <div style={{position:"absolute",top:"50%",width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||"none",
-            left:(planePhase==='in'||planePhase==='outStart')?"calc(100% - 36px)":"50%",
+            left:(planePhase==='in'||planePhase==='outStart')?"calc(100% - 35px)":"50%",
             transform:(planePhase==='in'||planePhase==='outStart')?"translate(-50%,-50%) rotate(90deg)":"translate(-50%,-50%) rotate(0deg)",
-            transition:(planePhase==='start'||planePhase==='outStart')?"none":"left .45s ease-in-out, transform .45s ease-in-out"}}>
+            transition:(planePhase==='start'||planePhase==='outStart')?"none":"left .4s cubic-bezier(.25,.9,.3,1), transform .4s cubic-bezier(.25,.9,.3,1)"}}>
             <span style={{display:"flex",transform:"scale(.9)"}}>{IC.sendUp}</span>
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v558</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v559</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
