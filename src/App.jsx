@@ -1015,8 +1015,8 @@ function FolderForm({ title, initName="", initIcon="fFolder", initColor, icons, 
         </div>
       </div>
       <button onClick={()=>name.trim()&&onSubmit(name.trim(),icon,color)}
-        style={{width:"100%",background:selBg,border:choco?"1px solid var(--gline,var(--line))":neon?"1px solid #3E5C82":choconeon?"1px solid var(--gline,var(--line))":"none",borderRadius:12,padding:13,
-          color:selFg,fontWeight:600,fontSize:15,cursor:"pointer",opacity:name.trim()?1:.5,transition:"background .15s",boxShadow:selGlow}}>
+        style={{width:"100%",background:__LITE?"var(--acc)":selBg,border:(!__LITE&&choco)?"1px solid var(--gline,var(--line))":(!__LITE&&neon)?"1px solid #3E5C82":(!__LITE&&choconeon)?"1px solid var(--gline,var(--line))":"none",borderRadius:12,padding:13,
+          color:__LITE?"#fff":selFg,fontWeight:600,fontSize:15,cursor:"pointer",opacity:name.trim()?1:.5,transition:"background .15s",boxShadow:__LITE?"none":selGlow}}>
         {btnLabel}
       </button>
     </>
@@ -3276,7 +3276,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v549</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v550</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
