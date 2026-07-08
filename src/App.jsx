@@ -627,7 +627,7 @@ function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
         </div>
       </div>
       {/* Нижняя панель: компактная «Изменить» рядом с «Отправить» */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"0 12px",border:"1px solid var(--gline,var(--line))",background:"var(--bar)",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:10,padding:"0 12px",border:"1px solid var(--gline,var(--line))",background:"var(--bar)",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)",width:"calc(100% - 2px)",margin:"0 1px"}}>
         <button onClick={onClose} title="Изменить"
           style={{width:40,height:40,borderRadius:"50%",background:"var(--row2)",border:"1px solid var(--gline,var(--line))",color:"var(--sub)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <span style={{display:"flex",transform:"scale(.8)"}}>{IC.edit}</span>
@@ -1261,7 +1261,9 @@ export default function App() {
       setTimeout(()=>{ try{ snap.remove(); }catch{} }, 370);
     }catch{}
   }
+  const noAnimOnce = useRef(false);
   const prevScrInfo = useRef({scr:null,fid:null,sid:null});
+  const [suppressScrAnim, setSuppressScrAnim] = useState(false);
   useLayoutEffect(()=>{
     if(navTickInit.current){ navTickInit.current=false; prevScrInfo.current={scr,fid,sid}; return; }
     const prev=prevScrInfo.current;
@@ -1269,6 +1271,7 @@ export default function App() {
     const dir = depth(scr) >= depth(prev.scr) ? "push" : "pop";
     prevScrInfo.current={scr,fid,sid};
     setNavDir(dir);
+    if(noAnimOnce.current){ noAnimOnce.current=false; setSuppressScrAnim(true); setTimeout(()=>setSuppressScrAnim(false),50); }
     setNavTick(t=>t+1);
   },[scr,fid,sid]);
   const [search,    setSearch]    = useState("");
@@ -2278,6 +2281,7 @@ export default function App() {
   },[note, sid, fid, scr, editId]);
   // recompute floating buttons when notes or input height change
   useEffect(()=>{ if(scr==="chat") updateActiveNote(); },[data,inputH,isTyping]);
+  useEffect(()=>{ try{ const bg=(THEMES[theme]||THEMES.dark)["--bg"]; if(window.AndroidRec&&window.AndroidRec.setBars){ window.AndroidRec.setBars(bg, theme==="light"); } }catch{} },[theme]);
   // measure input area height
   useEffect(()=>{
     if(inputAreaRef.current) setInputH(inputAreaRef.current.offsetHeight);
@@ -2659,7 +2663,7 @@ export default function App() {
     }
     setDragActive(null); setDragOffset(0);
   }
-  function delF(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){setFid(null);setScr("main");} }
+  function delF(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.filter(f=>f.id!==id)})); if(fid===id){noAnimOnce.current=true;setFid(null);setScr("main");} }
 
   // ── Subfolder CRUD ──
   function mkS(n,i,c)  { upd(d=>({...d,folders:d.folders.map(f=>f.id!==fid?f:{...f,subfolders:[...f.subfolders,{id:uid("sf"),name:n,icon:i,color:c,notes:[]}]})})); setModal(null); }
@@ -2680,7 +2684,7 @@ export default function App() {
       return f.subfolders.map(s=>s.id!==id?s:(s.pinned?{...s,pinned:false}:{...s,pinned:true,pinOrder:maxOrder+1}));
     })()})}));
   }
-  function delS(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.map(f=>f.id!==fid?f:{...f,subfolders:f.subfolders.filter(s=>s.id!==id)})})); if(sid===id){setSid(null);setScr("sub");} }
+  function delS(id)    { try{buzz(18,"delete");}catch{} upd(d=>({...d,folders:d.folders.map(f=>f.id!==fid?f:{...f,subfolders:f.subfolders.filter(s=>s.id!==id)})})); if(sid===id){noAnimOnce.current=true;setSid(null);setScr("sub");} }
 
   // ── Edit in main input ──
   function startEdit(n) {
@@ -3144,7 +3148,7 @@ export default function App() {
 
   return (
     <div
-      className={(booting?"booting":"")+(navDir==="pop"?" navPop":"")+(iosTrans?(navDir==="pop"?" iosT iosPop":" iosT"):"")}
+      className={(booting?"booting":"")+(navDir==="pop"?" navPop":"")+(suppressScrAnim?" noScrAnim":"")+(iosTrans?(navDir==="pop"?" iosT iosPop":" iosT"):"")}
       style={{height:"100dvh",background:"var(--bg)",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
         ...(THEMES[theme]||THEMES.dark),
@@ -3197,7 +3201,7 @@ export default function App() {
         *{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
         input,textarea{-webkit-user-select:text;user-select:text;}
         .editor-ta{-webkit-user-select:text;-webkit-touch-callout:none!important;}
-        .editor-ta::selection{background:rgba(239,108,0,.35);}
+        .editor-ta::selection{background:color-mix(in srgb, var(--acc) 35%, transparent);}
         .selectable,.selectable *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;cursor:text;}
         ::-webkit-scrollbar{width:0;}
         /* staggered появление карточек — только прозрачность (не двигаем хит-зону) */
@@ -3230,6 +3234,7 @@ export default function App() {
         .scrAnim{animation-name:scrIn;animation-duration:var(--scr-dur,.6s);animation-timing-function:cubic-bezier(.05,.7,.1,1);animation-fill-mode:both;}
         .navPop .scrAnim{animation-name:scrInPop;}
         .iosT .scrAnim{animation:none!important;}
+        .noScrAnim .scrAnim{animation:none!important;}
         
         
         
@@ -3276,7 +3281,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v550</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v553</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3330,7 +3335,7 @@ export default function App() {
           </div>
           {/* Нижняя шапка списка — скруглённая, как остальные панели */}
           <div data-lmfooter style={{display:"flex",alignItems:"center",gap:8,padding:"0 12px",height:52,
-            background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",
+            background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",width:"calc(100% - 2px)",margin:"0 1px",
             boxShadow:"0 -4px 16px rgba(0,0,0,.35)",flexShrink:0,position:"relative"}}>
             <button onClick={()=>{setListMode(null);setLmEditMode(false);}} style={{width:40,height:40,borderRadius:"50%",background:"none",border:"none",color:"var(--ink,var(--txt))",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{IC.back}</button>
             <div style={{flex:1,fontWeight:600,fontSize:16,color:"var(--ink,var(--txt))"}}>Список</div>
@@ -3360,7 +3365,7 @@ export default function App() {
             ))}
           </div>
           {/* Панель поиска внизу — в едином стиле, высота 46 */}
-          <div style={{padding:"0 12px",flexShrink:0,background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 12px",flexShrink:0,background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 1px",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)",width:"calc(100% - 2px)"}}>
             <div style={{background:"var(--bg)",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
               <span style={{color:"var(--sub)",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} placeholder="Поиск по всем сообщениям..."
@@ -3706,7 +3711,7 @@ export default function App() {
 
       {/* Строка поиска по темам — внизу */}
       {scr==="sub"&&folder&&subSearch!=="" && !selectMode && multiSelect.length===0 && (
-        <div style={{padding:"0 12px",flexShrink:0,background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+        <div style={{padding:"0 12px",flexShrink:0,background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 1px",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)",width:"calc(100% - 2px)"}}>
           <div style={{background:"var(--bg)",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
             <span style={{color:"var(--sub)",display:"flex"}}>{IC.search}</span>
             <input autoFocus value={subSearch.trim()===""?"":subSearch} onChange={e=>setSubSearch(e.target.value||" ")}
@@ -3830,7 +3835,7 @@ export default function App() {
                   onMouseMove={(selectMode||multiActive)?undefined:bubbleLpMove}
                   onMouseUp={(selectMode||multiActive)?undefined:(e=>bubbleLpEnd(n,e))}
                   onContextMenu={e=>{ e.preventDefault(); }}
-                  style={{background:highlightId===n.id?"#52401F":editId===n.id?"var(--bar)":isMulti?"#3A2A14":selActive?"var(--barActive)":"var(--bar)",
+                  style={{background:highlightId===n.id?(_lite?"var(--barActive)":"#52401F"):editId===n.id?"var(--bar)":isMulti?"var(--barActive)":selActive?"var(--barActive)":"var(--bar)",
                     borderRadius:"16px 4px 16px 16px",padding:(!n.text&&n.attachments&&n.attachments.length===1&&(n.attachments[0].voice||n.attachments[0].type?.startsWith("image/")))?"3px":"6px 14px 4px",
                     maxWidth:"100%",minWidth:0,cursor:multiActive?"pointer":"default",opacity:editId===n.id?.5:1,
                     border:(highlightId===n.id)?"1px solid var(--gold)":(selActive||isMulti)?"1px solid var(--acc)":"1px solid transparent",
@@ -4050,7 +4055,7 @@ export default function App() {
               </div>
             )}
             {/* Нижняя панель инструментов */}
-            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,var(--line))",background:"var(--bar)",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"0 12px",border:"1px solid var(--gline,var(--line))",background:"var(--bar)",flexShrink:0,height:52,borderRadius:"16px 16px 0 0",boxShadow:"0 4px 16px rgba(0,0,0,.35)",width:"calc(100% - 2px)",margin:"0 1px"}}>
               <div role="button" onPointerDown={e=>e.preventDefault()} onClick={()=>setFullFmt(v=>!v)} title="Форматирование"
                 style={{width:38,height:38,borderRadius:"50%",background:fullFmt?"var(--acc)":"var(--row2)",cursor:"pointer",
                   color:fullFmt?"#fff":"var(--sub)",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>BB</div>
@@ -4095,7 +4100,7 @@ export default function App() {
             )}
             {/* Оверлей записи голосового (только в редакторе) */}
             {recording && composerFull && (
-              <div style={{position:"absolute",left:0,right:0,bottom:0,padding:"0 12px",background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
+              <div style={{position:"absolute",left:1,right:1,bottom:0,padding:"0 12px",background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",height:52,display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(0,0,0,.35)",zIndex:20}}>
                 <span style={{width:11,height:11,borderRadius:"50%",background:"#E05252",animation:"pulse 1s infinite",flexShrink:0}}/>
                 <span style={{fontSize:15,color:"var(--ink,var(--txt))",fontVariantNumeric:"tabular-nums"}}>{fmtRec(recSec)}</span>
                 <span style={{flex:1,fontSize:13,textAlign:"center",color:recSlide>60?"#E05252":"var(--sub2)",transform:`translateX(${-Math.min(recSlide,120)*0.5}px)`}}>{recSlide>60?"Отпустите для отмены":"← смахните влево для отмены"}</span>
@@ -4187,7 +4192,7 @@ export default function App() {
         </div>
       )}
         {!selectMode && multiSelect.length===0 && (!composerFull||composerPeek) && chatSearch!=="" && (
-          <div style={{padding:"0 12px",flexShrink:0,background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 0 0",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)"}}>
+          <div style={{padding:"0 12px",flexShrink:0,background:"var(--bar)",border:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",margin:"0 1px",height:52,display:"flex",alignItems:"center",boxShadow:"0 4px 16px rgba(0,0,0,.35)",width:"calc(100% - 2px)"}}>
             <div style={{background:"var(--bg)",borderRadius:12,display:"flex",alignItems:"center",padding:"0 12px",height:40,gap:8,width:"100%"}}>
               <span style={{color:"var(--sub)",display:"flex"}}>{IC.search}</span>
               <input autoFocus value={chatSearch.trim()===""?"":chatSearch} onChange={e=>setChatSearch(e.target.value||" ")}
