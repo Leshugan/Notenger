@@ -1799,6 +1799,7 @@ export default function App() {
   useEffect(()=>{ try{ const _lt=theme==="light"; document.documentElement.style.setProperty("--gline", iconAccent==="choconeon"?(_lt?"rgba(47,128,237,.5)":"rgba(239,108,0,.55)"):"var(--line)"); document.documentElement.style.setProperty("--gline2", (!_lt&&iconAccent==="choconeon")?"rgba(239,108,0,.3)":"var(--bar)"); document.documentElement.style.setProperty("--gline-glow", iconAccent==="choconeon"?(_lt?"0 0 10px rgba(47,128,237,.4)":"0 0 10px rgba(239,108,0,.35)"):"none"); }catch{} },[iconAccent,theme]);
   function setAccent(v){ setIconAccent(v); try{ localStorage.setItem("napp_iconAccent",v); }catch{} }
   const _lite = theme==="light"; __LITE=_lite;
+  useEffect(()=>{ try{ const bg=(THEMES[theme]||THEMES.dark)["--bg"]; if(window.AndroidRec&&window.AndroidRec.setBars){ window.AndroidRec.setBars(bg, theme==="light"); } }catch{} },[theme]);
   const ACC = _lite ? "#FFFFFF" : (iconAccent==="choco" ? "var(--line2)" : iconAccent==="neon" ? "#2E4A6B" : iconAccent==="choconeon" ? "var(--line2)" : "var(--acc)");
   const ACC_FG = _lite ? "#2F80ED" : (iconAccent==="choco" ? "var(--acc)" : iconAccent==="neon" ? "var(--line2)" : iconAccent==="choconeon" ? "var(--acc)" : "var(--accfg)");
   const ACC_BORDER = _lite ? "#D3D8DE" : (iconAccent==="choco" ? "var(--line)" : iconAccent==="neon" ? "#3E5C82" : iconAccent==="choconeon" ? "var(--line)" : "transparent");
@@ -3281,7 +3282,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v553</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v554</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
