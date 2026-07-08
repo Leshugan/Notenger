@@ -263,6 +263,24 @@ jobs:
               // Нативная запись звука (минуя WebView/getUserMedia)
               this.bridge.getWebView().addJavascriptInterface(new Object(){
                 @JavascriptInterface
+                public void setBars(final String color, final boolean light){
+                  try{
+                    runOnUiThread(new Runnable(){ public void run(){
+                      try{
+                        Window w = getWindow();
+                        int c = Color.parseColor(color);
+                        w.setStatusBarColor(c);
+                        w.setNavigationBarColor(c);
+                        View dv = w.getDecorView();
+                        int vis = dv.getSystemUiVisibility();
+                        if(light){ vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; if(Build.VERSION.SDK_INT>=26) vis |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR; }
+                        else { vis &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; if(Build.VERSION.SDK_INT>=26) vis &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR; }
+                        dv.setSystemUiVisibility(vis);
+                      }catch(Exception e){}
+                    }});
+                  }catch(Exception e){}
+                }
+                @JavascriptInterface
                 public boolean startRec(){
                   try{
                     stopRecInternal(false);
