@@ -738,6 +738,53 @@ function AttBubble({ att, onOpen, stamp, selecting }) {
 // ─── Pinned banner ────────────────────────────────────────────
 // Живой двухслойный переход экранов (iOS push/pop), без клонов.
 // Держит предыдущий контент смонтированным во время анимации и двигает оба слоя.
+function ZoomImg({ src }){
+  const wrapRef = useRef(null);
+  const st = useRef({scale:1,x:0,y:0,startDist:0,startScale:1,startX:0,startY:0,px:0,py:0,pinch:false,pan:false,moved:false,lastTap:0});
+  const [,force] = useState(0);
+  const apply=()=>{ const el=wrapRef.current; if(el){ const s=st.current; el.style.transform=`translate(${s.x}px,${s.y}px) scale(${s.scale})`; } };
+  const dist=(t)=>{ const dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; return Math.hypot(dx,dy); };
+  const mid=(t)=>({x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2});
+  const onTouchStart=(e)=>{
+    const s=st.current;
+    if(e.touches.length===2){ s.pinch=true; s.pan=false; s.startDist=dist(e.touches); s.startScale=s.scale; const m=mid(e.touches); s.px=m.x; s.py=m.y; s.startX=s.x; s.startY=s.y; }
+    else if(e.touches.length===1){
+      const now=Date.now();
+      if(now-s.lastTap<300){ // двойной тап — сброс/увеличение
+        if(s.scale>1){ s.scale=1; s.x=0; s.y=0; } else { s.scale=2.5; }
+        apply(); s.lastTap=0; e.preventDefault(); return;
+      }
+      s.lastTap=now;
+      if(s.scale>1){ s.pan=true; s.startX=e.touches[0].clientX; s.startY=e.touches[0].clientY; s.px=s.x; s.py=s.y; }
+      s.moved=false;
+    }
+  };
+  const onTouchMove=(e)=>{
+    const s=st.current;
+    if(s.pinch && e.touches.length===2){
+      e.preventDefault(); e.stopPropagation();
+      const d=dist(e.touches); let ns=s.startScale*(d/s.startDist); ns=Math.max(1,Math.min(5,ns)); s.scale=ns;
+      if(ns<=1){ s.x=0; s.y=0; } else { const m=mid(e.touches); s.x=s.startX+(m.x-s.px); s.y=s.startY+(m.y-s.py); }
+      s.moved=true; apply();
+    } else if(s.pan && e.touches.length===1 && s.scale>1){
+      e.preventDefault(); e.stopPropagation();
+      s.x=s.px+(e.touches[0].clientX-s.startX); s.y=s.py+(e.touches[0].clientY-s.startY); s.moved=true; apply();
+    }
+  };
+  const onTouchEnd=(e)=>{
+    const s=st.current;
+    if(e.touches.length===0){ s.pinch=false; s.pan=false; }
+    else if(e.touches.length===1 && s.pinch){ s.pinch=false; if(s.scale>1){ s.pan=true; s.startX=e.touches[0].clientX; s.startY=e.touches[0].clientY; s.px=s.x; s.py=s.y; } }
+  };
+  return (
+    <div onClick={(e)=>{ if(st.current.moved||st.current.scale>1){ e.stopPropagation(); } }}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+      style={{maxWidth:"100%",maxHeight:"100%",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"none"}}>
+      <img ref={wrapRef} src={src} alt="" draggable={false}
+        style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8,transformOrigin:"center center",willChange:"transform",animation:"lbZoom .26s cubic-bezier(.2,.8,.2,1)",userSelect:"none"}}/>
+    </div>
+  );
+}
 function PinnedBanner({ note, color, onJump, count=1, index=0 }) {
   if(!note) return null;
   return (
@@ -3227,7 +3274,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v547</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v548</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -4287,8 +4334,8 @@ export default function App() {
         const hb=b=>{ if(b==null) return null; if(b<1024) return b+" Б"; if(b<1048576) return (b/1024).toFixed(1)+" КБ"; return (b/1048576).toFixed(1)+" МБ"; };
         return (
         <div onClick={closeLightbox} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:600,
-          display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <img src={lightbox} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8,animation:"lbZoom .26s cubic-bezier(.2,.8,.2,1)"}}/>
+          display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflow:"hidden"}}>
+          <ZoomImg src={lightbox}/>
           {meta && (meta.size||meta.origSize) && (
             <div style={{position:"absolute",left:16,bottom:24,fontSize:11,lineHeight:1.5,color:"#C8BCAE",textShadow:"0 1px 3px rgba(0,0,0,.9)"}}>
               <div>{hb(meta.origSize||meta.size)}</div>
