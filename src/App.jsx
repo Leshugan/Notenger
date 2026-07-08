@@ -391,7 +391,7 @@ function Sheet({ open, onClose, title="", children, noAnim }) {
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:300,backdropFilter:"blur(3px)"}}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"var(--bar)",
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"var(--bar)",
         borderRadius:"20px 20px 0 0",padding:"20px 20px 36px",animation:noAnim?"none":"sUp .34s cubic-bezier(.2,.9,.3,1)",
         maxHeight:"88vh",overflowY:"auto"}}>
         {title&&<div style={{fontWeight:700,fontSize:17,marginBottom:16}}>{title}</div>}
@@ -610,7 +610,7 @@ function PlaneGhost({ phase, acc, accFg, glow, anchor, micAnchor, accBorder }){
 function PreviewModal({ open, onClose, onSend, text, atts, color, isEdit }) {
   if(!open) return null;
   return (
-    <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"var(--bg)",zIndex:600,display:"flex",flexDirection:"column"}}>
+    <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,background:"var(--bg)",zIndex:600,display:"flex",flexDirection:"column"}}>
       {/* Шапка без стрелки */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"12px 14px",borderBottom:"1px solid var(--gline2,var(--bar))",flexShrink:0}}>
         <div style={{fontWeight:600,fontSize:16,color:"var(--ink,var(--txt))"}}>Предпросмотр</div>
@@ -836,7 +836,7 @@ function MediaBrowser({ open, onClose, subf, color, onChangeIcon, onOpenImage, o
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",
       display:"flex",alignItems:"flex-end",zIndex:400,backdropFilter:"blur(3px)"}}>
-      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"var(--bar)",
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"var(--bar)",
         borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",animation:"sUp .34s cubic-bezier(.2,.9,.3,1)"}}>
         {/* Шапка темы + действия с иконкой */}
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 14px 10px",flexShrink:0}}>
@@ -3144,8 +3144,8 @@ export default function App() {
 
   return (
     <div
-      className={(booting?"booting":"")+(iosTrans?(navDir==="pop"?" iosT iosPop":" iosT"):"")}
-      style={{maxWidth:420,margin:"0 auto",height:"100dvh",background:"var(--bg)",
+      className={(booting?"booting":"")+(navDir==="pop"?" navPop":"")+(iosTrans?(navDir==="pop"?" iosT iosPop":" iosT"):"")}
+      style={{height:"100dvh",background:"var(--bg)",
         display:"flex",flexDirection:"column",fontFamily:"var(--font-ui,'Noto Sans',sans-serif)",
         ...(THEMES[theme]||THEMES.dark),
         "--font-ui":fontCssFor("ui"),"--font-msg":fontCssFor("messages"),"--font-title":fontCssFor("titles"),"--font-input":fontCssFor("input"),"--scr-dur":spd("scr",0.6)+"s","--del-dur":spd("del",2)+"s","--input-dur":spd("input",0.38)+"s",
@@ -3171,7 +3171,7 @@ export default function App() {
       {/* Глобальная панель пересылки — снизу, над полем ввода */}
       {moveBuffer&&(
         <div onClick={e=>e.stopPropagation()} style={{position:"fixed",left:0,right:0,bottom:0,
-          maxWidth:420,margin:"0 auto",background:"var(--row2)",borderTop:"1px solid var(--gline,var(--line))",
+          background:"var(--row2)",borderTop:"1px solid var(--gline,var(--line))",
           padding:"12px 14px",display:"flex",alignItems:"center",gap:10,zIndex:120,
           boxShadow:"0 -4px 16px rgba(0,0,0,.4)"}}>
           <span style={{fontSize:14,color:"var(--sub)",flex:1}}>
@@ -3219,7 +3219,8 @@ export default function App() {
         @keyframes pinDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
-        @keyframes scrIn{from{opacity:0;transform:translateX(30px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
+        @keyframes scrIn{from{opacity:.6;transform:translateX(-100%)}to{opacity:1;transform:translateX(0)}}
+        @keyframes scrInPop{from{opacity:.6;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
         @keyframes dropGrow{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
         @keyframes msgInUp{from{opacity:0;transform:translateY(28px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes checkPop{0%{transform:scale(.6)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
@@ -3227,6 +3228,7 @@ export default function App() {
         .msgInUp{animation:msgInUp .34s cubic-bezier(.2,.7,.2,1) both;}
         .checkPop{animation:checkPop .32s cubic-bezier(.3,1.3,.4,1) both;}
         .scrAnim{animation-name:scrIn;animation-duration:var(--scr-dur,.6s);animation-timing-function:cubic-bezier(.05,.7,.1,1);animation-fill-mode:both;}
+        .navPop .scrAnim{animation-name:scrInPop;}
         .iosT .scrAnim{animation:none!important;}
         
         
@@ -3265,7 +3267,7 @@ export default function App() {
 
       
       {planePhase!=='idle' && (
-        <div style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",height:52,pointerEvents:"none",zIndex:9998}}>
+        <div style={{position:"fixed",bottom:0,left:0,right:0,height:52,pointerEvents:"none",zIndex:9998}}>
           <div style={{position:"absolute",top:"50%",width:44,height:44,borderRadius:"50%",background:ACC,border:"1px solid "+ACC_BORDER,color:ACC_FG,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:ACC_GLOW||"none",
             left:(planePhase==='in'||planePhase==='outStart')?"calc(100% - 35px)":"50%",
             transform:(planePhase==='in'||planePhase==='outStart')?"translate(-50%,-50%) rotate(90deg)":"translate(-50%,-50%) rotate(0deg)",
@@ -3274,7 +3276,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v548</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v549</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3290,7 +3292,7 @@ export default function App() {
         const toggle=id=>{ const cur=items.find(x=>x.id===id); const checking=cur&&!cur.checked; flipReorder("[data-lmid]", ()=>setItems(arr=>{ const a=arr.map(x=>({...x})); const i=a.findIndex(x=>x.id===id); if(i<0)return arr; const it=a[i]; if(!it.checked){ it.checked=true; it.origIdx=i; a.splice(i,1); a.push(it); } else { it.checked=false; a.splice(i,1); const unchecked=a.filter(x=>!x.checked).length; const back=Math.min(it.origIdx??unchecked,unchecked); a.splice(back,0,it); delete it.origIdx; } return a; }), checking?560:320); try{buzz(8,"check");}catch{} };
         const editTxt=(id,v)=>setItems(arr=>arr.map(x=>x.id===id?{...x,text:v}:x));
         return (
-        <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"var(--bg)",zIndex:620,display:"flex",flexDirection:"column"}}>
+        <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,background:"var(--bg)",zIndex:620,display:"flex",flexDirection:"column"}}>
           <div onTouchMove={lmRowTouchMove} onTouchEnd={lmRowTouchEnd} style={{flex:1,overflowY:"auto",padding:"12px 0",display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
             <div style={{width:"max-content",maxWidth:"calc(100% - 24px)",marginLeft:"auto",marginRight:14,boxSizing:"border-box"}}>
             <input data-lmtitle defaultValue={lnote?.clTitle||""} key={"lmtitle-"+lm.id} readOnly={!lmEditMode}
@@ -3343,7 +3345,7 @@ export default function App() {
 
       {/* Глобальный поиск по сообщениям */}
       {globalSearch!==null&&(
-        <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"var(--bg)",zIndex:420,display:"flex",flexDirection:"column"}}>
+        <div style={{position:"fixed",top:0,bottom:0,left:0,right:0,background:"var(--bg)",zIndex:420,display:"flex",flexDirection:"column"}}>
           {/* Результаты сверху */}
           <div style={{flex:1,overflowY:"auto",padding:"6px 0"}}>
             {globalSearch.trim().length<2 && <div style={{textAlign:"center",color:"var(--sub3)",marginTop:50,fontSize:14}}>Введите минимум 2 символа</div>}
@@ -3946,7 +3948,7 @@ export default function App() {
           <div
             onTouchStart={e=>{ const t=e.touches[0]; swipeRef.current={x:t.clientX,y:t.clientY}; }}
             onTouchEnd={e=>{ const s=swipeRef.current; if(!s){return;} const t=e.changedTouches[0]; const dx=t.clientX-s.x, dy=t.clientY-s.y; if(dx>70 && Math.abs(dx)>Math.abs(dy)*1.3){ setComposerPeek(true); const pl=prevLoc.current; if(pl){ prevLoc.current=null; setScr(pl.scr); setFid(pl.fid); setSid(pl.sid); } } swipeRef.current=null; }}
-            style={{position:"fixed",top:0,bottom:0,left:0,right:0,maxWidth:420,margin:"0 auto",background:"var(--bg)",zIndex:400,display:"flex",flexDirection:"column",
+            style={{position:"fixed",top:0,bottom:0,left:0,right:0,background:"var(--bg)",zIndex:400,display:"flex",flexDirection:"column",
               transform: composerPeek?"translateX(101%)":"translateX(0)",
               transition: noInputAnim ? "none" : ("transform "+spd("input",0.5)+"s cubic-bezier(.32,.72,0,1)"),
               pointerEvents:composerPeek?"none":"auto",
@@ -4313,7 +4315,7 @@ export default function App() {
       {/* Глобальное подтверждение голосового (для записи кнопкой микрофона в шапке) */}
       {pendingVoice && !composerFull && (
         <div onClick={discardPendingVoice} style={{position:"fixed",inset:0,zIndex:610,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:420,margin:"0 auto",background:"var(--bar)",borderTop:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .3s cubic-bezier(.2,.9,.3,1)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:"var(--bar)",borderTop:"1px solid var(--gline,var(--line))",borderRadius:"16px 16px 0 0",padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,animation:"sUp .3s cubic-bezier(.2,.9,.3,1)"}}>
             <div style={{fontSize:13,color:"var(--sub)"}}>Голосовое сообщение · {fmtRec(pendingVoice.att.dur||0)}</div>
             <div style={{display:"flex",justifyContent:"center"}}><div style={{transform:"translateX(80px)"}}><VoiceMessage att={pendingVoice.att} /></div></div>
             <div style={{display:"flex",gap:10}}>
