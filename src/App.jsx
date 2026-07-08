@@ -3229,8 +3229,8 @@ export default function App() {
         @keyframes pinDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes sUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fS {from{opacity:0}to{opacity:1}}
-        @keyframes scrIn{from{opacity:.6;transform:translateX(-100%)}to{opacity:1;transform:translateX(0)}}
-        @keyframes scrInPop{from{opacity:.6;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+        @keyframes scrIn{from{opacity:.6;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+        @keyframes scrInPop{from{opacity:.6;transform:translateX(-100%)}to{opacity:1;transform:translateX(0)}}
         @keyframes dropGrow{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
         @keyframes msgInUp{from{opacity:0;transform:translateY(28px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes checkPop{0%{transform:scale(.6)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
@@ -3287,7 +3287,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v560</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v561</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
