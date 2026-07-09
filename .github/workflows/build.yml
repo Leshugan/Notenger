@@ -55,6 +55,19 @@ jobs:
           distribution: "zulu"
           java-version: "17"
 
+      - name: Кэш Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Кэш npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
       - name: Установить зависимости
         run: npm install --legacy-peer-deps
 
@@ -556,7 +569,7 @@ jobs:
           echo "=== signing ==="; grep -n "signingConfigs\|debug.keystore" "$GRADLE" || true
 
       - name: Собрать APK
-        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
+        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug --build-cache
 
       - name: Загрузить готовый APK
         uses: actions/upload-artifact@v4
