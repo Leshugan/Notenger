@@ -3287,7 +3287,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v564</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v565</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -4003,12 +4003,11 @@ export default function App() {
                 boxSizing:"border-box",overflowY:"hidden",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"var(--acc)",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             {checklist && (
+              <div style={{width:"max-content",maxWidth:"calc(100% - 24px)",marginLeft:"auto",marginRight:14,boxSizing:"border-box"}}>
               <input value={clTitle} onChange={e=>setClTitle(e.target.value)} placeholder="Заголовок (необязательно)"
                 onKeyDown={e=>{ if(e.key==="Enter"){ e.preventDefault(); if(checklist&&checklist.length>0){ const f0=checklist[0]; setClEditId(f0.id); const foc=()=>{ const f=clItemRefs.current[f0.id]; if(f){f.focus();} else requestAnimationFrame(foc); }; requestAnimationFrame(foc); } else { const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); setClEditId(nid); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){f.focus();} else requestAnimationFrame(foc); }; requestAnimationFrame(foc); } } }}
-                style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,var(--txt))",fontSize:17,fontWeight:700,fontFamily:"var(--font-input)",padding:"6px 16px 4px"}}/>
-            )}
-            {checklist && (
-              <div onTouchMove={clRowTouchMove} onTouchEnd={clRowTouchEnd} style={{padding:"2px 8px 12px",flexShrink:0}}>
+                style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,var(--txt))",fontSize:18,fontWeight:700,fontFamily:"var(--font-msg)",padding:"2px 0 10px 30px",textAlign:"left"}}/>
+              <div onTouchMove={clRowTouchMove} onTouchEnd={clRowTouchEnd} style={{paddingBottom:12}}>
                 {checklist.map((it,idx)=>(
                   <div key={it.id} data-clid={it.id} data-dragging={clDragId===it.id?"1":"0"}
                     onTouchStart={e=>{ clRowTouchStart(idx,e); }}
@@ -4039,6 +4038,7 @@ export default function App() {
                       style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.checked?"var(--sub2)":"var(--txt)",fontSize:16,fontFamily:"var(--font-input)",textDecoration:it.checked?"line-through":"none",padding:"6px 0"}}/>
                   </div>
                 ))}
+              </div>
               </div>
             )}
             </div>
