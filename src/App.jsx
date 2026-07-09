@@ -3287,7 +3287,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v562</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v563</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -4021,6 +4021,8 @@ export default function App() {
                         {it.checked&&<span className="checkPop" style={{display:"flex",transform:"scale(.7)",color:"#fff"}}>{IC.check}</span>}</span></button>
                     <input value={it.text} readOnly={clEditId!==it.id}
                       ref={el=>{ if(el) clItemRefs.current[it.id]=el; }}
+                      onPointerDown={()=>{ if(clEditId!==it.id){ setClEditId(it.id); const el=clItemRefs.current[it.id]; if(el){ el.readOnly=false; requestAnimationFrame(()=>{ try{el.focus();}catch{} }); } } }}
+                      onFocus={()=>setClEditId(it.id)}
                       onBlur={()=>{ if(clEditId===it.id) setClEditId(null); }}
                       onChange={e=>setChecklist(cl=>cl.map((x,i)=>i===idx?{...x,text:e.target.value}:x))}
                       onKeyDown={e=>{
