@@ -2723,7 +2723,7 @@ export default function App() {
     
   }
   function saveEdit() {
-    if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
+    if(!note.trim()&&patts.length===0&&!finalizeChecklist()&&!(checklist&&clTitle.trim())) return;
     const editedId=editId;
     updNotes(_n=>(_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined,time:tnow(),ts:tstamp()}:n)));
     cancelEdit();
@@ -2736,9 +2736,9 @@ export default function App() {
     const o=composerOrigin.current||{fid,sid};
     const wasEdit = !!editId; const editedId = editId;
     if(editId){
-      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined,time:tnow(),ts:tstamp()}:n)); }
+      if(note.trim()||patts.length||finalizeChecklist()||(checklist&&clTitle.trim())){ updNotesAt(o.fid,o.sid,_n=>_n.map(n=>n.id===editId?{...n,text:note.trim(),attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined,time:tnow(),ts:tstamp()}:n)); }
     } else {
-      if(note.trim()||patts.length||finalizeChecklist()){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined}]); }
+      if(note.trim()||patts.length||finalizeChecklist()||(checklist&&clTitle.trim())){ updNotesAt(o.fid,o.sid,_n=>[..._n,{id:uid("n"),text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined}]); }
     }
     // очистка черновика
     const dKey = o.sid==="__top__" ? "__top__"+o.fid : o.sid;
@@ -2756,7 +2756,7 @@ export default function App() {
   }
   // ── Notes ──
   function send() {
-    if(!note.trim()&&patts.length===0&&!finalizeChecklist()) return;
+    if(!note.trim()&&patts.length===0&&!finalizeChecklist()&&!(checklist&&clTitle.trim())) return;
     if(editId) { saveEdit(); return; }
     const nid=uid("n"); setJustSent(nid); try{buzz(10,"send");}catch{}
     updNotes(_n=>([..._n,{id:nid,text:note.trim(),time:tnow(),ts:tstamp(),pinned:false,attachments:patts,capPos,checklist:finalizeChecklist(),clTitle:(checklist&&clTitle.trim())?clTitle.trim():undefined}]));
@@ -3287,7 +3287,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v561</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v562</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -4001,6 +4001,7 @@ export default function App() {
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             {checklist && (
               <input value={clTitle} onChange={e=>setClTitle(e.target.value)} placeholder="Заголовок (необязательно)"
+                onKeyDown={e=>{ if(e.key==="Enter"){ e.preventDefault(); if(checklist&&checklist.length>0){ const f0=checklist[0]; setClEditId(f0.id); const foc=()=>{ const f=clItemRefs.current[f0.id]; if(f){f.focus();} else requestAnimationFrame(foc); }; requestAnimationFrame(foc); } else { const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); setClEditId(nid); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){f.focus();} else requestAnimationFrame(foc); }; requestAnimationFrame(foc); } } }}
                 style={{width:"100%",boxSizing:"border-box",background:"transparent",border:"none",outline:"none",color:"var(--ink,var(--txt))",fontSize:17,fontWeight:700,fontFamily:"var(--font-input)",padding:"6px 16px 4px"}}/>
             )}
             {checklist && (
