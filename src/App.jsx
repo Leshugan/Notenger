@@ -3287,7 +3287,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v563</div>}
+      {!hideVersion && <div style={{position:"fixed",top:2,left:2,zIndex:9999,fontSize:9,color:"var(--sub3)",pointerEvents:"none",fontFamily:"monospace"}}>beta v564</div>}
       <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={onFiles}/>
       <input ref={importRef} type="file" accept=".json,.aes256,application/json,text/plain" style={{display:"none"}} onChange={onImport}/>
       <input ref={iconRef} type="file" accept="image/*" style={{display:"none"}} onChange={onIconPick}/>
@@ -3984,20 +3984,23 @@ export default function App() {
               </div>
             )}
             {/* Текст + список как одно сообщение, прижато вниз */}
-            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:checklist?"flex-start":"flex-end",overflowY:"auto"}}>
+            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",overflowY:"auto"}}>
+            {!checklist && !note && (
+              <div style={{textAlign:"center",fontSize:12,color:"var(--sub3)",padding:"10px 0 8px",pointerEvents:"none"}}>Двойное тире — для создания списка</div>
+            )}
             <textarea value={note} className="editor-ta"
               onKeyDown={e=>{ if(e.key==="Enter" && !checklist){ const el=e.target; const pos=el.selectionStart; const before=el.value.slice(0,pos); const after=el.value.slice(pos); const lineStart=before.lastIndexOf("\n")+1; const curLine=before.slice(lineStart); if(/^•\s/.test(curLine)){ if(curLine.trim()==="•"){ e.preventDefault(); const ns=el.value.slice(0,lineStart)+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=lineStart; el.scrollTop=el.scrollHeight;}catch{} }); return; } e.preventDefault(); const nextLineMatch=after.match(/^(\n)(•\s)/); if(nextLineMatch){ const newPos=pos+2; requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=newPos+1; el.scrollTop=el.scrollHeight;}catch{} }); return; } const ins="\n• "; const ns=el.value.slice(0,pos)+ins+el.value.slice(pos); setNote(ns); requestAnimationFrame(()=>{ try{el.selectionStart=el.selectionEnd=pos+ins.length; el.blur(); el.focus(); el.setSelectionRange(pos+ins.length,pos+ins.length); el.scrollTop=el.scrollHeight;}catch{} }); } } }}
-              onChange={e=>{ let v=e.target.value; if(checklist){ const el=e.target; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); setClEditId(nid); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } v=v.replace(/(^|\n)- /g,"$1• "); setNote(v); }}
+              onChange={e=>{ let v=e.target.value; const el=e.target; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; const m=v.match(/(^|\n)(--|—|——)$/); if(!checklist && m){ const base=v.slice(0, v.length-m[2].length).replace(/\n$/,""); setNote(base); const nid=uid("cl"); setChecklist([{id:nid,text:"",checked:false}]); setClEditId(nid); const foc=()=>{ const f=clItemRefs.current[nid]; if(f){ f.focus(); } else requestAnimationFrame(foc); }; requestAnimationFrame(foc); return; } v=v.replace(/(^|\n)- /g,"$1• "); setNote(v); }}
               onSelect={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onKeyUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onMouseUp={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onBlur={e=>{ fmtSel.current={s:e.target.selectionStart,e:e.target.selectionEnd}; }}
               onTouchEnd={e=>{ const t=e.target; setTimeout(()=>{ try{fmtSel.current={s:t.selectionStart,e:t.selectionEnd};}catch{} },0); }}
-              ref={el=>{ fullTaRef.current=el; if(el){ if(checklist){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; } if(composerWantFocus.current){ composerWantFocus.current=false; try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} } } }}
+              ref={el=>{ fullTaRef.current=el; if(el){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; if(composerWantFocus.current){ composerWantFocus.current=false; try{ el.focus(); const L=el.value.length; el.setSelectionRange(L,L); }catch{} } } }}
               placeholder={editId?"Редактировать сообщение...":"Текст сообщения..."}
-              style={{flex:checklist?"0 0 auto":1,width:"100%",background:"var(--bg)",border:"none",outline:"none",
-                color:"var(--ink,var(--txt))",fontSize:16,lineHeight:1.5,fontWeight:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"16px 16px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
-                boxSizing:"border-box",overflowY:checklist?"hidden":"auto",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"var(--acc)",
+              style={{flex:"0 0 auto",width:"100%",background:"var(--bg)",border:"none",outline:"none",
+                color:"var(--ink,var(--txt))",fontSize:16,lineHeight:1.5,fontWeight:400,padding:checklist?(note?"12px 16px 2px":"0 16px"):"10px 16px 14px",resize:"none",fontFamily:"var(--font-input)",height:checklist&&!note?0:undefined,minHeight:checklist&&!note?0:undefined,
+                boxSizing:"border-box",overflowY:"hidden",WebkitTapHighlightColor:"transparent",WebkitTouchCallout:"none",caretColor:"var(--acc)",
                 WebkitAppearance:"none",appearance:"none",boxShadow:"none"}}/>
             {checklist && (
               <input value={clTitle} onChange={e=>setClTitle(e.target.value)} placeholder="Заголовок (необязательно)"
@@ -4038,10 +4041,8 @@ export default function App() {
                 ))}
               </div>
             )}
-            {!checklist && !note && (
-              <div style={{textAlign:"center",fontSize:12,color:"var(--sub3)",padding:"0 0 10px",pointerEvents:"none"}}>Двойное тире — для создания списка</div>
-            )}
             </div>
+            {/* низ */}
             {/* Всплывающая панель ББ-кодов */}
             {fullFmt&&(
               <div style={{position:"absolute",left:10,bottom:54,background:"var(--bar)",borderRadius:12,padding:"5px 6px",
