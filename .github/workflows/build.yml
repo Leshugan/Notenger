@@ -16,6 +16,34 @@ jobs:
       - name: Скачать код
         uses: actions/checkout@v4
 
+      - name: Распаковать архив проекта
+        run: |
+          set -e
+          # В корне репозитория лежит только этот workflow + архив Notenger-main.zip.
+          # Распаковываем архив и раскладываем его содержимое в корень.
+          if [ ! -f Notenger-main.zip ]; then
+            echo "ОШИБКА: нет файла Notenger-main.zip в корне репозитория."; exit 1
+          fi
+          unzip -o -q Notenger-main.zip -d _extracted
+          # Внутри архива может быть либо папка Notenger-main/, либо файлы напрямую.
+          if [ -d _extracted/Notenger-main ]; then
+            SRC=_extracted/Notenger-main
+          else
+            SRC=_extracted
+          fi
+          # Переносим всё содержимое в корень (включая скрытые файлы), не трогая .github.
+          shopt -s dotglob
+          for item in "$SRC"/*; do
+            name=$(basename "$item")
+            if [ "$name" = ".github" ]; then continue; fi
+            rm -rf "./$name"
+            cp -r "$item" "./$name"
+          done
+          shopt -u dotglob
+          rm -rf _extracted
+          echo "=== Содержимое корня после распаковки ==="
+          ls -la
+
       - name: Установить Node.js
         uses: actions/setup-node@v4
         with:
