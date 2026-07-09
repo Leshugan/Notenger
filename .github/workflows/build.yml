@@ -48,12 +48,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package.json
 
       - name: Установить Java (JDK 17)
         uses: actions/setup-java@v4
         with:
           distribution: "zulu"
           java-version: "17"
+
+      - name: Кэш Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Установить зависимости
         run: npm install --legacy-peer-deps
@@ -557,7 +564,7 @@ jobs:
           echo "=== signing ==="; grep -n "signingConfigs\|debug.keystore" "$GRADLE" || true
 
       - name: Собрать APK
-        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
+        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug --build-cache
 
       - name: Загрузить готовый APK
         uses: actions/upload-artifact@v4
