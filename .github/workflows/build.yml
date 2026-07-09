@@ -55,19 +55,6 @@ jobs:
           distribution: "zulu"
           java-version: "17"
 
-      - name: Кэш Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: false
-
-      - name: Кэш npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-
       - name: Установить зависимости
         run: npm install --legacy-peer-deps
 
@@ -87,9 +74,8 @@ jobs:
 
       - name: Добавить Android-проект (Capacitor)
         run: |
-          # Удаляем возможную старую папку android (в ней мог остаться чужой appId)
           rm -rf android
-          npx cap add android || npx cap sync android
+          npx cap add android
           npx cap sync android
 
       - name: Установить иконку приложения
@@ -570,7 +556,7 @@ jobs:
           echo "=== signing ==="; grep -n "signingConfigs\|debug.keystore" "$GRADLE" || true
 
       - name: Собрать APK
-        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug --build-cache
+        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
 
       - name: Загрузить готовый APK
         uses: actions/upload-artifact@v4
