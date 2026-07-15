@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 jobs:
@@ -147,11 +147,31 @@ jobs:
             -Pandroid.injected.signing.key.alias="androiddebugkey" \
             -Pandroid.injected.signing.key.password="android"
 
-      - name: Загрузить готовый APK
+      - name: Загрузить готовый APK (артефакт)
+        id: upload_artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: Notenger_Compiled
           path: android/app/build/outputs/apk/release/*.apk
+
+      - name: Выложить APK в релиз (квота артефактов исчерпана)
+        if: steps.upload_artifact.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          TAG=apk-latest
+          NOTES="Автосборка #${{ github.run_number }} от $(date -u +'%Y-%m-%d %H:%M UTC') — выложено в релиз, т.к. квота артефактов исчерпана."
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$REPO" --notes "$NOTES"
+          else
+            gh release create "$TAG" --repo "$REPO" --title "Notenger APK" --notes "$NOTES"
+          fi
+          gh release upload "$TAG" "$APK" --repo "$REPO" --clobber
+          echo "::notice::Квота артефактов исчерпана — APK в релизе $TAG"
 
   cleanup:
     needs: build
