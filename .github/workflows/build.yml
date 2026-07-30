@@ -128,6 +128,36 @@ jobs:
           sed "s/__PKG__/$PKG/" native/MainActivity.java > "$MA"
           echo "=== MainActivity установлен ===" && head -5 "$MA"
 
+      - name: Быстрая заметка (ярлык при удержании + плитка в шторке + схема notenger://)
+        run: |
+          set -e
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          RES=android/app/src/main/res
+          mkdir -p "$RES/xml" "$RES/drawable"
+          MA=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
+          PKG=$(grep -m1 '^package' "$MA" | sed 's/package //;s/;//')
+          # ресурсы: ярлык, иконки, сервис плитки
+          sed "s/__PKG__/$PKG/g" native/shortcuts.xml > "$RES/xml/shortcuts.xml"
+          cp native/ic_shortcut_note.xml "$RES/drawable/ic_shortcut_note.xml"
+          cp native/ic_tile_note.xml "$RES/drawable/ic_tile_note.xml"
+          sed "s/__PKG__/$PKG/" native/QuickNoteTileService.java > "$(dirname "$MA")/QuickNoteTileService.java"
+          # строки-названия
+          STR="$RES/values/strings.xml"
+          if ! grep -q "quicknote_label" "$STR"; then
+            sed -i 's|</resources>|    <string name="quicknote_label">Быстрая заметка</string>\n    <string name="quicknote_label_long">Быстрая заметка в «Избранное»</string>\n</resources>|' "$STR"
+          fi
+          # интент-фильтр схемы notenger:// + ярлыки — в первую (единственную) activity
+          if ! grep -q 'android:scheme="notenger"' "$MANIFEST"; then
+            EXTRA='<intent-filter>\n                <action android:name="android.intent.action.VIEW"/>\n                <category android:name="android.intent.category.DEFAULT"/>\n                <category android:name="android.intent.category.BROWSABLE"/>\n                <data android:scheme="notenger"/>\n            </intent-filter>\n            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>'
+            sed -i "0,/<\/activity>/s|</activity>|    $EXTRA\n        </activity>|" "$MANIFEST"
+          fi
+          # сервис плитки быстрых настроек
+          if ! grep -q "QuickNoteTileService" "$MANIFEST"; then
+            TILE='<service android:name=".QuickNoteTileService" android:exported="true" android:label="@string/quicknote_label" android:icon="@drawable/ic_tile_note" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">\n            <intent-filter>\n                <action android:name="android.service.quicksettings.action.QS_TILE"/>\n            </intent-filter>\n        </service>'
+            sed -i "s|</application>|    $TILE\n    </application>|" "$MANIFEST"
+          fi
+          echo "=== манифест после патча ===" && cat "$MANIFEST"
+
       - name: Подготовить ключ подписи
         run: |
           set -e
