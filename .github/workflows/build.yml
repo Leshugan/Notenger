@@ -102,8 +102,13 @@ jobs:
             sed -i "s|<application|$PERMS\n    <application|" "$MANIFEST"
           fi
           GRADLE=android/app/build.gradle
-          sed -i 's/versionCode .*/versionCode 2/' "$GRADLE"
-          sed -i 's/versionName .*/versionName "0.2"/' "$GRADLE"
+          # версия — единый источник: const APP_VERSION в src/App.jsx (меняется по слову «билд»)
+          VN=$(grep -m1 'const APP_VERSION' src/App.jsx | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$VN" ]; then echo "::error::APP_VERSION не найдена в src/App.jsx"; exit 1; fi
+          VC=$(awk "BEGIN{printf \"%d\", $VN*1000+0.5}")
+          echo "versionName=$VN versionCode=$VC"
+          sed -i "s/versionCode .*/versionCode $VC/" "$GRADLE"
+          sed -i "s/versionName .*/versionName \"$VN\"/" "$GRADLE"
           sed -i -E 's/applicationId[[:space:]]*=?[[:space:]]*"[^"]*"/applicationId "leshugan.notenger"/' "$GRADLE"
           sed -i -E 's/namespace[[:space:]]*=?[[:space:]]*"[^"]*"/namespace "leshugan.notenger"/' "$GRADLE"
           echo "=== build.gradle (id) ==="; grep -E "applicationId|namespace" "$GRADLE"
@@ -176,6 +181,15 @@ jobs:
             -Pandroid.injected.signing.store.password="android" \
             -Pandroid.injected.signing.key.alias="androiddebugkey" \
             -Pandroid.injected.signing.key.password="android"
+
+      - name: Переименовать APK по версии
+        run: |
+          set -e
+          VN=$(grep -m1 'const APP_VERSION' src/App.jsx | sed -E 's/.*"([^"]+)".*/\1/')
+          OUT=android/app/build/outputs/apk/release
+          APK=$(ls "$OUT"/*.apk | head -1)
+          mv "$APK" "$OUT/Notenger v.$VN.apk"
+          ls -la "$OUT"
 
       - name: Загрузить готовый APK (артефакт)
         id: upload_artifact
