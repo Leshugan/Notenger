@@ -128,7 +128,7 @@ jobs:
           sed "s/__PKG__/$PKG/" native/MainActivity.java > "$MA"
           echo "=== MainActivity установлен ===" && head -5 "$MA"
 
-      - name: Быстрая заметка (ярлык при удержании + плитка в шторке + схема notenger://)
+      - name: Быстрая заметка (ярлык при удержании + плитка в шторке + трамплин)
         run: |
           set -e
           MANIFEST=android/app/src/main/AndroidManifest.xml
@@ -136,20 +136,26 @@ jobs:
           mkdir -p "$RES/xml" "$RES/drawable"
           MA=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
           PKG=$(grep -m1 '^package' "$MA" | sed 's/package //;s/;//')
-          # ресурсы: ярлык, иконки, сервис плитки
+          # ресурсы: ярлык, иконки, сервис плитки, трамплин-активити
           sed "s/__PKG__/$PKG/g" native/shortcuts.xml > "$RES/xml/shortcuts.xml"
           cp native/ic_shortcut_note.xml "$RES/drawable/ic_shortcut_note.xml"
           cp native/ic_tile_note.xml "$RES/drawable/ic_tile_note.xml"
           sed "s/__PKG__/$PKG/" native/QuickNoteTileService.java > "$(dirname "$MA")/QuickNoteTileService.java"
+          sed "s/__PKG__/$PKG/" native/QuickNoteActivity.java > "$(dirname "$MA")/QuickNoteActivity.java"
           # строки-названия
           STR="$RES/values/strings.xml"
           if ! grep -q "quicknote_label" "$STR"; then
             sed -i 's|</resources>|    <string name="quicknote_label">Быстрая заметка</string>\n    <string name="quicknote_label_long">Быстрая заметка в «Избранное»</string>\n</resources>|' "$STR"
           fi
-          # интент-фильтр схемы notenger:// + ярлыки — в первую (единственную) activity
-          if ! grep -q 'android:scheme="notenger"' "$MANIFEST"; then
-            EXTRA='<intent-filter>\n                <action android:name="android.intent.action.VIEW"/>\n                <category android:name="android.intent.category.DEFAULT"/>\n                <category android:name="android.intent.category.BROWSABLE"/>\n                <data android:scheme="notenger"/>\n            </intent-filter>\n            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>'
-            sed -i "0,/<\/activity>/s|</activity>|    $EXTRA\n        </activity>|" "$MANIFEST"
+          # у MainActivity — только объявление статических ярлыков
+          if ! grep -q "android.app.shortcuts" "$MANIFEST"; then
+            META='<meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>'
+            sed -i "0,/<\/activity>/s|</activity>|    $META\n        </activity>|" "$MANIFEST"
+          fi
+          # трамплин быстрой заметки: прозрачный, вне «Недавних», принимает схему notenger://
+          if ! grep -q "QuickNoteActivity" "$MANIFEST"; then
+            QNA='<activity android:name=".QuickNoteActivity" android:exported="true" android:noHistory="true" android:excludeFromRecents="true" android:theme="@android:style/Theme.Translucent.NoTitleBar">\n            <intent-filter>\n                <action android:name="android.intent.action.VIEW"/>\n                <category android:name="android.intent.category.DEFAULT"/>\n                <category android:name="android.intent.category.BROWSABLE"/>\n                <data android:scheme="notenger"/>\n            </intent-filter>\n        </activity>'
+            sed -i "s|</application>|    $QNA\n    </application>|" "$MANIFEST"
           fi
           # сервис плитки быстрых настроек
           if ! grep -q "QuickNoteTileService" "$MANIFEST"; then
