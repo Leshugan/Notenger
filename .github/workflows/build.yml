@@ -133,11 +133,10 @@ jobs:
           set -e
           MANIFEST=android/app/src/main/AndroidManifest.xml
           RES=android/app/src/main/res
-          mkdir -p "$RES/xml" "$RES/drawable"
+          mkdir -p "$RES/drawable"
           MA=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
           PKG=$(grep -m1 '^package' "$MA" | sed 's/package //;s/;//')
-          # ресурсы: ярлык, иконки, сервис плитки, трамплин-активити
-          sed "s/__PKG__/$PKG/g" native/shortcuts.xml > "$RES/xml/shortcuts.xml"
+          # ресурсы: иконки, сервис плитки, трамплин-активити (ярлык только динамический — из кода)
           cp native/ic_shortcut_note.xml "$RES/drawable/ic_shortcut_note.xml"
           cp native/ic_tile_note.xml "$RES/drawable/ic_tile_note.xml"
           sed "s/__PKG__/$PKG/" native/QuickNoteTileService.java > "$(dirname "$MA")/QuickNoteTileService.java"
@@ -146,11 +145,6 @@ jobs:
           STR="$RES/values/strings.xml"
           if ! grep -q "quicknote_label" "$STR"; then
             sed -i 's|</resources>|    <string name="quicknote_label">Быстрая заметка</string>\n    <string name="quicknote_label_long">Быстрая заметка в «Избранное»</string>\n</resources>|' "$STR"
-          fi
-          # у MainActivity — только объявление статических ярлыков
-          if ! grep -q "android.app.shortcuts" "$MANIFEST"; then
-            META='<meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>'
-            sed -i "0,/<\/activity>/s|</activity>|    $META\n        </activity>|" "$MANIFEST"
           fi
           # трамплин быстрой заметки: прозрачный, вне «Недавних», принимает схему notenger://
           if ! grep -q "QuickNoteActivity" "$MANIFEST"; then
