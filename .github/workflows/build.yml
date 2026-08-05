@@ -102,11 +102,19 @@ jobs:
             sed -i "s|<application|$PERMS\n    <application|" "$MANIFEST"
           fi
           GRADLE=android/app/build.gradle
-          # версия — единый источник: const APP_VERSION в src/App.jsx (меняется по слову «билд»)
-          VN=$(grep -m1 'const APP_VERSION' src/App.jsx | sed -E 's/.*"([^"]+)".*/\1/')
-          if [ -z "$VN" ]; then echo "::error::APP_VERSION не найдена в src/App.jsx"; exit 1; fi
+          # Версия берётся ИЗ ПРОЕКТА (version.json в корне zip) — этот workflow править не нужно.
+          # Формат: {"version":"1.001","release":true,"changelog":["…"]}
+          # release:false = тестовая сборка: версия приложения не меняется, к имени APK добавляется номер прогона.
+          VN=""
+          if [ -f version.json ]; then VN="$(node -e 'try{process.stdout.write(String(require("./version.json").version||""))}catch(e){}' 2>/dev/null || true)"; fi
+          if [ -z "$VN" ] && [ -f package.json ]; then VN="$(node -e 'try{process.stdout.write(String(require("./package.json").version||""))}catch(e){}' 2>/dev/null || true)"; fi
+          if [ -z "$VN" ]; then VN="1.000"; echo "ВНИМАНИЕ: версия не найдена в version.json/package.json — беру $VN"; fi
+          IS_REL="$(node -e 'try{process.stdout.write(require("./version.json").release===false?"0":"1")}catch(e){process.stdout.write("1")}' 2>/dev/null || echo 1)"
           VC=$(awk "BEGIN{printf \"%d\", $VN*1000+0.5}")
-          echo "versionName=$VN versionCode=$VC"
+          echo "APP_VER=$VN" >> "$GITHUB_ENV"
+          echo "IS_REL=$IS_REL" >> "$GITHUB_ENV"
+          echo "----- источник версии: version.json -----" && cat version.json 2>/dev/null || true
+          echo "versionName=$VN versionCode=$VC release=$IS_REL"
           sed -i "s/versionCode .*/versionCode $VC/" "$GRADLE"
           sed -i "s/versionName .*/versionName \"$VN\"/" "$GRADLE"
           sed -i -E 's/applicationId[[:space:]]*=?[[:space:]]*"[^"]*"/applicationId "leshugan.notenger"/' "$GRADLE"
@@ -146,6 +154,12 @@ jobs:
           cp native/ic_tile_note.xml "$RES/drawable/ic_tile_note.xml"
           sed "s/__PKG__/$PKG/" native/QuickNoteTileService.java > "$(dirname "$MA")/QuickNoteTileService.java"
           sed "s/__PKG__/$PKG/" native/QuickNoteActivity.java > "$(dirname "$MA")/QuickNoteActivity.java"
+          # виджет рабочего стола 1x1
+          mkdir -p "$RES/layout" "$RES/xml"
+          cp native/ic_widget_note.xml "$RES/drawable/ic_widget_note.xml"
+          cp native/qn_widget.xml "$RES/layout/qn_widget.xml"
+          cp native/qn_widget_info.xml "$RES/xml/qn_widget_info.xml"
+          sed "s/__PKG__/$PKG/" native/QuickNoteWidget.java > "$(dirname "$MA")/QuickNoteWidget.java"
           # строки-названия
           STR="$RES/values/strings.xml"
           if ! grep -q "quicknote_label" "$STR"; then
@@ -160,6 +174,11 @@ jobs:
           if ! grep -q "QuickNoteTileService" "$MANIFEST"; then
             TILE='<service android:name=".QuickNoteTileService" android:exported="true" android:label="@string/quicknote_label" android:icon="@drawable/ic_tile_note" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">\n            <intent-filter>\n                <action android:name="android.service.quicksettings.action.QS_TILE"/>\n            </intent-filter>\n        </service>'
             sed -i "s|</application>|    $TILE\n    </application>|" "$MANIFEST"
+          fi
+          # виджет рабочего стола
+          if ! grep -q "QuickNoteWidget" "$MANIFEST"; then
+            WID='<receiver android:name=".QuickNoteWidget" android:exported="false" android:label="@string/quicknote_label">\n            <intent-filter>\n                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>\n            </intent-filter>\n            <meta-data android:name="android.appwidget.provider" android:resource="@xml/qn_widget_info"/>\n        </receiver>'
+            sed -i "s|</application>|    $WID\n    </application>|" "$MANIFEST"
           fi
           echo "=== манифест после патча ===" && cat "$MANIFEST"
 
@@ -185,10 +204,10 @@ jobs:
       - name: Переименовать APK по версии
         run: |
           set -e
-          VN=$(grep -m1 'const APP_VERSION' src/App.jsx | sed -E 's/.*"([^"]+)".*/\1/')
           OUT=android/app/build/outputs/apk/release
-          APK=$(ls "$OUT"/*.apk | head -1)
-          mv "$APK" "$OUT/Notenger v.$VN.apk"
+          SRC=$(ls "$OUT"/*.apk | head -1)
+          if [ "${IS_REL:-1}" = "1" ]; then DST="$OUT/Notenger v.${APP_VER}.apk"; else DST="$OUT/Notenger v.${APP_VER}-test${GITHUB_RUN_NUMBER}.apk"; fi
+          if [ -n "$SRC" ] && [ "$SRC" != "$DST" ]; then mv "$SRC" "$DST"; fi
           ls -la "$OUT"
 
       - name: Загрузить готовый APK (артефакт)
