@@ -210,31 +210,42 @@ jobs:
           if [ -n "$SRC" ] && [ "$SRC" != "$DST" ]; then mv "$SRC" "$DST"; fi
           ls -la "$OUT"
 
-      - name: Загрузить готовый APK (артефакт)
-        id: upload_artifact
+      # Артефакты Actions всегда отдаются zip-архивом, поэтому основной способ —
+      # ассет релиза: по нему APK скачивается прямой ссылкой одним файлом.
+      - name: Выложить APK прямой ссылкой (релиз apk-latest)
+        id: release_apk
         continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: Notenger_Compiled
-          path: android/app/build/outputs/apk/release/*.apk
-
-      - name: Выложить APK в релиз (квота артефактов исчерпана)
-        if: steps.upload_artifact.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
           set -e
           APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          NAME=$(basename "$APK")
           TAG=apk-latest
-          NOTES="Автосборка #${{ github.run_number }} от $(date -u +'%Y-%m-%d %H:%M UTC') — выложено в релиз, т.к. квота артефактов исчерпана."
+          NOTES="Автосборка #${{ github.run_number }} от $(date -u +'%Y-%m-%d %H:%M UTC')"
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
-            gh release edit "$TAG" --repo "$REPO" --notes "$NOTES"
+            gh release edit "$TAG" --repo "$REPO" --title "Notenger APK" --notes "$NOTES"
           else
             gh release create "$TAG" --repo "$REPO" --title "Notenger APK" --notes "$NOTES"
           fi
           gh release upload "$TAG" "$APK" --repo "$REPO" --clobber
-          echo "::notice::Квота артефактов исчерпана — APK в релизе $TAG"
+          ENC=$(printf '%s' "$NAME" | sed 's/ /%20/g')
+          URL="https://github.com/$REPO/releases/download/$TAG/$ENC"
+          echo "::notice::APK: $URL"
+          {
+            echo "### 📦 APK готов"
+            echo ""
+            echo "[$NAME]($URL)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Загрузить APK артефактом (если релиз не удался)
+        if: steps.release_apk.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: Notenger_Compiled
+          path: android/app/build/outputs/apk/release/*.apk
 
   cleanup:
     needs: build
